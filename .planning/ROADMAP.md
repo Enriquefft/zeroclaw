@@ -12,7 +12,7 @@ Three phases to deliver a robust, extensible foundation for the Kiro agent. Phas
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Config Foundation** - Wire the complete config.toml and module.nix deployment model so the gateway passes zero-warning validation
+- [x] **Phase 1: Config Foundation** - Wire the complete config.toml and module.nix deployment model so the gateway passes zero-warning validation (completed 2026-03-04)
 - [ ] **Phase 2: Scaffolding and Identity** - Build directory structure, CLAUDE.md, and audited identity documents accessible at runtime via symlinks
 - [ ] **Phase 3: Self-Modification and Resilience** - Establish the behavioral constitution and self-repair protocol that govern Kiro's autonomous operation
 
@@ -62,6 +62,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Config Foundation | 0/1 | Not started | - |
+| 1. Config Foundation | 1/1 | Complete   | 2026-03-04 |
 | 2. Scaffolding and Identity | 0/TBD | Not started | - |
 | 3. Self-Modification and Resilience | 0/TBD | Not started | - |

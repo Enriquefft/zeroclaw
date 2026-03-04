@@ -9,23 +9,23 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 ### Config Foundation
 
-- [ ] **CFG-01**: config.toml includes `[autonomy]` section with explicit `allowed_commands` allowlist, `allowed_roots` for `/etc/nixos/` and `~/Projects/`, and `workspace_only = false`
-- [ ] **CFG-02**: config.toml includes `[memory]` section with `backend = "sqlite"` and `auto_save = true`
-- [ ] **CFG-03**: config.toml includes `[observability]` section with `runtime_trace_mode = "rolling"` for debugging tool/cron failures
-- [ ] **CFG-04**: config.toml includes `[agent]` section with tuned `max_tool_iterations` and `max_history_messages`
-- [ ] **CFG-05**: module.nix renders complete config.toml with all configured sections
+- [x] **CFG-01**: config.toml includes `[autonomy]` section with explicit `allowed_commands` allowlist, `allowed_roots` for `/etc/nixos/` and `~/Projects/`, and `workspace_only = false`
+- [x] **CFG-02**: config.toml includes `[memory]` section with `backend = "sqlite"` and `auto_save = true`
+- [x] **CFG-03**: config.toml includes `[observability]` section with `runtime_trace_mode = "rolling"` for debugging tool/cron failures
+- [x] **CFG-04**: config.toml includes `[agent]` section with tuned `max_tool_iterations` and `max_history_messages`
+- [x] **CFG-05**: module.nix renders complete config.toml with all configured sections
 
 ### Directory & Scaffolding
 
 - [ ] **DIR-01**: `skills/` directory exists with scaffolding and a README documenting SKILL.toml conventions
 - [ ] **DIR-02**: `cron/` directory exists with structure for cron job definitions and a README documenting conventions
 - [ ] **DIR-03**: CLAUDE.md exists in `/etc/nixos/zeroclaw/` providing comprehensive guidance for any LLM agent working on this infrastructure
-- [ ] **DIR-04**: `reference/upstream-docs/` symlink to `~/Projects/zeroclaw/docs/` is accessible and documented
+- [x] **DIR-04**: `reference/upstream-docs/` symlink to `~/Projects/zeroclaw/docs/` is accessible and documented
 
 ### Self-Modification Infrastructure
 
 - [ ] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
-- [ ] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
+- [x] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
 - [ ] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
 - [ ] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
 
@@ -37,8 +37,8 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 ### Multi-Agent Infrastructure
 
-- [ ] **IPC-01**: config.toml includes `[agents_ipc]` section with `enabled = true`, shared SQLite DB path, and staleness timeout configured
-- [ ] **IPC-02**: module.nix wires IPC database path and ensures the shared SQLite file is accessible to all ZeroClaw instances on the host
+- [x] **IPC-01**: config.toml includes `[agents_ipc]` section with `enabled = true`, shared SQLite DB path, and staleness timeout configured
+- [x] **IPC-02**: module.nix wires IPC database path and ensures the shared SQLite file is accessible to all ZeroClaw instances on the host
 - [ ] **IPC-03**: CLAUDE.md documents how additional ZeroClaw agent instances can be spun up and communicate with Kiro via IPC
 
 ### Identity Documents
@@ -83,24 +83,24 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 1 | Pending |
-| CFG-02 | Phase 1 | Pending |
-| CFG-03 | Phase 1 | Pending |
-| CFG-04 | Phase 1 | Pending |
-| CFG-05 | Phase 1 | Pending |
+| CFG-01 | Phase 1 | Complete |
+| CFG-02 | Phase 1 | Complete |
+| CFG-03 | Phase 1 | Complete |
+| CFG-04 | Phase 1 | Complete |
+| CFG-05 | Phase 1 | Complete |
 | DIR-01 | Phase 2 | Pending |
 | DIR-02 | Phase 2 | Pending |
 | DIR-03 | Phase 2 | Pending |
-| DIR-04 | Phase 1 | Pending |
+| DIR-04 | Phase 1 | Complete |
 | MOD-01 | Phase 3 | Pending |
-| MOD-02 | Phase 1 | Pending |
+| MOD-02 | Phase 1 | Complete |
 | MOD-03 | Phase 2 | Pending |
 | MOD-04 | Phase 3 | Pending |
 | RPR-01 | Phase 3 | Pending |
 | RPR-02 | Phase 3 | Pending |
 | RPR-03 | Phase 3 | Pending |
-| IPC-01 | Phase 1 | Pending |
-| IPC-02 | Phase 1 | Pending |
+| IPC-01 | Phase 1 | Complete |
+| IPC-02 | Phase 1 | Complete |
 | IPC-03 | Phase 3 | Pending |
 | IDN-01 | Phase 2 | Pending |
 | IDN-02 | Phase 2 | Pending |
