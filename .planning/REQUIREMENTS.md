@@ -43,8 +43,8 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 ### Identity Documents
 
-- [ ] **IDN-01**: All 6 identity documents (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) audited and updated to remove stale OpenClaw references and reflect ZeroClaw context
-- [ ] **IDN-02**: Identity document format verified against ZeroClaw's expected `[identity] format = "openclaw"` schema — all filenames and structure match what ZeroClaw loads at runtime
+- [x] **IDN-01**: All 6 identity documents (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) audited and updated to remove stale OpenClaw references and reflect ZeroClaw context
+- [x] **IDN-02**: Identity document format verified against ZeroClaw's expected `[identity] format = "openclaw"` schema — all filenames and structure match what ZeroClaw loads at runtime
 
 ## v2 Requirements
 
@@ -102,8 +102,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | IPC-01 | Phase 1 | Complete |
 | IPC-02 | Phase 1 | Complete |
 | IPC-03 | Phase 3 | Pending |
-| IDN-01 | Phase 2 | Pending |
-| IDN-02 | Phase 2 | Pending |
+| IDN-01 | Phase 2 | Complete |
+| IDN-02 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 21 total
