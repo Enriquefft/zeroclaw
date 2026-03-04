@@ -48,6 +48,7 @@ let
     [autonomy]
     level = "supervised"
     workspace_only = false
+    max_cost_per_day_cents = 500
     allowed_roots = ["/etc/nixos/", "~/Projects/"]
     allowed_commands = [
       "git", "nix", "nixos-rebuild", "systemctl", "journalctl",
@@ -69,6 +70,7 @@ let
     auto_save = true
 
     [observability]
+    backend = "none"
     runtime_trace_mode = "rolling"
     runtime_trace_max_entries = 200
 
@@ -108,6 +110,16 @@ in
     config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/USER.md";
   home.file.".zeroclaw/documents/LORE.md".source =
     config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/LORE.md";
+
+  # Workspace-level identity doc symlinks (fixes zeroclaw doctor SOUL.md/AGENTS.md warnings)
+  home.file.".zeroclaw/workspace/SOUL.md".source =
+    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/SOUL.md";
+  home.file.".zeroclaw/workspace/AGENTS.md".source =
+    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/AGENTS.md";
+
+  # Reference directory (DIR-04) — upstream-docs already symlinks to ~/Projects/zeroclaw/docs
+  home.file.".zeroclaw/reference".source =
+    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/reference";
 
   # Kapso WhatsApp bridge
   services.kapso-whatsapp = {
