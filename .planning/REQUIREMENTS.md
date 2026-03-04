@@ -17,16 +17,16 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 ### Directory & Scaffolding
 
-- [ ] **DIR-01**: `skills/` directory exists with scaffolding and a README documenting SKILL.toml conventions
-- [ ] **DIR-02**: `cron/` directory exists with structure for cron job definitions and a README documenting conventions
-- [ ] **DIR-03**: CLAUDE.md exists in `/etc/nixos/zeroclaw/` providing comprehensive guidance for any LLM agent working on this infrastructure
+- [x] **DIR-01**: `skills/` directory exists with scaffolding and a README documenting SKILL.toml conventions
+- [x] **DIR-02**: `cron/` directory exists with structure for cron job definitions and a README documenting conventions
+- [x] **DIR-03**: CLAUDE.md exists in `/etc/nixos/zeroclaw/` providing comprehensive guidance for any LLM agent working on this infrastructure
 - [x] **DIR-04**: `reference/upstream-docs/` symlink to `~/Projects/zeroclaw/docs/` is accessible and documented
 
 ### Self-Modification Infrastructure
 
 - [ ] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
 - [x] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
-- [ ] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
+- [x] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
 - [ ] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
 
 ### Self-Repair & Resilience
@@ -88,13 +88,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | CFG-03 | Phase 1 | Complete |
 | CFG-04 | Phase 1 | Complete |
 | CFG-05 | Phase 1 | Complete |
-| DIR-01 | Phase 2 | Pending |
-| DIR-02 | Phase 2 | Pending |
-| DIR-03 | Phase 2 | Pending |
+| DIR-01 | Phase 2 | Complete |
+| DIR-02 | Phase 2 | Complete |
+| DIR-03 | Phase 2 | Complete |
 | DIR-04 | Phase 1 | Complete |
 | MOD-01 | Phase 3 | Pending |
 | MOD-02 | Phase 1 | Complete |
-| MOD-03 | Phase 2 | Pending |
+| MOD-03 | Phase 2 | Complete |
 | MOD-04 | Phase 3 | Pending |
 | RPR-01 | Phase 3 | Pending |
 | RPR-02 | Phase 3 | Pending |
