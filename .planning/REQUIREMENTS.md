@@ -83,33 +83,33 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase ? | Pending |
-| CFG-02 | Phase ? | Pending |
-| CFG-03 | Phase ? | Pending |
-| CFG-04 | Phase ? | Pending |
-| CFG-05 | Phase ? | Pending |
-| DIR-01 | Phase ? | Pending |
-| DIR-02 | Phase ? | Pending |
-| DIR-03 | Phase ? | Pending |
-| DIR-04 | Phase ? | Pending |
-| MOD-01 | Phase ? | Pending |
-| MOD-02 | Phase ? | Pending |
-| MOD-03 | Phase ? | Pending |
-| MOD-04 | Phase ? | Pending |
-| RPR-01 | Phase ? | Pending |
-| RPR-02 | Phase ? | Pending |
-| RPR-03 | Phase ? | Pending |
-| IPC-01 | Phase ? | Pending |
-| IPC-02 | Phase ? | Pending |
-| IPC-03 | Phase ? | Pending |
-| IDN-01 | Phase ? | Pending |
-| IDN-02 | Phase ? | Pending |
+| CFG-01 | Phase 1 | Pending |
+| CFG-02 | Phase 1 | Pending |
+| CFG-03 | Phase 1 | Pending |
+| CFG-04 | Phase 1 | Pending |
+| CFG-05 | Phase 1 | Pending |
+| DIR-01 | Phase 2 | Pending |
+| DIR-02 | Phase 2 | Pending |
+| DIR-03 | Phase 2 | Pending |
+| DIR-04 | Phase 1 | Pending |
+| MOD-01 | Phase 3 | Pending |
+| MOD-02 | Phase 1 | Pending |
+| MOD-03 | Phase 2 | Pending |
+| MOD-04 | Phase 3 | Pending |
+| RPR-01 | Phase 3 | Pending |
+| RPR-02 | Phase 3 | Pending |
+| RPR-03 | Phase 3 | Pending |
+| IPC-01 | Phase 1 | Pending |
+| IPC-02 | Phase 1 | Pending |
+| IPC-03 | Phase 3 | Pending |
+| IDN-01 | Phase 2 | Pending |
+| IDN-02 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 (pending roadmap)
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-04*
-*Last updated: 2026-03-04 after initial definition*
+*Last updated: 2026-03-04 after roadmap creation*
