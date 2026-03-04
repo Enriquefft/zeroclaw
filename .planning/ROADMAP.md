@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Add 5 TOML config sections + wire workspace symlinks and reference dir, rebuild to verify
+- [x] 01-01-PLAN.md — Add 5 TOML config sections + wire workspace symlinks and reference dir, rebuild to verify
 
 ### Phase 2: Scaffolding and Identity
 **Goal**: The skills and cron directories exist with documented conventions, CLAUDE.md provides complete agent guidance, and all six identity documents are audited and ZeroClaw-compatible
@@ -42,7 +42,12 @@ Plans:
   2. Any agent opening this repo can read CLAUDE.md and immediately know which files require rebuild vs live-edit
   3. All six identity documents (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) contain no stale OpenClaw references and load correctly when Kiro starts
   4. The skills/ and cron/ READMEs document conventions clearly enough that Kiro can create a new skill or cron job by reading them without human guidance
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Create skills/README.md, cron/README.md, and CLAUDE.md (scaffolding + deployment model)
+- [ ] 02-02-PLAN.md — Full rewrite of AGENTS.md for ZeroClaw-native tooling
+- [ ] 02-03-PLAN.md — Surgical audit of IDENTITY, SOUL, TOOLS, USER, LORE documents
 
 ### Phase 3: Self-Modification and Resilience
 **Goal**: Kiro's behavioral constitution is documented and tested — git-first self-modification is demonstrated end-to-end, and the self-repair mandate is unconditional and durable
@@ -63,5 +68,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Config Foundation | 1/1 | Complete    | 2026-03-04 |
-| 2. Scaffolding and Identity | 0/TBD | Not started | - |
+| 2. Scaffolding and Identity | 0/3 | Not started | - |
 | 3. Self-Modification and Resilience | 0/TBD | Not started | - |
