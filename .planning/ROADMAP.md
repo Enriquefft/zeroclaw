@@ -58,7 +58,13 @@ Plans:
   2. AGENTS.md explicitly distinguishes what Kiro can change autonomously vs what requires user approval, with no ambiguous cases
   3. When Kiro encounters any failure (config, runtime, or infrastructure), it files a durable record and attempts repair before asking the user
   4. An additional ZeroClaw agent instance can be described and configured using the IPC documentation in CLAUDE.md
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Add self-modification policy table and strengthen self-repair mandate in AGENTS.md
+- [ ] 03-02-PLAN.md — Create and install repair-loop skill (callable repair_loop tool)
+- [ ] 03-03-PLAN.md — Create sentinel skill and register 2-hour error sentinel cron job
+- [ ] 03-04-PLAN.md — Add Multi-Agent IPC section to CLAUDE.md + MOD-04 live test checkpoint
 
 ## Progress
 
@@ -69,4 +75,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Config Foundation | 1/1 | Complete    | 2026-03-04 |
 | 2. Scaffolding and Identity | 2/3 | Complete    | 2026-03-04 |
-| 3. Self-Modification and Resilience | 0/TBD | Not started | - |
+| 3. Self-Modification and Resilience | 0/4 | Not started | - |
