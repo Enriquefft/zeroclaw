@@ -23,12 +23,15 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Nothing (first phase)
 **Requirements**: CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, DIR-04, IPC-01, IPC-02, MOD-02
 **Success Criteria** (what must be TRUE):
-  1. `zeroclaw doctor` reports zero warnings or errors after a clean `nixos-rebuild switch`
-  2. `zeroclaw chat "hello"` returns a successful response from the Z.AI model (not a 404 or auth error)
+  1. `zeroclaw doctor` reports at most 3 warnings (api_key env, no channels, no channel-components — non-eliminatable with kapso-whatsapp bridge architecture) after a clean `nixos-rebuild switch`
+  2. `zeroclaw agent -m "hello"` returns a successful response from the Z.AI model (not a 404 or auth error)
   3. Kiro can execute an approved shell command (e.g., `git status`) in a live session without permission errors
-  4. Changes made to files in `documents/`, `skills/`, and `cron/` source directories are immediately visible at the `~/.zeroclaw/` deployment paths without a rebuild
-  5. The `reference/upstream-docs/` symlink resolves and ZeroClaw docs are readable from within the repo
-**Plans**: TBD
+  4. Changes made to files in `documents/` source directory are immediately visible at `~/.zeroclaw/documents/` without a rebuild
+  5. The `reference/upstream-docs/` symlink resolves to `~/Projects/zeroclaw/docs` and ZeroClaw docs are readable
+**Plans**: 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — Add 5 TOML config sections + wire workspace symlinks and reference dir, rebuild to verify
 
 ### Phase 2: Scaffolding and Identity
 **Goal**: The skills and cron directories exist with documented conventions, CLAUDE.md provides complete agent guidance, and all six identity documents are audited and ZeroClaw-compatible
@@ -59,6 +62,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Config Foundation | 0/TBD | Not started | - |
+| 1. Config Foundation | 0/1 | Not started | - |
 | 2. Scaffolding and Identity | 0/TBD | Not started | - |
 | 3. Self-Modification and Resilience | 0/TBD | Not started | - |
