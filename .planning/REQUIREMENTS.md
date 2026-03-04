@@ -1,0 +1,115 @@
+# Requirements: ZeroClaw Infrastructure
+
+**Defined:** 2026-03-04
+**Core Value:** A robust, extensible foundation that enables Kiro to grow and self-modify without friction
+
+## v1 Requirements
+
+Requirements for the infrastructure foundation. Each maps to roadmap phases.
+
+### Config Foundation
+
+- [ ] **CFG-01**: config.toml includes `[autonomy]` section with explicit `allowed_commands` allowlist, `allowed_roots` for `/etc/nixos/` and `~/Projects/`, and `workspace_only = false`
+- [ ] **CFG-02**: config.toml includes `[memory]` section with `backend = "sqlite"` and `auto_save = true`
+- [ ] **CFG-03**: config.toml includes `[observability]` section with `runtime_trace_mode = "rolling"` for debugging tool/cron failures
+- [ ] **CFG-04**: config.toml includes `[agent]` section with tuned `max_tool_iterations` and `max_history_messages`
+- [ ] **CFG-05**: module.nix renders complete config.toml with all configured sections
+
+### Directory & Scaffolding
+
+- [ ] **DIR-01**: `skills/` directory exists with scaffolding and a README documenting SKILL.toml conventions
+- [ ] **DIR-02**: `cron/` directory exists with structure for cron job definitions and a README documenting conventions
+- [ ] **DIR-03**: CLAUDE.md exists in `/etc/nixos/zeroclaw/` providing comprehensive guidance for any LLM agent working on this infrastructure
+- [ ] **DIR-04**: `reference/upstream-docs/` symlink to `~/Projects/zeroclaw/docs/` is accessible and documented
+
+### Self-Modification Infrastructure
+
+- [ ] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
+- [ ] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
+- [ ] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
+- [ ] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
+
+### Self-Repair & Resilience
+
+- [ ] **RPR-01**: AGENTS.md contains self-repair protocol: when Kiro encounters any issue, priority order is robust fix → workaround → ask user for help
+- [ ] **RPR-02**: Self-repair mandate is unconditional — Kiro must attempt to fix ANY issue found, not just tool failures, including config, runtime, or infrastructure problems
+- [ ] **RPR-03**: All discovered issues are filed as durable records (not just chat context) before attempting repair
+
+### Multi-Agent Infrastructure
+
+- [ ] **IPC-01**: config.toml includes `[agents_ipc]` section with `enabled = true`, shared SQLite DB path, and staleness timeout configured
+- [ ] **IPC-02**: module.nix wires IPC database path and ensures the shared SQLite file is accessible to all ZeroClaw instances on the host
+- [ ] **IPC-03**: CLAUDE.md documents how additional ZeroClaw agent instances can be spun up and communicate with Kiro via IPC
+
+### Identity Documents
+
+- [ ] **IDN-01**: All 6 identity documents (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) audited and updated to remove stale OpenClaw references and reflect ZeroClaw context
+- [ ] **IDN-02**: Identity document format verified against ZeroClaw's expected `[identity] format = "openclaw"` schema — all filenames and structure match what ZeroClaw loads at runtime
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Security Hardening
+
+- **SEC-01**: `[security.estop]` enabled with `require_otp_to_resume = true` as a kill-switch for runaway behavior
+- **SEC-02**: `[security.otp]` configured for TOTP gating on sensitive actions (shell, browser_open, file_write)
+
+### Intelligence Layer
+
+- **INT-01**: `[query_classification]` with rules routing reasoning tasks to `zai` and fast tasks to `zai-coding`
+- **INT-02**: `[[model_routes]]` with stable hints (`reasoning`, `fast`, `code`) pointing to appropriate providers/models
+- **INT-03**: Sub-agent delegation config (`[agents.researcher]`, `[agents.coder]`) for scoped tool access
+- **INT-04**: `[cost]` tracking enabled with daily limit based on observed usage patterns
+
+### Cron & Skills
+
+- **CRN-01**: Task queue skill ported or rebuilt as ZeroClaw-native SKILL.toml skill
+- **CRN-02**: Core cron jobs migrated (morning-briefing, end-of-day, task-worker)
+- **CRN-03**: Full 13-job cron schedule migrated and tested
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| WASM runtime for skills | Conflicts with `mkOutOfStoreSymlink` pattern; native runtime + autonomy config achieves safety |
+| Open skills registry (`open_skills_enabled`) | Supply chain risk on a personal agent with shell access |
+| Public gateway bind | Loopback only; Kapso bridge handles external delivery via Tailscale |
+| OpenClaw compatibility/migration | Clean break — achieve the same goals through ZeroClaw's native systems, don't port OpenClaw patterns |
+| Hardware/peripheral config | Not relevant to current use case |
+| Ad-hoc crontab / systemd timers | All scheduling through ZeroClaw native cron only |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CFG-01 | Phase ? | Pending |
+| CFG-02 | Phase ? | Pending |
+| CFG-03 | Phase ? | Pending |
+| CFG-04 | Phase ? | Pending |
+| CFG-05 | Phase ? | Pending |
+| DIR-01 | Phase ? | Pending |
+| DIR-02 | Phase ? | Pending |
+| DIR-03 | Phase ? | Pending |
+| DIR-04 | Phase ? | Pending |
+| MOD-01 | Phase ? | Pending |
+| MOD-02 | Phase ? | Pending |
+| MOD-03 | Phase ? | Pending |
+| MOD-04 | Phase ? | Pending |
+| RPR-01 | Phase ? | Pending |
+| RPR-02 | Phase ? | Pending |
+| RPR-03 | Phase ? | Pending |
+| IPC-01 | Phase ? | Pending |
+| IPC-02 | Phase ? | Pending |
+| IPC-03 | Phase ? | Pending |
+| IDN-01 | Phase ? | Pending |
+| IDN-02 | Phase ? | Pending |
+
+**Coverage:**
+- v1 requirements: 21 total
+- Mapped to phases: 0
+- Unmapped: 21 (pending roadmap)
+
+---
+*Requirements defined: 2026-03-04*
+*Last updated: 2026-03-04 after initial definition*
