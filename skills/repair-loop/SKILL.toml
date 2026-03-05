@@ -9,4 +9,4 @@ tags = ["resilience", "repair", "memory"]
 name = "repair_loop"
 description = "File issue to ZeroClaw memory and signal repair start. Pass a description of the issue. Returns structured output with REPAIR_LOOP_KEY (the memory key) for follow-up resolution calls. After invoking, call memory_store with the returned key to mark resolved when done."
 kind = "shell"
-command = "/etc/nixos/zeroclaw/skills/repair-loop/scripts/repair-loop.sh"
+command = "/etc/nixos/zeroclaw/bin/repair-loop.sh"
