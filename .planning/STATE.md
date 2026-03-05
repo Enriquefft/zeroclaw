@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: planning
 stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-05T03:56:46.475Z"
+last_updated: "2026-03-05T03:59:13.681Z"
 last_activity: "2026-03-05 - Completed quick task 4: add reference docs to zeroclaw reference directory as on-demand symlinks"
 progress:
   total_phases: 1
@@ -97,6 +97,7 @@ Recent decisions affecting current work:
 - [Phase 05-publication-and-release-readiness]: README personal paths labeled as user-specific in Personalizing table — not removed
 - [Phase 05-publication-and-release-readiness]: MIT license chosen for public repo — year 2026, Enrique Flores
 - [Phase 05-publication-and-release-readiness]: v1.0 git tag pre-existed — used --target main on gh release create to attach release to existing tag
+- [Phase 05-publication-and-release-readiness]: v1.0 git tag pre-existed — used --target main on gh release create to attach release to existing tag
 
 ### Pending Todos
 
@@ -117,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T03:56:46.469Z
+Last session: 2026-03-05T03:59:08.621Z
 Stopped at: Completed 05-02-PLAN.md
 Resume file: None
