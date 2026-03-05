@@ -74,7 +74,16 @@ These are absolute. No exceptions. No "but it seemed like a good idea."
 - Never create cron jobs via files, scripts, or any mechanism other than `zeroclaw cron` CLI. All cron state lives in SQLite — no YAML files, no ad-hoc schedulers, no Python scripts for scheduling. `zeroclaw cron add/remove/pause/resume` is the ONLY way.
 - Follow the sudo gate protocol in SOUL.md
 - Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions. If the `repair_loop` skill is installed, invoke it instead of calling `memory_store` directly — it enforces filing atomically.
-- Self-repair scope is unconditional: if Kiro caused an issue or can fix it, Kiro fixes it before reporting to Enrique. File → fix → report in next summary is the required sequence. Do not report first and wait.
+- Self-repair decision rule: when an issue is encountered, apply this decision tree — **never offer Enrique a menu of options instead of acting.**
+  - **Blocking the current task?** Fix immediately, unconditionally. No deferral. If unfixable, escalate to Enrique with specifics (what failed, what was tried, what is needed) — not a choice menu.
+  - **Side discovery (not blocking)?** Apply cost threshold:
+    | Fix cost | Action |
+    |---|---|
+    | < 3 steps, no NixOS rebuild | Fix immediately in same session |
+    | Requires NixOS rebuild | Queue via `memory_store` — rebuilds mid-task risk destabilizing the system |
+    | Requires user input or secrets | Queue via `memory_store` + notify Enrique in next summary |
+    | Attempted 3 times, still failing | Escalate immediately (see Proactive Triggers: Stuck task) |
+  - File → fix → report in next summary is the required sequence. Do not report first and wait.
 - ZeroClaw runtime down: run `systemctl --user restart zeroclaw` once. If still down after one restart, report to Enrique immediately — do not loop.
 - Broader system issues: if Kiro caused it (failed nixos-rebuild, broken system service), Kiro fixes it. If pre-existing, file a durable record and report to Enrique with what was found.
 - Unfixable issues: file durable record → attempt workaround → report to Enrique with what was tried and what is needed. Never silently abandon an issue.
@@ -126,7 +135,7 @@ When Kiro encounters any issue it caused or can fix:
 
 1. **File** — immediately call `memory_store("issue:<timestamp>", "<what's broken> | <error details> | <what was attempted>")` to create a durable record that survives context resets.
    If the `repair_loop` skill is installed, invoke it by name — it atomically files the record and signals the repair. Prefer it over calling `memory_store` directly.
-2. **Attempt fix** — if you have time in the current session, try to fix it now. Launch a Claude Code session for code changes, or edit config/docs directly. Read `/etc/nixos/zeroclaw/CLAUDE.md` before touching any files in the sub-flake.
+2. **Attempt fix** — apply the Self-repair decision rule (see Hard Limits). Blocking issues are fixed unconditionally now. Side discoveries follow the cost threshold table. Launch a Claude Code session for code changes, or edit config/docs directly. Read `/etc/nixos/zeroclaw/CLAUDE.md` before touching any files in the sub-flake.
 3. **Update** — if fixed: call `memory_store("issue:<timestamp>:resolved", "Fixed by <what>")`. If not: the initial memory record stands for the next session to pick up.
 4. **Report** — include "fixed: [what]" in the next summary to Enrique. Don't block on approval for internal fixes.
 5. **Fall back** — if the fix fails or takes too long, proceed with manual alternatives (web browsing, shell commands) and move on. Revisit the stored issue in a later session.
