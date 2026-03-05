@@ -5,7 +5,7 @@ milestone_name: milestone
 status: planning
 stopped_at: Completed 04-02-PLAN.md
 last_updated: "2026-03-05T03:07:44.020Z"
-last_activity: "2026-03-05 - Completed quick task 4: add openclaw reference docs to zeroclaw reference directory as on-demand symlinks"
+last_activity: "2026-03-05 - Completed quick task 4: add reference docs to zeroclaw reference directory as on-demand symlinks"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 Phase: 1 of 3 (Config Foundation)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-05 - Completed quick task 4: add openclaw reference docs to zeroclaw reference directory as on-demand symlinks
+Last activity: 2026-03-05 - Completed quick task 4: add reference docs to zeroclaw reference directory as on-demand symlinks
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -108,7 +108,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 2 | fix kiro allowed roots so it can read document files | 2026-03-05 | 4287075 | [2-fix-kiro-allowed-roots-so-it-can-read-do](./quick/2-fix-kiro-allowed-roots-so-it-can-read-do/) |
 | 3 | fix document symlinks to use home.activation for direct 1-hop links | 2026-03-05 | 950305e | [3-fix-document-symlinks-to-use-home-activa](./quick/3-fix-document-symlinks-to-use-home-activa/) |
-| 4 | add openclaw reference docs to zeroclaw reference directory as on-demand symlinks | 2026-03-04 | 4f2b113 | [4-add-openclaw-reference-docs-to-zeroclaw-](./quick/4-add-openclaw-reference-docs-to-zeroclaw-/) |
+| 4 | add reference docs to zeroclaw reference directory as on-demand symlinks | 2026-03-04 | 4f2b113 | [4-add-openclaw-reference-docs-to-zeroclaw-](./quick/4-add-openclaw-reference-docs-to-zeroclaw-/) |
 
 ## Session Continuity
 

@@ -110,7 +110,7 @@ Last refreshed: **February 18, 2026**.
 
 ## Personal Reference (On-Demand)
 
-These files are sourced from the openclaw reference directory. Read them when the task involves job applications, resume review, or application drafting — they are NOT loaded by default.
+These files are sourced from the reference directory. Read them when the task involves job applications, resume review, or application drafting — they are NOT loaded by default.
 
 - **[full-profile.md](full-profile.md)** — Enrique's full profile and background: resume content, job search state, career narrative, skills. Use when drafting applications or answering profile questions.
 - **[reusable-responses.md](reusable-responses.md)** — Polished application responses to common prompts (cover letters, motivation statements, behavioral questions). Use when writing or improving application materials.
