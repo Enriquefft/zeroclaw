@@ -1,11 +1,16 @@
 ---
 name: sentinel
-description: Error sentinel — scan ZeroClaw memory every 2 hours for unresolved issues, run repair_loop for each, escalate to Enrique via WhatsApp immediately if repair fails. Invoked by cron.
+description: On-demand error sentinel — scan memory for unresolved issues and attempt repairs with agent reasoning. For scheduled scanning, the cron job uses bin/sentinel-scan.ts instead.
 ---
 
-# Sentinel Protocol
+# Sentinel Protocol (On-Demand)
 
-You are executing the scheduled error sentinel check. This runs every 2 hours via cron. Follow these steps exactly and in order.
+This skill is for **on-demand** use when Kiro or a user wants a full scan+repair cycle with agent reasoning. The scheduled cron job runs `bin/sentinel-scan.ts` (deterministic scan+alert, no agent) every 2 hours.
+
+Use this skill when:
+- You want to actively attempt repairs on unresolved issues (not just detect them)
+- The cron sentinel alert identified issues that need agent reasoning to fix
+- You're doing a manual system health check
 
 ## Steps
 

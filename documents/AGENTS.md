@@ -12,9 +12,10 @@ Before building anything, route the task to the correct existing system:
 
 | Task type | System | Action |
 |-----------|--------|--------|
-| Scheduled, recurring, or monitoring tasks | Cron | Create YAML in `cron/jobs/`, run `cron-sync`. Read `cron/README.md`. |
-| Reusable CLI automation | Skills | Use `zeroclaw skills install`. Read `skills/README.md` if needed. |
-| Issues, tasks, broken tools, improvements | ZeroClaw memory | Use `memory_store` to file a durable record. A dedicated task-queue skill is v2 scope (CRN-01). |
+| Deterministic scheduled automation | bin/ + shell cron | Create program in `bin/`, wire shell cron job. See `bin/README.md`. |
+| Scheduled task needing LLM reasoning | Skill + agent cron | Create or reference skill, wire agent cron job. See `cron/README.md`. |
+| Reusable agent capability | Skills | Create skill in `skills/`, audit, install. Read `skills/README.md`. |
+| Issues, tasks, broken tools, improvements | ZeroClaw memory | Use `memory_store` to file a durable record. |
 | System or service config | NixOS | Edit module in `/etc/nixos/`. Read `/etc/nixos/zeroclaw/CLAUDE.md` first. |
 
 "Execute" means **use the right system**, not "write a standalone script." If a task maps to an existing mechanism, use it. Creating parallel infrastructure (standalone scripts, direct state-file edits, ad-hoc schedulers) is never correct and violates Hard Limits.
@@ -171,11 +172,27 @@ When Kiro encounters any issue it caused or can fix:
 
 ## Self-Grow Protocol
 
-**Trigger:** you've done the same manual I/O task (web scraping, API call, data formatting, state management, filtering) 3+ times across separate sessions. That pattern signals a skill.
+**Trigger:** you've done the same manual I/O task (web scraping, API call, data formatting, state management, filtering) 3+ times across separate sessions. That repetition signals automation.
 
-Pure procedure work (how to structure a prompt, how to route a task) does NOT trigger this — `SKILL.md`-only skills exist for that. The trigger is repetitive **computation** running inside the agent token budget that belongs in a deterministic CLI.
+### Creation Decision Tree
 
-**Steps:**
+Before building, determine **what** to build:
+
+```
+Does this need to run on a schedule?
+  YES → Does it need LLM reasoning at runtime?
+          YES → Skill + agent cron (reference skill by name in prompt)
+          NO  → bin/ program + shell cron
+  NO  → Is it a reusable agent capability?
+          YES → Skill (procedure or tool)
+          NO  → One-off bin/ program or inline
+```
+
+**The LLM test:** can you express the decision logic as an if-statement? Yes → no LLM needed → program. No → LLM stays → skill.
+
+After deciding WHAT to build → classify complexity → route to `coding-task`, `fix-task`, or `heavy-task`.
+
+### Building a Skill
 
 1. **Invoke the `skill-creator` skill** — it contains the full anatomy standard and step-by-step guide
 2. **Design** — decide what the skill does, whether it needs a CLI, and what the CLI outputs
@@ -185,10 +202,22 @@ Pure procedure work (how to structure a prompt, how to route a task) does NOT tr
 6. **Test** — invoke the skill or run the CLI directly, verify output
 7. **Commit** — `git add skills/<name>/ && git commit -m "feat(skills): add <name>"`
 
-**Hard rules:**
-- Only install from `/etc/nixos/zeroclaw/skills/` — external registries (`skills.sh`, `npx skills`, GitHub URLs) are blocked by the wrapper
+### Building a Program
+
+1. **Create TypeScript file** in `bin/<name>.ts` — bun preferred, shell for trivial ops
+2. **Follow output contract** — JSON to stdout, errors to stderr, exit 0/1
+3. **Own your state** — programs manage state files in `~/.zeroclaw/workspace/` (agent IPC tools are not available)
+4. **Test directly** — `bun run /etc/nixos/zeroclaw/bin/<name>.ts`
+5. **Wire cron** — create `cron/jobs/<name>.yaml` with `command: "bun run /etc/nixos/zeroclaw/bin/<name>.ts"`
+6. **Apply** — `cron-sync` to activate
+7. **Commit** — `git add bin/<name>.ts cron/jobs/<name>.yaml && git commit -m "feat(bin): add <name>"`
+
+See `bin/README.md` for the full program standard.
+
+### Hard rules
+- Only install skills from `/etc/nixos/zeroclaw/skills/` — external registries (`skills.sh`, `npx skills`, GitHub URLs) are blocked by the wrapper
 - Always audit before install — no exceptions
-- Always commit after install — git is the source of truth; workspace-only installs are lost on rebuild
+- Always commit after install/create — git is the source of truth
 - No `.sh` files inside skill directories — shell scripts go in `/etc/nixos/zeroclaw/bin/`
 
 ## Durable Tracking

@@ -223,3 +223,21 @@ git commit -m "feat(skills): add my-skill"
 | `skills-sync --dry-run` | Preview changes without applying |
 
 **Enforcement:** `zeroclaw skills install` from external sources (GitHub URLs, npm) is blocked. Use absolute paths under `/etc/nixos/zeroclaw/skills/`.
+
+---
+
+## Skills vs Programs
+
+Skills and programs are both automation, but for different contexts:
+
+| | Skill | Program |
+|-|-------|---------|
+| **Requires LLM** | Yes — agent context is valuable | No — deterministic logic only |
+| **Location** | `skills/<name>/` | `bin/<name>.ts` |
+| **Triggered by** | Agent session (interactive or cron) | Shell cron or direct execution |
+| **State** | Via agent tools (`memory_store`, `state_set`) | Own state files in `~/.zeroclaw/workspace/` |
+
+**The test:** Can you express the decision logic as an if-statement? Yes → program (`bin/`). No → skill.
+
+If automation is wired to cron AND needs no LLM reasoning, it should be a program, not a skill.
+See `bin/README.md` for the program standard.

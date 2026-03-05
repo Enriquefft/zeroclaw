@@ -8,6 +8,27 @@ description: Create a new skill or improve an existing one. Use when you catch y
 Guide for authoring and installing skills in this system. All skills live at
 `/etc/nixos/zeroclaw/skills/` (git source of truth) and are installed via `skills-sync`.
 
+## First: is a skill the right artifact?
+
+Before creating a skill, determine if a skill is what you need:
+
+```
+Does this need to run on a schedule?
+  YES → Does it need LLM reasoning at runtime?
+          YES → Skill + agent cron
+          NO  → bin/ program + shell cron (see bin/README.md)
+  NO  → Is it a reusable agent capability?
+          YES → Skill (continue below)
+          NO  → One-off bin/ program or inline
+```
+
+**The LLM test:** can you express the decision logic as an if-statement? Yes → program, not skill.
+
+If the answer is "program": create a TypeScript file in `bin/`, wire a shell cron job, commit.
+See `bin/README.md` for the full standard.
+
+If the answer is "skill": continue with this guide.
+
 ## When to create a skill
 
 **Trigger:** you've done the same manual I/O task (web scraping, API call, data formatting,

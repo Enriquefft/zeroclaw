@@ -29,12 +29,27 @@ Edit YAML files, commit to git, then either:
 name: "Human-readable unique name"   # required — reconciliation key
 schedule: "*/10 * * * *"             # standard 5-field cron expression
 tz: "America/Lima"                   # optional IANA timezone (default: UTC)
-command: |                           # the full command/prompt passed to zeroclaw cron add
-  Your agent prompt here...
+command: "bun run /etc/nixos/zeroclaw/bin/my-program.ts"  # shell command or agent prompt
 ```
 
-For AI-driven sessions, `command` is the agent prompt text. For shell commands, use
-`agent -m "..."` format.
+---
+
+## Job Types
+
+ZeroClaw cron supports two execution modes. The `command` field in YAML determines behavior:
+
+| Type | When to use | `command` value | How daemon runs it |
+|------|-------------|-----------------|-------------------|
+| **Shell** | Decision logic is deterministic (if-statements) | Path to a program: `bun run /path/to/program.ts` | Executes command directly as a shell process |
+| **Agent** | Requires LLM reasoning, judgment, novel output | Agent prompt text describing what to do | Creates an LLM session with the prompt |
+
+**The test:** Can you express the decision logic as an if-statement? Yes → shell job with a `bin/` program. No → agent job with a prompt.
+
+**Shell jobs** reference programs in `bin/` by absolute path. The program does the work deterministically — no tokens burned, fast, testable. This is the preferred type for most scheduled automation.
+
+**Agent jobs** should keep prompts focused and reference skills by name where possible (e.g., "Run the sentinel skill" rather than inlining the full procedure). Agent jobs are expensive and should only be used when the task genuinely requires reasoning at runtime.
+
+`cron-sync` creates all jobs as shell type via `zeroclaw cron add`. The daemon distinguishes based on the `job_type` column in SQLite.
 
 ### Schedule Reference
 
