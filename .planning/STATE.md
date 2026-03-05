@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 Phase: 1 of 3 (Config Foundation)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-05 - Completed quick task 3: fix document symlinks to use home.activation for direct 1-hop links
+Last activity: 2026-03-05 - Completed quick task 4: add openclaw reference docs to zeroclaw reference directory as on-demand symlinks
 
 Progress: [░░░░░░░░░░] 0%
 
