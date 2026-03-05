@@ -33,7 +33,7 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 - [x] **RPR-01**: AGENTS.md contains self-repair protocol: when Kiro encounters any issue, priority order is robust fix → workaround → ask user for help
 - [x] **RPR-02**: Self-repair mandate is unconditional — Kiro must attempt to fix ANY issue found, not just tool failures, including config, runtime, or infrastructure problems
-- [x] **RPR-03**: All discovered issues are filed as durable records (not just chat context) before attempting repair *(automated sentinel detection unverified — Phase 4 gap closure)*
+- [x] **RPR-03**: All discovered issues are filed as durable records (not just chat context) before attempting repair — automated sentinel detects and routes unresolved issues every 2 hours via cron
 
 ### Multi-Agent Infrastructure
 
@@ -112,4 +112,4 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-03-04*
-*Last updated: 2026-03-04 after roadmap creation*
+*Last updated: 2026-03-05 after Phase 4 gap closure — RPR-03 sentinel verification complete*
