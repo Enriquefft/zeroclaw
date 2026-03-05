@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Config Foundation** - Wire the complete config.toml and module.nix deployment model so the gateway passes zero-warning validation (completed 2026-03-04)
 - [x] **Phase 2: Scaffolding and Identity** - Build directory structure, CLAUDE.md, and audited identity documents accessible at runtime via symlinks (completed 2026-03-04)
 - [x] **Phase 3: Self-Modification and Resilience** - Establish the behavioral constitution and self-repair protocol that govern Kiro's autonomous operation (completed 2026-03-05)
-- [ ] **Phase 4: Sentinel Verification and Cleanup** - Verify sentinel automated detection works end-to-end, close Phase 3 documentation gaps
+- [x] **Phase 4: Sentinel Verification and Cleanup** - Verify sentinel automated detection works end-to-end, close Phase 3 documentation gaps (completed 2026-03-05)
 
 ## Phase Details
 
@@ -93,4 +93,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Config Foundation | 1/1 | Complete    | 2026-03-04 |
 | 2. Scaffolding and Identity | 2/3 | Complete    | 2026-03-04 |
 | 3. Self-Modification and Resilience | 4/4 | Complete   | 2026-03-05 |
-| 4. Sentinel Verification and Cleanup | 0/1 | Pending    | — |
+| 4. Sentinel Verification and Cleanup | 1/1 | Complete   | 2026-03-05 |
