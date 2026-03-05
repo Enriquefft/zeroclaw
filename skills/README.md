@@ -39,6 +39,8 @@ skills/
 
 **Important:** All files inside a skill directory must be **regular files** — no symlinks allowed inside skill packages. The `zeroclaw skills audit` command will reject any skill that contains symlinks, even in subdirectories. Copy files; never symlink them.
 
+Shell script files (`.sh`) also cannot be placed inside skill packages — the `zeroclaw skills audit` security policy rejects them. Scripts invoked by skill tools must live **outside** the skill directory. The established pattern is `/etc/nixos/zeroclaw/bin/<script>.sh`. Reference scripts via absolute path in the SKILL.toml `command` field.
+
 When `zeroclaw skills install` succeeds, ZeroClaw also auto-generates `_meta.json` in the installed copy — this file is managed by ZeroClaw and should not be manually created or edited.
 
 ---
