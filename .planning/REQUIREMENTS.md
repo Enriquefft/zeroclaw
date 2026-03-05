@@ -27,7 +27,7 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 - [x] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
 - [x] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
 - [x] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
-- [ ] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
+- [x] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
 
 ### Self-Repair & Resilience
 
@@ -39,7 +39,7 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 - [x] **IPC-01**: config.toml includes `[agents_ipc]` section with `enabled = true`, shared SQLite DB path, and staleness timeout configured
 - [x] **IPC-02**: module.nix wires IPC database path and ensures the shared SQLite file is accessible to all ZeroClaw instances on the host
-- [ ] **IPC-03**: CLAUDE.md documents how additional ZeroClaw agent instances can be spun up and communicate with Kiro via IPC
+- [x] **IPC-03**: CLAUDE.md documents how additional ZeroClaw agent instances can be spun up and communicate with Kiro via IPC
 
 ### Identity Documents
 
@@ -95,13 +95,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | MOD-01 | Phase 3 | Complete |
 | MOD-02 | Phase 1 | Complete |
 | MOD-03 | Phase 2 | Complete |
-| MOD-04 | Phase 3 | Pending |
+| MOD-04 | Phase 3 | Complete |
 | RPR-01 | Phase 3 | Complete |
 | RPR-02 | Phase 3 | Complete |
 | RPR-03 | Phase 3 | Complete |
 | IPC-01 | Phase 1 | Complete |
 | IPC-02 | Phase 1 | Complete |
-| IPC-03 | Phase 3 | Pending |
+| IPC-03 | Phase 3 | Complete |
 | IDN-01 | Phase 2 | Complete |
 | IDN-02 | Phase 2 | Complete |
 
