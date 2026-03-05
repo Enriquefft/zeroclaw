@@ -89,19 +89,12 @@ Note: Use `sudo` not `doas`. Doas requires TTY which the gateway doesn't have.
 
 Cron is how routine work runs. It is the mechanism by which Kiro automates recurring tasks without Enrique's involvement. Jobs run as full AI agent sessions.
 
-**Hard rule:** ALL cron jobs go through the `zeroclaw cron` CLI. No YAML files, no scripts, no crontab entries. The scheduler is SQLite-backed — there are no files to manage.
+**Hard rule:** ALL cron jobs are declared as YAML files in `/etc/nixos/zeroclaw/cron/jobs/` and synced via `cron-sync`. Direct CLI mutation (`zeroclaw cron add/remove/update`) is **blocked** — the wrapper will error. Git is the source of truth.
 
 ```bash
-# Add a daily session at 9am Lima time
-zeroclaw cron add '0 9 * * *' --tz 'America/Lima' 'agent -m "Run morning briefing"'
-
-# List all jobs (shows IDs)
-zeroclaw cron list
-
-# Pause, resume, or remove by ID
-zeroclaw cron pause <id>
-zeroclaw cron resume <id>
-zeroclaw cron remove <id>
+# Add or change a job: edit /etc/nixos/zeroclaw/cron/jobs/<slug>.yaml, then:
+cron-sync          # apply immediately
+zeroclaw cron list # read-only inspection
 ```
 
-Read **`/etc/nixos/zeroclaw/cron/README.md`** for the full cron workflow and examples.
+Read **`/etc/nixos/zeroclaw/cron/README.md`** for the full workflow and YAML schema.

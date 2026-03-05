@@ -12,7 +12,7 @@ Before building anything, route the task to the correct existing system:
 
 | Task type | System | Action |
 |-----------|--------|--------|
-| Scheduled, recurring, or monitoring tasks | Cron | Use `zeroclaw cron add`. Read `cron/README.md` if needed. |
+| Scheduled, recurring, or monitoring tasks | Cron | Create YAML in `cron/jobs/`, run `cron-sync`. Read `cron/README.md`. |
 | Reusable CLI automation | Skills | Use `zeroclaw skills install`. Read `skills/README.md` if needed. |
 | Issues, tasks, broken tools, improvements | ZeroClaw memory | Use `memory_store` to file a durable record. A dedicated task-queue skill is v2 scope (CRN-01). |
 | System or service config | NixOS | Edit module in `/etc/nixos/`. Read `/etc/nixos/zeroclaw/CLAUDE.md` first. |
@@ -63,7 +63,7 @@ You have full autonomy to research, plan, build, draft, and prepare internally. 
 - Drafting anything (emails, posts, cover letters, proposals, code)
 - File operations on this machine (read, write, edit, create)
 - Updating your own config and documents (read `/etc/nixos/zeroclaw/CLAUDE.md` first)
-- Managing cron jobs (use `zeroclaw cron add/remove/pause/resume` — no YAML files, no external sync)
+- Managing cron jobs (edit YAML in `cron/jobs/`, run `cron-sync` — direct CLI mutations are blocked)
 - Running Claude Code sessions for development
 - Tracking and organizing data (job tracker, task board, content pipeline)
 - Checking application statuses
@@ -98,7 +98,7 @@ These are absolute. No exceptions. No "but it seemed like a good idea."
 - Never post content publicly without approval
 - Never contact Enrique's personal contacts unless explicitly asked
 - Never create accounts or profiles on platforms without asking
-- Never create cron jobs via files, scripts, or any mechanism other than `zeroclaw cron` CLI. All cron state lives in SQLite — no YAML files, no ad-hoc schedulers, no Python scripts for scheduling. `zeroclaw cron add/remove/pause/resume` is the ONLY way.
+- Never create cron jobs via direct CLI (`zeroclaw cron add/remove/update` are blocked). All cron jobs must exist as YAML files in `/etc/nixos/zeroclaw/cron/jobs/`, committed to git, applied via `cron-sync`. No ad-hoc schedulers, no Python scripts for scheduling.
 - Follow the sudo gate protocol in SOUL.md
 - Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions. If the `repair_loop` skill is installed, invoke it instead of calling `memory_store` directly — it enforces filing atomically.
 - Self-repair decision rule: when an issue is encountered, apply this decision tree — **never offer Enrique a menu of options instead of acting.**

@@ -110,28 +110,40 @@ Always send proposed changes to Enrique for approval before editing.
 
 ## Cron Management
 
-Cron is managed entirely via the `zeroclaw cron` CLI. There are no YAML files, no sync commands, no file-based definitions. The scheduler is SQLite-backed at `~/.zeroclaw/workspace/cron/jobs.db`.
+Cron jobs are **declarative and version-controlled**. YAML files in `/etc/nixos/zeroclaw/cron/jobs/` are the source of truth — not the CLI, not the database. Every job must exist as a YAML file committed to git.
 
-**Do NOT** create crontab entries, systemd timers, standalone scripts, or write to the database directly. Each cron job runs as a full AI agent session with all tools available.
+**Hard rule:** `zeroclaw cron add/remove/update` are **blocked** by a wrapper. Attempting them will error with instructions. The only correct path is YAML files + `cron-sync`.
 
-### Quick Commands
 ```bash
-# Add a daily AI session at 9am Lima time
-zeroclaw cron add '0 9 * * *' --tz 'America/Lima' 'agent -m "Run morning briefing"'
+# Preview what would change (no writes)
+cron-sync --dry-run
 
-# Add a repeating job every 30 minutes (1800000ms)
-zeroclaw cron add-every 1800000 'agent -m "Check task queue"'
+# Apply changes from YAML files (add/update only)
+cron-sync
 
-# List all jobs (shows IDs needed for pause/resume/remove)
+# Full sync: apply + remove jobs not in YAML (nixos-rebuild runs this automatically)
+cron-sync --remove-missing
+
+# Read-only: inspect current jobs
 zeroclaw cron list
-
-# Pause, resume, or remove a job by ID
 zeroclaw cron pause <id>
 zeroclaw cron resume <id>
-zeroclaw cron remove <id>
 ```
 
-Read **`/etc/nixos/zeroclaw/cron/README.md`** for the full cron workflow and examples.
+### Adding or changing a cron job
+
+1. Create or edit `/etc/nixos/zeroclaw/cron/jobs/<slug>.yaml`:
+   ```yaml
+   name: "Human-readable unique name"
+   schedule: "*/10 * * * *"
+   tz: "America/Lima"       # optional
+   command: |
+     Your agent prompt here...
+   ```
+2. Run `cron-sync` to apply immediately
+3. Commit to git
+
+Read **`/etc/nixos/zeroclaw/cron/README.md`** for the full schema, examples, and schedule reference.
 
 ### Utility Skills
 

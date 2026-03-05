@@ -17,7 +17,7 @@ Different files in this repo have different deployment models. This is the most 
 | `documents/*.md` (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) | Live edit | Edit in `/etc/nixos/zeroclaw/documents/`, commit to git — symlink means ZeroClaw sees changes immediately, no rebuild needed |
 | `skills/<name>/` (source) | Deploy via CLI | `zeroclaw skills audit ./skills/<name>` then `zeroclaw skills install ./skills/<name>` |
 | `~/.zeroclaw/workspace/skills/` (installed) | Live after install | ZeroClaw reads from here; managed by runtime, do not edit directly |
-| Cron jobs | Live via CLI | `zeroclaw cron add/remove/pause/resume` — no files to edit |
+| Cron jobs | Live via `cron-sync` | Edit `cron/jobs/*.yaml`, run `cron-sync` — direct CLI mutations are blocked |
 | `config.toml` | Rebuild required | Rendered via sops template at activation time — symlinked to `/run/secrets/rendered/zeroclaw-config` |
 | Agenix secrets | Rebuild required | Secrets rendered by NixOS at activation time |
 
@@ -47,8 +47,9 @@ Every important file and directory in this repo:
 │   └── README.md               # Full guide for creating and installing skills
 │   └── <skill-name>/           # Each skill is a directory with SKILL.md or SKILL.toml
 │
-├── cron/                       # Cron reference documentation only — no job files here
-│   └── README.md               # Full guide for managing cron jobs via zeroclaw CLI
+├── cron/                       # Declarative cron — YAML files are source of truth
+│   ├── jobs/                   # *.yaml job definitions — edit here, apply with cron-sync
+│   └── README.md               # Full guide: YAML schema, cron-sync CLI, examples
 │
 └── reference/                  # Reference documents — live edit (mkOutOfStoreSymlink)
     │                           # Symlinked to /etc/nixos/zeroclaw/reference/ in workspace
@@ -117,27 +118,30 @@ See `skills/README.md` for the complete guide including SKILL.md format, SKILL.t
 
 ### Kiro: Managing Cron Jobs
 
-Cron jobs are managed entirely via CLI — no files to create or commit.
+Cron jobs are **declarative and version-controlled**. YAML files in `cron/jobs/` are the source of truth. `zeroclaw cron add/remove/update` are **blocked** by a wrapper — attempting them will error.
 
 ```bash
-# Add a recurring job (standard cron expression)
-zeroclaw cron add '0 9 * * *' --tz 'America/Lima' 'agent -m "Run morning briefing"'
+# 1. Create or edit the job definition
+nano /etc/nixos/zeroclaw/cron/jobs/my-job.yaml
+# Required fields: name, schedule, command
+# Optional: tz
 
-# Add a job that repeats every 30 minutes (interval in milliseconds)
-zeroclaw cron add-every 1800000 'agent -m "Check task queue"'
+# 2. Apply immediately
+cron-sync
 
-# List all jobs to see IDs and status
+# 3. Commit to git
+git add cron/jobs/my-job.yaml
+git commit -m "feat(cron): add my-job"
+
+# Read-only inspection
 zeroclaw cron list
-
-# Pause / resume / remove (use ID from cron list)
 zeroclaw cron pause <id>
 zeroclaw cron resume <id>
-zeroclaw cron remove <id>
 ```
 
-No files are created when adding cron jobs — jobs are stored in SQLite at `~/.zeroclaw/workspace/cron/jobs.db`. No git commit needed for cron changes.
+nixos-rebuild runs `cron-sync --remove-missing` automatically — SQLite always mirrors git after a rebuild.
 
-See `cron/README.md` for the complete guide including schedule syntax, all CLI subcommands, and anti-patterns to avoid.
+See `cron/README.md` for the complete guide including YAML schema, schedule reference, and examples.
 
 ### Coding Agents: Testing Changes
 
@@ -171,7 +175,7 @@ Never edit `~/.zeroclaw/` directly:
 
 - `~/.zeroclaw/workspace/skills/` is managed by ZeroClaw — edits are overwritten on next install
 - `~/.zeroclaw/documents/` is a symlink target — edits must go through the source in `documents/`
-- `~/.zeroclaw/workspace/cron/jobs.db` is managed by ZeroClaw — use CLI, not direct SQL writes
+- `~/.zeroclaw/workspace/cron/jobs.db` is managed by ZeroClaw — use `cron-sync` (via YAML files), not direct CLI mutations or SQL writes
 
 Git is the source of truth for all content. When in doubt: if it's in `/etc/nixos/zeroclaw/`, edit it there and commit.
 
