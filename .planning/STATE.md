@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 Phase: 1 of 3 (Config Foundation)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-04 — Roadmap created
+Last activity: 2026-03-05 - Completed quick task 2: fix kiro allowed roots so it can read document files
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -93,6 +93,12 @@ None yet.
 
 - [Research]: Cron format validation unresolved — confirm via `zeroclaw cron --help` whether cron definitions load from watched files or CLI only. Block Phase 3 planning if still unresolved.
 - [Research]: Symlink security for skills directory must be validated in Phase 2 (`zeroclaw skills list`) before Phase 3 depends on it. If `reject_symlink_tools_dir = true` blocks the skills symlink, module.nix wiring must be redesigned.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 2 | fix kiro allowed roots so it can read document files | 2026-03-05 | 4287075 | [2-fix-kiro-allowed-roots-so-it-can-read-do](./quick/2-fix-kiro-allowed-roots-so-it-can-read-do/) |
 
 ## Session Continuity
 
