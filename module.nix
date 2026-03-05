@@ -1,12 +1,19 @@
 # ZeroClaw home-manager configuration
 # Generates ~/.zeroclaw/config.toml, wires systemd service, and kapso-whatsapp bridge
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
-  zeroclawPkg = inputs.zeroclaw.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
-    (old: {
-      src = inputs.zeroclaw;
-      prePatch = ""; # web/dist already exists in full source (upstream packaging bug)
-    });
+  zeroclawPkg =
+    inputs.zeroclaw.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
+      (old: {
+        src = inputs.zeroclaw;
+        prePatch = ""; # web/dist already exists in full source (upstream packaging bug)
+      });
 
   kapsoPackages = inputs.kapso-whatsapp-plugin.packages.${pkgs.stdenv.hostPlatform.system};
 
@@ -48,6 +55,7 @@ let
     [autonomy]
     level = "supervised"
     workspace_only = false
+    max_actions_per_hour = 9999
     max_cost_per_day_cents = 500
     allowed_roots = ["/etc/nixos/", "~/Projects/", "~/.zeroclaw/documents/"]
     allowed_commands = [
@@ -63,7 +71,6 @@ let
       "/boot", "/dev", "/proc", "/sys", "/var", "/tmp",
       "~/.ssh", "~/.gnupg", "~/.aws", "~/.config"
     ]
-    max_actions_per_hour = 20
 
     [memory]
     backend = "sqlite"
@@ -98,7 +105,7 @@ in
   };
 
   # Identity documents — direct symlinks via activation (avoids nix store hop blocking zeroclaw)
-  home.activation.zeroclawDocuments = lib.hm.dag.entryAfter ["writeBoundary"] ''
+  home.activation.zeroclawDocuments = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.zeroclaw/documents"
     for doc in IDENTITY SOUL AGENTS TOOLS USER LORE; do
       ln -sf "/etc/nixos/zeroclaw/documents/$doc.md" "$HOME/.zeroclaw/documents/$doc.md"
