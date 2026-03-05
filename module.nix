@@ -97,25 +97,15 @@ in
     force = true;
   };
 
-  # Identity documents (symlinked for live editing)
-  home.file.".zeroclaw/documents/IDENTITY.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/IDENTITY.md";
-  home.file.".zeroclaw/documents/SOUL.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/SOUL.md";
-  home.file.".zeroclaw/documents/AGENTS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/AGENTS.md";
-  home.file.".zeroclaw/documents/TOOLS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/TOOLS.md";
-  home.file.".zeroclaw/documents/USER.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/USER.md";
-  home.file.".zeroclaw/documents/LORE.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/LORE.md";
-
-  # Workspace-level identity doc symlinks (fixes zeroclaw doctor SOUL.md/AGENTS.md warnings)
-  home.file.".zeroclaw/workspace/SOUL.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/SOUL.md";
-  home.file.".zeroclaw/workspace/AGENTS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/documents/AGENTS.md";
+  # Identity documents — direct symlinks via activation (avoids nix store hop blocking zeroclaw)
+  home.activation.zeroclawDocuments = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    mkdir -p "$HOME/.zeroclaw/documents"
+    for doc in IDENTITY SOUL AGENTS TOOLS USER LORE; do
+      ln -sf "/etc/nixos/zeroclaw/documents/$doc.md" "$HOME/.zeroclaw/documents/$doc.md"
+    done
+    ln -sf "/etc/nixos/zeroclaw/documents/SOUL.md" "$HOME/.zeroclaw/workspace/SOUL.md"
+    ln -sf "/etc/nixos/zeroclaw/documents/AGENTS.md" "$HOME/.zeroclaw/workspace/AGENTS.md"
+  '';
 
   # Reference directory (DIR-04) — upstream-docs already symlinks to ~/Projects/zeroclaw/docs
   home.file.".zeroclaw/reference".source =
