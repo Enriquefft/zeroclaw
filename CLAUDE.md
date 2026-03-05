@@ -174,3 +174,53 @@ Never edit `~/.zeroclaw/` directly:
 - `~/.zeroclaw/workspace/cron/jobs.db` is managed by ZeroClaw — use CLI, not direct SQL writes
 
 Git is the source of truth for all content. When in doubt: if it's in `/etc/nixos/zeroclaw/`, edit it there and commit.
+
+---
+
+## Multi-Agent IPC
+
+ZeroClaw supports multiple independent agent instances communicating on the same host via a shared SQLite database.
+
+### How IPC Works
+
+IPC is enabled by the `[agents_ipc]` config section. When enabled, ZeroClaw registers five tools in the agent's session:
+
+| Tool | Purpose |
+|------|---------|
+| `agents_list` | Discover agents currently registered in the shared DB |
+| `agents_send` | Send a message to another agent by identity |
+| `agents_inbox` | Read messages addressed to this agent |
+| `state_get` | Read shared state by key |
+| `state_set` | Write shared state by key |
+
+All agents that share the same `db_path` can discover each other. Agent identity is derived from the `workspace_dir` SHA-256 hash — not a user-supplied name. Use `agents_list` to discover other agents' identities at runtime.
+
+No database is created until `enabled = true` in at least one instance.
+
+### Kiro's IPC Configuration
+
+Kiro's current configuration (set in Phase 1, IPC-01):
+
+```toml
+[agents_ipc]
+enabled = true
+db_path = "~/.zeroclaw/agents.db"
+staleness_secs = 300
+```
+
+`staleness_secs = 300` means an agent not seen for 5 minutes is considered offline. Use `agents_list` to check which agents are currently active.
+
+### Configuring a Second Agent Instance
+
+A second ZeroClaw instance must point to the **same `db_path`** as Kiro to participate in IPC:
+
+```toml
+[agents_ipc]
+enabled = true
+db_path = "~/.zeroclaw/agents.db"   # Same path as Kiro — shared state
+staleness_secs = 300                 # Match Kiro's staleness window
+```
+
+The second instance needs its own workspace directory (separate `ZEROCLAW_WORKSPACE` env var or a different `~/.zeroclaw/` setup). It does **not** need the same `config.toml` overall — only the same `db_path` value under `[agents_ipc]`.
+
+**config.toml location:** Kiro's config.toml is rendered by Nix at build time from `module.nix`. To reconfigure Kiro's IPC settings, edit `module.nix` and run a nixos-rebuild. See the Deployment Model table above.
