@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-05T03:55:01.373Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-05T03:56:46.475Z"
 last_activity: "2026-03-05 - Completed quick task 4: add reference docs to zeroclaw reference directory as on-demand symlinks"
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-sentinel-verification-and-cleanup P01 | 15min | 1 tasks | 4 files |
 | Phase 04-sentinel-verification-and-cleanup P02 | 45min | 3 tasks | 1 files |
 | Phase 05-publication-and-release-readiness P01 | 2min | 2 tasks | 2 files |
+| Phase 05-publication-and-release-readiness P02 | 5min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,7 @@ Recent decisions affecting current work:
 - [Phase 04-sentinel-verification-and-cleanup]: RPR-03 annotation removed: stale '(automated sentinel detection unverified)' replaced with live-verified behavior description — all 21 v1 requirements now fully satisfied
 - [Phase 05-publication-and-release-readiness]: README personal paths labeled as user-specific in Personalizing table — not removed
 - [Phase 05-publication-and-release-readiness]: MIT license chosen for public repo — year 2026, Enrique Flores
+- [Phase 05-publication-and-release-readiness]: v1.0 git tag pre-existed — used --target main on gh release create to attach release to existing tag
 
 ### Pending Todos
 
@@ -115,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T03:55:01.369Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-05T03:56:46.469Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
