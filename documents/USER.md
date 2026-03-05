@@ -2,8 +2,8 @@
 
 ## Enrique Flores (hybridz)
 
-- Emails: enriquefft@404tf.com (profesional), enriquefft2001@gmail.com (personal), enrique.flores@utec.edu.pe (college)
-- Phone: +51 926 689 401
+- Emails: you@example.com (professional), you+personal@example.com (personal)
+- Phone: +1 555 100 0001
 - LinkedIn: linkedin.com/in/enriqueflores000
 - GitHub: github.com/Enriquefft (200+ repos)
 - Location: Lima, Peru
