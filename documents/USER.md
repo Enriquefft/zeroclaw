@@ -2,7 +2,7 @@
 
 ## Enrique Flores (hybridz)
 
-- Emails: you@example.com (professional), you+personal@example.com (personal)
+- Emails: you@example.com (professional), you+personal@example.com (personal), you+college@example.com (college)
 - Phone: +1 555 100 0001
 - LinkedIn: linkedin.com/in/enriqueflores000
 - GitHub: github.com/Enriquefft (200+ repos)
