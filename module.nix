@@ -49,7 +49,7 @@ let
     level = "supervised"
     workspace_only = false
     max_cost_per_day_cents = 500
-    allowed_roots = ["/etc/nixos/", "~/Projects/"]
+    allowed_roots = ["/etc/nixos/", "~/Projects/", "~/.zeroclaw/documents/"]
     allowed_commands = [
       "git", "nix", "nixos-rebuild", "systemctl", "journalctl",
       "zeroclaw", "gpush", "gcommit", "gh", "cargo",
@@ -95,7 +95,6 @@ in
   home.file.".zeroclaw/config.toml" = {
     source = configToml;
     force = true;
-    mode = "600";
   };
 
   # Identity documents (symlinked for live editing)
