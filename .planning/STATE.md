@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-05T00:01:57.569Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-05T00:02:24.007Z"
 last_activity: 2026-03-04 — Roadmap created
 progress:
   total_phases: 3
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-scaffolding-and-identity P02 | 2min | 1 tasks | 1 files |
 | Phase 02-scaffolding-and-identity P01 | 2 | 3 tasks | 3 files |
 | Phase 03-self-modification-and-resilience P02 | 1min | 2 tasks | 3 files |
+| Phase 03-self-modification-and-resilience P01 | 2min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 02-scaffolding-and-identity]: skills/README.md prominently documents no-symlinks-inside-skill-packages rule — zeroclaw audit rejects them
 - [Phase 03-self-modification-and-resilience]: Script moved to bin/repair-loop.sh (outside skill package) — zeroclaw audit rejects .sh files inside skill packages by security policy
 - [Phase 03-self-modification-and-resilience]: Shell skill tools emit KEY=value stdout markers for agent-side follow-up — pattern for skills that need agent tool calls (memory_store) not available in shell
+- [Phase 03-self-modification-and-resilience]: Self-repair scope broadened from internal tools to any issue Kiro caused or can fix
+- [Phase 03-self-modification-and-resilience]: repair_loop skill referenced in Hard Limits and Self-Repair Protocol as preferred invocation over direct memory_store
+- [Phase 03-self-modification-and-resilience]: ZeroClaw runtime restart prescribed as one-shot: restart once, if still down report immediately
 
 ### Pending Todos
 
@@ -86,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T00:01:57.564Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-05T00:02:24.002Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

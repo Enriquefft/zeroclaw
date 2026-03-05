@@ -24,15 +24,15 @@ Requirements for the infrastructure foundation. Each maps to roadmap phases.
 
 ### Self-Modification Infrastructure
 
-- [ ] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
+- [x] **MOD-01**: AGENTS.md contains git-first self-modification workflow: edit → commit → verify, with rules for what Kiro can change autonomously vs what requires approval
 - [x] **MOD-02**: module.nix wires all live-editable paths (documents/, skills/, cron/) via `mkOutOfStoreSymlink` so changes take effect without NixOS rebuild
 - [x] **MOD-03**: CLAUDE.md documents which files require rebuild vs live-edit, so any agent knows the deployment model
 - [ ] **MOD-04**: Kiro can edit identity documents in `/etc/nixos/zeroclaw/documents/`, commit via git, and changes are immediately visible to the ZeroClaw runtime without rebuild
 
 ### Self-Repair & Resilience
 
-- [ ] **RPR-01**: AGENTS.md contains self-repair protocol: when Kiro encounters any issue, priority order is robust fix → workaround → ask user for help
-- [ ] **RPR-02**: Self-repair mandate is unconditional — Kiro must attempt to fix ANY issue found, not just tool failures, including config, runtime, or infrastructure problems
+- [x] **RPR-01**: AGENTS.md contains self-repair protocol: when Kiro encounters any issue, priority order is robust fix → workaround → ask user for help
+- [x] **RPR-02**: Self-repair mandate is unconditional — Kiro must attempt to fix ANY issue found, not just tool failures, including config, runtime, or infrastructure problems
 - [x] **RPR-03**: All discovered issues are filed as durable records (not just chat context) before attempting repair
 
 ### Multi-Agent Infrastructure
@@ -92,12 +92,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | DIR-02 | Phase 2 | Complete |
 | DIR-03 | Phase 2 | Complete |
 | DIR-04 | Phase 1 | Complete |
-| MOD-01 | Phase 3 | Pending |
+| MOD-01 | Phase 3 | Complete |
 | MOD-02 | Phase 1 | Complete |
 | MOD-03 | Phase 2 | Complete |
 | MOD-04 | Phase 3 | Pending |
-| RPR-01 | Phase 3 | Pending |
-| RPR-02 | Phase 3 | Pending |
+| RPR-01 | Phase 3 | Complete |
+| RPR-02 | Phase 3 | Complete |
 | RPR-03 | Phase 3 | Complete |
 | IPC-01 | Phase 1 | Complete |
 | IPC-02 | Phase 1 | Complete |
