@@ -95,6 +95,7 @@ in
   home.file.".zeroclaw/config.toml" = {
     source = configToml;
     force = true;
+    mode = "600";
   };
 
   # Identity documents (symlinked for live editing)
