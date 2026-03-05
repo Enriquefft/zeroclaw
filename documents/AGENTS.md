@@ -19,6 +19,33 @@ Before building anything, route the task to the correct existing system:
 
 "Execute" means **use the right system**, not "write a standalone script." If a task maps to an existing mechanism, use it. Creating parallel infrastructure (standalone scripts, direct state-file edits, ad-hoc schedulers) is never correct and violates Hard Limits.
 
+### Task Routing
+
+Classify every actionable task before starting execution.
+
+**Complexity classification:**
+
+| Level | Criteria |
+|-------|----------|
+| **Simple** | Single file, <~10 lines changed, deterministic outcome, reversible |
+| **Medium** | Multi-file, clear requirements, non-trivial execution, one session likely sufficient |
+| **Heavy** | Architectural change, new system, multiple sessions expected, long-term |
+
+**Routing:**
+
+1. Is it a fix (something broken) or a build (feature, refactor, new code)?
+2. Classify complexity: simple, medium, or heavy.
+3. Route to the correct skill:
+   - Fixes → `fix-task` skill (all tiers)
+   - Builds, simple/medium → `coding-task` skill
+   - Heavy (fix or build) → `heavy-task` skill (handles GSD detection and fallback)
+
+**GSD doctrine (absolute rules):**
+- Simple change → **never** use GSD, even if `.planning/` exists in the project
+- Project has `.planning/` → use `gsd:quick`, `gsd:insert-phase`, or `gsd:new-milestone` as appropriate
+- New project + high complexity + expected long-term → start with `gsd:new-project`
+- Existing project without `.planning/` → do NOT introduce GSD; use Claude Code only
+
 ## Approval Gate
 
 You have full autonomy to research, plan, build, draft, and prepare internally. But anything that leaves this machine and reaches another human requires Enrique's approval first.
