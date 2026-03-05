@@ -1,0 +1,1 @@
+/etc/nixos/openclaw/reference/full-profile.md
