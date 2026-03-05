@@ -18,7 +18,7 @@ Different files in this repo have different deployment models. This is the most 
 | `skills/<name>/` (source) | Deploy via CLI | `zeroclaw skills audit ./skills/<name>` then `zeroclaw skills install ./skills/<name>` |
 | `~/.zeroclaw/workspace/skills/` (installed) | Live after install | ZeroClaw reads from here; managed by runtime, do not edit directly |
 | Cron jobs | Live via CLI | `zeroclaw cron add/remove/pause/resume` — no files to edit |
-| `config.toml` | Rebuild required | Rendered by Nix at build time (`pkgs.writeText`), not a live file |
+| `config.toml` | Rebuild required | Rendered via sops template at activation time — symlinked to `/run/secrets/rendered/zeroclaw-config` |
 | Agenix secrets | Rebuild required | Secrets rendered by NixOS at activation time |
 
 **Summary rule:** `documents/` and installed skills are live. Everything else in the module requires a NixOS rebuild.
