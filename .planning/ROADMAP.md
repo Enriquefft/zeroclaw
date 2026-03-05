@@ -15,6 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Config Foundation** - Wire the complete config.toml and module.nix deployment model so the gateway passes zero-warning validation (completed 2026-03-04)
 - [x] **Phase 2: Scaffolding and Identity** - Build directory structure, CLAUDE.md, and audited identity documents accessible at runtime via symlinks (completed 2026-03-04)
 - [x] **Phase 3: Self-Modification and Resilience** - Establish the behavioral constitution and self-repair protocol that govern Kiro's autonomous operation (completed 2026-03-05)
+- [ ] **Phase 4: Sentinel Verification and Cleanup** - Verify sentinel automated detection works end-to-end, close Phase 3 documentation gaps
 
 ## Phase Details
 
@@ -66,13 +67,30 @@ Plans:
 - [ ] 03-03-PLAN.md — Create sentinel skill and register 2-hour error sentinel cron job
 - [ ] 03-04-PLAN.md — Add Multi-Agent IPC section to CLAUDE.md + MOD-04 live test checkpoint
 
+### Phase 4: Sentinel Verification and Cleanup
+**Goal**: Confirm sentinel automated error detection works end-to-end, close RPR-03 partial gap, and clear Phase 3 documentation debt
+**Depends on**: Phase 3
+**Requirements**: RPR-03
+**Gap Closure**: Closes gaps from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. `memory_recall("issue:")` prefix scan behavior confirmed — either works as expected or sentinel SKILL.md updated to use a confirmed pattern
+  2. Sentinel cron fires and detects at least one seeded test issue (live end-to-end test)
+  3. Phase 3 VERIFICATION.md generated and committed
+  4. Phase 3 VALIDATION.md signed off (`nyquist_compliant: true`)
+  5. skills/README.md updated to accurately reflect that `.sh` files cannot be placed inside skill packages
+**Plans**: 1 plan
+
+Plans:
+- [ ] 04-01-PLAN.md — Verify memory_recall API, fix sentinel if needed, generate Phase 3 VERIFICATION.md, sign off VALIDATION.md, fix skills/README.md docs gap
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Config Foundation | 1/1 | Complete    | 2026-03-04 |
 | 2. Scaffolding and Identity | 2/3 | Complete    | 2026-03-04 |
 | 3. Self-Modification and Resilience | 4/4 | Complete   | 2026-03-05 |
+| 4. Sentinel Verification and Cleanup | 0/1 | Pending    | — |
