@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-05T03:07:44.020Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-05T03:55:01.373Z"
 last_activity: "2026-03-05 - Completed quick task 4: add reference docs to zeroclaw reference directory as on-demand symlinks"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-self-modification-and-resilience P04 | 30min | 2 tasks | 1 files |
 | Phase 04-sentinel-verification-and-cleanup P01 | 15min | 1 tasks | 4 files |
 | Phase 04-sentinel-verification-and-cleanup P02 | 45min | 3 tasks | 1 files |
+| Phase 05-publication-and-release-readiness P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 04-sentinel-verification-and-cleanup]: memory_recall prefix scan confirmed live: memory_recall('issue:') returns all keys with that prefix — sentinel SKILL.md correct as written, no changes needed
 - [Phase 04-sentinel-verification-and-cleanup]: Sentinel E2E detection passed: seeded issue detected, repair_loop invoked, resolved with :resolved entry, no WhatsApp escalation needed — full sentinel pipeline operational
 - [Phase 04-sentinel-verification-and-cleanup]: RPR-03 annotation removed: stale '(automated sentinel detection unverified)' replaced with live-verified behavior description — all 21 v1 requirements now fully satisfied
+- [Phase 05-publication-and-release-readiness]: README personal paths labeled as user-specific in Personalizing table — not removed
+- [Phase 05-publication-and-release-readiness]: MIT license chosen for public repo — year 2026, Enrique Flores
 
 ### Pending Todos
 
@@ -112,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-05T02:59:59.520Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-05T03:55:01.369Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

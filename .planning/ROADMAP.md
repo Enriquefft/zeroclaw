@@ -43,4 +43,4 @@ Plans:
 | 2. Scaffolding and Identity | v1.0 | 3/3 | Complete | 2026-03-04 |
 | 3. Self-Modification and Resilience | v1.0 | 4/4 | Complete | 2026-03-05 |
 | 4. Sentinel Verification and Cleanup | v1.0 | 2/2 | Complete | 2026-03-05 |
-| 5. Publication and Release Readiness | v1.1 | 0/2 | Planned | — |
+| 5. Publication and Release Readiness | 1/2 | In Progress|  | — |
