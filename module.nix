@@ -18,101 +18,6 @@ let
 
   kapsoPackages = inputs.kapso-whatsapp-plugin.packages.${pkgs.stdenv.hostPlatform.system};
 
-  # Config template — full config visible and version-controlled here.
-  # brave_api_key is the only secret; it's injected at activation time from the sops-decrypted file.
-  configTemplate = pkgs.writeText "zeroclaw-config-template.toml" ''
-    # ZeroClaw configuration — managed by NixOS, do not edit manually
-    default_provider = "zai-coding"
-    default_model = "glm-5"
-    default_temperature = 0.7
-
-    [model_providers.zai]
-    base_url = "https://api.z.ai/api/paas/v4"
-    wire_api = "chat_completions"
-
-    [model_providers.zai-coding]
-    base_url = "https://api.z.ai/api/coding/paas/v4"
-    wire_api = "chat_completions"
-
-    [identity]
-    format = "openclaw"
-
-    [gateway]
-    port = 42617
-    host = "127.0.0.1"
-    require_pairing = false
-
-    [browser]
-    enabled = true
-    browser_open = "chrome"
-    native_chrome_path = "/run/current-system/sw/bin/kiro-browser"
-
-    [web_search]
-    enabled = true
-    provider = "brave"
-    brave_api_key = "@BRAVE_API_KEY@"
-
-    [channels_config]
-    cli = true
-
-    [autonomy]
-    level = "supervised"
-    workspace_only = false
-    max_actions_per_hour = 9999
-    max_cost_per_day_cents = 500
-    allowed_roots = ["/etc/nixos/", "~/Projects/", "~/.zeroclaw/documents/"]
-    allowed_commands = [
-      "git", "nix", "nixos-rebuild", "systemctl", "journalctl",
-      "zeroclaw", "gpush", "gcommit", "gh", "cargo",
-      "node", "bun", "npm", "python3", "bash", "sh",
-      "ls", "cat", "grep", "find", "cp", "mv", "rm",
-      "mkdir", "chmod", "chown", "curl", "wget", "jq",
-      "direnv", "sudo"
-    ]
-    forbidden_paths = [
-      "/root", "/usr", "/bin", "/sbin", "/lib", "/opt",
-      "/boot", "/dev", "/proc", "/sys", "/var", "/tmp",
-      "~/.ssh", "~/.gnupg", "~/.aws", "~/.config"
-    ]
-    non_cli_excluded_tools = [
-      "shell",
-      "file_write",
-      "file_edit",
-      "git_operations",
-      "browser",
-      "browser_open",
-      "http_request",
-      "schedule",
-      "memory_store",
-      "memory_forget",
-      "proxy_config",
-      "model_routing_config",
-      "pushover",
-      "composio",
-      "delegate",
-      "screenshot",
-      "image_info"
-    ]
-
-    [memory]
-    backend = "sqlite"
-    auto_save = true
-
-    [observability]
-    backend = "none"
-    runtime_trace_mode = "rolling"
-    runtime_trace_max_entries = 200
-
-    [agent]
-    max_tool_iterations = 40
-    max_history_messages = 100
-
-    [agents_ipc]
-    enabled = true
-    db_path = "~/.zeroclaw/agents.db"
-    staleness_secs = 300
-  '';
-
 in
 {
   imports = [
@@ -121,10 +26,10 @@ in
 
   home.packages = [ zeroclawPkg ];
 
-  # Config file — template is in the Nix store (version-controlled above), brave_api_key injected at activation
+  # Config file — source is zeroclaw/config.toml (version-controlled), brave_api_key injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD sed "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
-      ${configTemplate} > "$HOME/.zeroclaw/config.toml"
+      /etc/nixos/zeroclaw/config.toml > "$HOME/.zeroclaw/config.toml"
   '';
 
   # Identity documents — direct symlinks via activation (avoids nix store hop blocking zeroclaw)
