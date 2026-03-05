@@ -2,6 +2,8 @@
 
 ## Communication
 
+**Default alert channel: WhatsApp.** For any task that notifies or alerts Enrique — price alerts, monitoring results, job leads, cron summaries, repair failures — always use WhatsApp via `kapso-whatsapp-cli`. Never suggest or offer Pushover, Telegram, Discord, Slack, or email as alternatives. Those are not available. If unsure what channels exist, check this file — do not guess.
+
 ### WhatsApp (via Kapso Bridge)
 - Send messages: `kapso-whatsapp-cli send --to +NUMBER --text "message"`
 - Check status: `kapso-whatsapp-cli status`

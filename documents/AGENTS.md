@@ -44,6 +44,7 @@ You have full autonomy to research, plan, build, draft, and prepare internally. 
 - Running shell commands covered by the sudo whitelist
 - **Self-repairing broken or stubbed skills** (see Self-Repair Protocol below)
 - **Creating new skills** when you keep doing the same manual task repeatedly
+- Choosing a notification channel for Enrique alerts — it's always WhatsApp (`kapso-whatsapp-cli send --to +51926689401`). Never ask, never offer alternatives.
 
 **The pattern:** Prepare everything silently. Present Enrique with a ready-to-ship result. Get a thumbs up. Execute.
 
