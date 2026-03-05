@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-04T23:42:19.058Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-05T00:01:57.569Z"
 last_activity: 2026-03-04 — Roadmap created
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 6
   percent: 0
 ---
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-config-foundation P01 | 6min | 2 tasks | 3 files |
 | Phase 02-scaffolding-and-identity P02 | 2min | 1 tasks | 1 files |
 | Phase 02-scaffolding-and-identity P01 | 2 | 3 tasks | 3 files |
+| Phase 03-self-modification-and-resilience P02 | 1min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 02-scaffolding-and-identity]: CLAUDE.md serves both coding agents and Kiro — single file, dual audience, no duplication
 - [Phase 02-scaffolding-and-identity]: cron/README.md includes SQLite schema as power-user section for transparency; direct DB writes explicitly forbidden
 - [Phase 02-scaffolding-and-identity]: skills/README.md prominently documents no-symlinks-inside-skill-packages rule — zeroclaw audit rejects them
+- [Phase 03-self-modification-and-resilience]: Script moved to bin/repair-loop.sh (outside skill package) — zeroclaw audit rejects .sh files inside skill packages by security policy
+- [Phase 03-self-modification-and-resilience]: Shell skill tools emit KEY=value stdout markers for agent-side follow-up — pattern for skills that need agent tool calls (memory_store) not available in shell
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-04T23:42:19.053Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-self-modification-and-resilience/03-CONTEXT.md
+Last session: 2026-03-05T00:01:57.564Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: None
