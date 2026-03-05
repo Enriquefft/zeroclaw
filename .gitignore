@@ -1,7 +1,7 @@
 # Claude Code internal directory (worktrees, session state)
 .claude/
 
-# Internal planning docs (contain PII from development phases)
+# Internal planning docs (milestones, research notes, phase plans)
 .planning/
 
 # Machine-specific symlink to external upstream docs

@@ -39,7 +39,7 @@ If the repair attempt fails or the issue cannot be fixed:
 
 Send an immediate WhatsApp message to Enrique using:
 ```
-kapso-whatsapp-cli send --to +15551000001 --text "Sentinel alert: repair-loop ran for [issue key]. Issue: [issue description]. Attempted: [what was tried]. Result: failed. Your input needed."
+kapso-whatsapp-cli send --to +51926689401 --text "Sentinel alert: repair-loop ran for [issue key]. Issue: [issue description]. Attempted: [what was tried]. Result: failed. Your input needed."
 ```
 
 Do NOT defer this to the EOD summary. Send immediately.
@@ -53,4 +53,4 @@ If Step 1 found no unresolved issues: exit. Do not send a "nothing found" messag
 - Never skip Step 1 — always scan memory first before assuming there is nothing to do.
 - Never trigger repair for an issue that already has a `:resolved` record — check both sides of the pair.
 - Never defer escalation to the EOD summary when a repair fails — immediate WhatsApp only.
-- The owner's WhatsApp number is in USER.md. Cross-check there if needed.
+- Enrique's WhatsApp number is +51 926 689 401. Cross-check with USER.md if needed.

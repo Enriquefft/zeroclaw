@@ -2,8 +2,8 @@
 
 ## Basic Info
 - **Location:** Lima, Peru
-- **Phone:** +1 555 100 0001
-- **Email:** you@example.com
+- **Phone:** +51 926 689 401
+- **Email:** enrique.flores@utec.edu.pe
 - **LinkedIn:** linkedin.com/in/enriqueflores000
 - **GitHub:** github.com/Enriquefft (200+ projects, mostly experimental)
 - **Willing to relocate:** Yes, internationally

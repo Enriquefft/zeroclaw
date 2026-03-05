@@ -135,8 +135,10 @@ in
       mode = "allowlist";
       roles = {
         owner = [
-          "+15551000001"  # Replace with your phone numbers
-          "+15551000002"
+          "+51926689401"
+          "+51984089340"
+          "+51917443156"
+          "+51984938682"
         ];
       };
       sessionIsolation = true;
@@ -145,7 +147,7 @@ in
     transcribe = {
       provider = "local";
       binaryPath = "/run/current-system/sw/bin/whisper-cli";
-      modelPath = "/home/YOUR_USER/ggml-base.bin";
+      modelPath = "/home/hybridz/ggml-base.bin";
       language = "es";
     };
 
