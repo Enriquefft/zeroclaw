@@ -28,6 +28,7 @@ in
 
   # Config file — source is zeroclaw/config.toml (version-controlled), brave_api_key injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD rm -f "$HOME/.zeroclaw/config.toml"
     $DRY_RUN_CMD sed "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
       /etc/nixos/zeroclaw/config.toml > "$HOME/.zeroclaw/config.toml"
   '';
