@@ -2,7 +2,7 @@
 
 ## Enrique Flores (hybridz)
 
-- Email: enrique.flores@utec.edu.pe
+- Emails: enriquefft@404tf.com (profesional), enriquefft2001@gmail.com (personal), enrique.flores@utec.edu.pe (college)
 - Phone: +51 926 689 401
 - LinkedIn: linkedin.com/in/enriqueflores000
 - GitHub: github.com/Enriquefft (200+ repos)
@@ -32,7 +32,7 @@ Built the Kapso WhatsApp bridge (Go, 100 GitHub stars, endorsed by Kapso/Platanu
 
 ## Technical Stack
 
-Primary: TypeScript, Python, Go. Also: C++, Rust, SQL.
+Primary: TypeScript, Python, Go. Also: C++, Rust, Zig, SQL.
 Frontend: React, Next.js, Vue.js, Tailwind.
 Backend: FastAPI, Django, Node.js, WebSockets, GraphQL.
 AI/ML: Claude API, OpenAI API, LangChain, LangGraph, MCP, RAG, SHAP, Ollama, scikit-learn, XGBoost.

@@ -1,0 +1,5 @@
+# Claude Code internal directory (worktrees, session state)
+.claude/
+
+# Machine-specific symlink to external upstream docs
+reference/upstream-docs
