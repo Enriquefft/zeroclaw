@@ -23,8 +23,11 @@ require_pairing = false
 
 [browser]
 enabled = true
-browser_open = "chrome"
-native_chrome_path = "/run/current-system/sw/bin/kiro-browser"
+backend = "rust_native"
+native_headless = true
+native_webdriver_url = "http://127.0.0.1:9515"
+native_chrome_path = "/run/current-system/sw/bin/google-chrome-stable"
+allowed_domains = ["*"]
 
 [web_search]
 enabled = true
@@ -35,10 +38,12 @@ brave_api_key = "@BRAVE_API_KEY@"
 cli = true
 
 [autonomy]
-level = "supervised"
+level = "full"
 workspace_only = false
 max_actions_per_hour = 9999
 max_cost_per_day_cents = 500
+require_approval_for_medium_risk = false
+block_high_risk_commands = false
 allowed_roots = ["/etc/nixos/", "~/Projects/", "~/.zeroclaw/documents/"]
 allowed_commands = [
   "git", "nix", "nixos-rebuild", "systemctl", "journalctl",
@@ -54,24 +59,17 @@ forbidden_paths = [
   "~/.ssh", "~/.gnupg", "~/.aws", "~/.config"
 ]
 non_cli_excluded_tools = [
-  "shell",
-  "file_write",
-  "file_edit",
-  "git_operations",
-  "browser",
-  "browser_open",
-  "http_request",
-  "schedule",
-  "memory_store",
   "memory_forget",
   "proxy_config",
-  "model_routing_config",
   "pushover",
-  "composio",
-  "delegate",
-  "screenshot",
-  "image_info"
+  "composio"
 ]
+
+[research]
+enabled = true
+trigger = "keywords"
+keywords = ["find", "search", "check", "investigate", "show", "list"]
+max_iterations = 5
 
 [memory]
 backend = "sqlite"

@@ -1,0 +1,15 @@
+name: "Bitcoin Price Monitor"
+schedule: "*/10 * * * *"
+tz: "America/Lima"
+command: |
+  Check Bitcoin price and alert if 5%+ drop in 1 hour.
+
+  Steps:
+  1. Fetch current BTC/USD price from CoinGecko API: https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd
+  2. Get current timestamp
+  3. Retrieve previous price data from state key "btc_price_history" (JSON array of {price, timestamp})
+  4. If history exists, filter to prices from last hour (3600 seconds)
+  5. If oldest price from last hour exists and current price is >5% lower: calculate drop percentage and send WhatsApp alert via kapso-whatsapp-cli: `kapso-whatsapp-cli send --to +51926689401 "⚠️ BTC dropped {X}% in the last hour. Current: ${current}, Was: ${old}"`
+  6. Update state key "btc_price_history" with current price (keep last 24 hours of data, prune older entries)
+
+  Only send alert once per significant drop event (don't spam).

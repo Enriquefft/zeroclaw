@@ -1,0 +1,4 @@
+name: "Sentinel"
+schedule: "0 */2 * * *"
+command: >-
+  agent -m "Run the sentinel skill — scan ZeroClaw memory for unresolved issues and trigger repair-loop for each. Escalate to Enrique via WhatsApp if any repair fails."
