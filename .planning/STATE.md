@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 Phase: 1 of 3 (Config Foundation)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-05 - Completed quick task 2: fix kiro allowed roots so it can read document files
+Last activity: 2026-03-05 - Completed quick task 3: fix document symlinks to use home.activation for direct 1-hop links
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -99,9 +99,10 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 2 | fix kiro allowed roots so it can read document files | 2026-03-05 | 4287075 | [2-fix-kiro-allowed-roots-so-it-can-read-do](./quick/2-fix-kiro-allowed-roots-so-it-can-read-do/) |
+| 3 | fix document symlinks to use home.activation for direct 1-hop links | 2026-03-05 | 950305e | [3-fix-document-symlinks-to-use-home-activa](./quick/3-fix-document-symlinks-to-use-home-activa/) |
 
 ## Session Continuity
 
-Last session: 2026-03-05T00:18:40.604Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-03-05T01:22:05Z
+Stopped at: Completed quick task 3: fix document symlinks to use home.activation
 Resume file: None
