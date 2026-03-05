@@ -85,6 +85,25 @@ in
       gatewayTokenFile = "/run/secrets/zeroclaw/gateway-token";
       webhookVerifyTokenFile = "/run/secrets/zeroclaw/kapso-webhook-verify-token";
     };
+
+    commands = {
+      prefix = "!";
+      definitions = {
+        reload = {
+          type        = "shell";
+          description = "Reload ZeroClaw context (restarts gateway + bridge)";
+          shell       = "systemctl --user restart zeroclaw-gateway";
+          ack         = "Reloading — send a message in ~5 seconds.";
+          roles       = [ "owner" ];
+        };
+        status = {
+          type        = "shell";
+          description = "Check ZeroClaw and bridge service status";
+          shell       = "systemctl --user status zeroclaw-gateway kapso-whatsapp-bridge --no-pager -l 2>&1 | head -40";
+          roles       = [ "owner" ];
+        };
+      };
+    };
   };
 
   # Systemd user service for zeroclaw gateway
