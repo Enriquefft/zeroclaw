@@ -100,9 +100,10 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 2 | fix kiro allowed roots so it can read document files | 2026-03-05 | 4287075 | [2-fix-kiro-allowed-roots-so-it-can-read-do](./quick/2-fix-kiro-allowed-roots-so-it-can-read-do/) |
 | 3 | fix document symlinks to use home.activation for direct 1-hop links | 2026-03-05 | 950305e | [3-fix-document-symlinks-to-use-home-activa](./quick/3-fix-document-symlinks-to-use-home-activa/) |
+| 4 | add openclaw reference docs to zeroclaw reference directory as on-demand symlinks | 2026-03-04 | 4f2b113 | [4-add-openclaw-reference-docs-to-zeroclaw-](./quick/4-add-openclaw-reference-docs-to-zeroclaw-/) |
 
 ## Session Continuity
 
-Last session: 2026-03-05T01:22:05Z
-Stopped at: Completed quick task 3: fix document symlinks to use home.activation
+Last session: 2026-03-04T20:50:00Z
+Stopped at: Completed quick task 4: add openclaw reference docs to zeroclaw reference directory
 Resume file: None
