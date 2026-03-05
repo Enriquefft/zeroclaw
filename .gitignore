@@ -1,5 +1,8 @@
 # Claude Code internal directory (worktrees, session state)
 .claude/
 
+# Internal planning docs (milestones, research notes, phase plans)
+.planning/
+
 # Machine-specific symlink to external upstream docs
 reference/upstream-docs
