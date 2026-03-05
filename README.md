@@ -68,7 +68,7 @@ Kiro is Enrique's chief of staff: runs 24/7 on a personal NixOS workstation, com
 - NixOS with flakes enabled
 - Home Manager configured
 - A ZeroClaw installation ([ZeroClaw documentation](https://zeroclaw.dev))
-- Agenix (for secrets management) — or replace the `secrets.*` blocks with your own approach
+- Agenix/SOPS (for secrets management) — or replace the `secrets.*` blocks with your own approach
 
 ### Using this as a Reference
 
