@@ -140,7 +140,7 @@ let
     '';
   };
 
-  # Wrapper that enforces declarative cron management — blocks direct cron add/remove/update
+  # Wrapper that enforces declarative management — blocks direct cron and external skill installs
   zeroclawWrapper = pkgs.writeShellApplication {
     name = "zeroclaw";
     text = ''
@@ -150,7 +150,100 @@ let
         echo "or 'sudo nixos-rebuild switch ...' to auto-apply on next rebuild." >&2
         exit 1
       fi
+      if [[ "''${1:-}" == "skills" ]] && [[ "''${2:-}" == "install" ]]; then
+        _source="''${3:-}"
+        if [[ "$_source" != /etc/nixos/zeroclaw/skills/* ]] && \
+           [[ "$_source" != ./skills/* ]]; then
+          echo "ERROR: Skills must be installed from /etc/nixos/zeroclaw/skills/ only." >&2
+          echo "Add the skill source to git first, then:" >&2
+          echo "  zeroclaw skills install /etc/nixos/zeroclaw/skills/<name>" >&2
+          exit 1
+        fi
+      fi
       exec ${zeroclawPkg}/bin/zeroclaw "$@"
+    '';
+  };
+
+  # skills-sync: reconciles zeroclaw/skills/* → ZeroClaw workspace via CLI.
+  # Uses zeroclawPkg in runtimeInputs so the real binary is found (bypasses wrapper).
+  skillsSync = pkgs.writeShellApplication {
+    name = "skills-sync";
+    runtimeInputs = [ zeroclawPkg pkgs.coreutils ];
+    text = ''
+      SKILLS_DIR="/etc/nixos/zeroclaw/skills"
+      WORKSPACE="$HOME/.zeroclaw/workspace/skills"
+      DRY_RUN=false
+      REMOVE_MISSING=false
+
+      for arg in "$@"; do
+        case "$arg" in
+          --dry-run) DRY_RUN=true ;;
+          --remove-missing) REMOVE_MISSING=true ;;
+          -h|--help)
+            echo "Usage: skills-sync [--dry-run] [--remove-missing]"
+            echo ""
+            echo "Syncs skill directories in $SKILLS_DIR to ZeroClaw workspace."
+            echo "Git is the source of truth — edit skills there, then run this or rebuild."
+            echo ""
+            echo "  --dry-run          Show what would change without applying"
+            echo "  --remove-missing   Remove workspace skills not in git"
+            exit 0
+            ;;
+        esac
+      done
+
+      mkdir -p "$WORKSPACE"
+
+      # Clear download-policy aliases — prevents ZeroClaw from blocking local installs
+      # of skills that were previously installed from skills.sh (find-skills, skill-creator)
+      POLICY_FILE="$WORKSPACE/.download-policy.toml"
+      if [[ -f "$POLICY_FILE" ]]; then
+        printf 'version = 1\ntrusted_domains = []\nblocked_domains = []\n\n[aliases]\n' \
+          > "$POLICY_FILE"
+      fi
+
+      declare -A GIT_SKILLS
+      installed=0; removed=0
+
+      for skill_dir in "$SKILLS_DIR"/*/; do
+        [[ -d "$skill_dir" ]] || continue
+        [[ -f "$skill_dir/SKILL.md" ]] || [[ -f "$skill_dir/SKILL.toml" ]] || continue
+        name=$(basename "$skill_dir")
+        GIT_SKILLS["$name"]=1
+        if $DRY_RUN; then
+          echo "INSTALL: $name"
+        else
+          if zeroclaw skills audit "$skill_dir" > /dev/null 2>&1; then
+            zeroclaw skills remove "$name" > /dev/null 2>&1 || true
+            rm -rf "''${WORKSPACE:?}/$name"
+            zeroclaw skills install "$skill_dir" > /dev/null 2>&1 || true
+            echo "Installed: $name"
+          else
+            echo "Audit failed: $name (skipped)"
+            continue
+          fi
+        fi
+        installed=$((installed + 1))
+      done
+
+      if $REMOVE_MISSING; then
+        for installed_dir in "$WORKSPACE"/*/; do
+          [[ -d "$installed_dir" ]] || continue
+          name=$(basename "$installed_dir")
+          if [[ -z "''${GIT_SKILLS[$name]:-}" ]]; then
+            if $DRY_RUN; then
+              echo "REMOVE: $name"
+            else
+              zeroclaw skills remove "$name" > /dev/null 2>&1 || true
+              echo "Removed: $name"
+            fi
+            removed=$((removed + 1))
+          fi
+        done
+      fi
+
+      echo ""
+      echo "Sync complete: $installed installed, $removed removed"
     '';
   };
 
@@ -162,7 +255,7 @@ in
     inputs.kapso-whatsapp-plugin.homeManagerModules.default
   ];
 
-  home.packages = [ zeroclawWrapper cronSync ];
+  home.packages = [ zeroclawWrapper cronSync skillsSync ];
 
   # Config file — source is zeroclaw/config.toml (version-controlled), brave_api_key injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -185,6 +278,13 @@ in
   home.activation.zeroclawCronSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if compgen -G "/etc/nixos/zeroclaw/cron/jobs/*.yaml" > /dev/null 2>&1; then
       $DRY_RUN_CMD ${cronSync}/bin/cron-sync --remove-missing
+    fi
+  '';
+
+  # Skills sync — reconciles workspace skills to git source on every rebuild
+  home.activation.zeroclawSkillsSync = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [[ -d "/etc/nixos/zeroclaw/skills" ]]; then
+      $DRY_RUN_CMD ${skillsSync}/bin/skills-sync --remove-missing
     fi
   '';
 

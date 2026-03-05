@@ -15,8 +15,8 @@ Different files in this repo have different deployment models. This is the most 
 | `module.nix` | Rebuild required | `sudo nixos-rebuild switch --option eval-cache false --flake /etc/nixos#nixos` |
 | `/etc/nixos/flake.nix` | Rebuild required | `direnv reload` first, then rebuild |
 | `documents/*.md` (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE) | Live edit | Edit in `/etc/nixos/zeroclaw/documents/`, commit to git — symlink means ZeroClaw sees changes immediately, no rebuild needed |
-| `skills/<name>/` (source) | Deploy via CLI | `zeroclaw skills audit ./skills/<name>` then `zeroclaw skills install ./skills/<name>` |
-| `~/.zeroclaw/workspace/skills/` (installed) | Live after install | ZeroClaw reads from here; managed by runtime, do not edit directly |
+| `skills/<name>/` (source) | Declarative via `skills-sync` | Edit in git, run `skills-sync` or rebuild — installs automatically |
+| `~/.zeroclaw/workspace/skills/` (installed) | Managed by runtime | ZeroClaw reads from here; do not edit directly. `skills-sync` is the only write path. |
 | Cron jobs | Live via `cron-sync` | Edit `cron/jobs/*.yaml`, run `cron-sync` — direct CLI mutations are blocked |
 | `config.toml` | Rebuild required | Rendered via sops template at activation time — symlinked to `/run/secrets/rendered/zeroclaw-config` |
 | Agenix secrets | Rebuild required | Secrets rendered by NixOS at activation time |
@@ -90,31 +90,37 @@ For document changes (`documents/*.md`): edit in the repo and commit. No rebuild
 
 ### Kiro: Creating Skills
 
-Skills are authored in `/etc/nixos/zeroclaw/skills/` and deployed to the ZeroClaw workspace via CLI.
+Skills are **declarative** — git is the source of truth. `nixos-rebuild` auto-installs via the `zeroclawSkillsSync` activation hook. `zeroclaw skills install` from external sources is blocked.
 
 ```bash
 # 1. Create the skill directory
 mkdir -p /etc/nixos/zeroclaw/skills/my-skill
 
-# 2. Write SKILL.md (minimum required file)
-#    Add YAML frontmatter (name, description) and markdown instructions
+# 2. Write SKILL.md (minimum required), SKILL.toml + CLI if the skill does I/O work
 
-# 3. Audit before installing (required — rejects symlinks and injection patterns)
+# 3. Audit before installing (required)
 cd /etc/nixos/zeroclaw
 zeroclaw skills audit ./skills/my-skill
 
 # 4. Install into ZeroClaw workspace
-zeroclaw skills install ./skills/my-skill
+zeroclaw skills install /etc/nixos/zeroclaw/skills/my-skill
 
-# 5. Verify the skill appears
+# 5. Verify
 zeroclaw skills list
 
-# 6. Commit the source to git
+# 6. Commit — next rebuild auto-syncs
 git add skills/my-skill/
 git commit -m "feat(skills): add my-skill"
 ```
 
-See `skills/README.md` for the complete guide including SKILL.md format, SKILL.toml format, and the directory structure rules (no symlinks inside skill packages).
+**skills-sync** is the reconciler (mirrors cron-sync for skills):
+```bash
+skills-sync              # install/update all git-tracked skills
+skills-sync --remove-missing   # also remove workspace skills not in git
+skills-sync --dry-run    # preview only
+```
+
+See `skills/README.md` for anatomy standard, CLI convention, and enforcement details.
 
 ### Kiro: Managing Cron Jobs
 

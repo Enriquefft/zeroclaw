@@ -37,3 +37,13 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 | 3. Self-Modification and Resilience | v1.0 | 4/4 | Complete | 2026-03-05 |
 | 4. Sentinel Verification and Cleanup | v1.0 | 2/2 | Complete | 2026-03-05 |
 | 5. Publication and Release Readiness | v1.1 | 2/2 | Complete | 2026-03-05 |
+
+### Phase 1: Declarative cron management - version-controlled job definitions
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 0
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 1 to break down)

@@ -125,6 +125,52 @@ Use absolute paths in `command` — relative paths will break after install sinc
 
 ---
 
+## Skill Anatomy
+
+Every skill is a directory. Files inside:
+
+| File | Required | Purpose |
+|------|----------|---------|
+| `SKILL.md` | Always | Agent instructions + describes the CLI if one exists |
+| `SKILL.toml` | If registering a callable tool | Declares the tool name, description, and shell command |
+| `cli.ts` / `cli.py` | If doing I/O work | The actual program — TypeScript or Python, lives inside skill dir |
+| `evals.json` | If outputs are testable | Test cases for verifying skill behavior |
+
+**Shell scripts (`.sh`) cannot live inside skill directories** — the audit security policy rejects them. Shell scripts must live in `/etc/nixos/zeroclaw/bin/` and be referenced via absolute path in the SKILL.toml `command` field.
+
+**TypeScript and Python files may live inside the skill directory.** Reference them via absolute path:
+```toml
+command = "bun run /etc/nixos/zeroclaw/skills/my-skill/cli.ts"
+command = "uv run /etc/nixos/zeroclaw/skills/my-skill/cli.py"
+```
+
+### When to include a CLI
+
+Include a CLI when the skill does **I/O work**: fetches data, manages state, calls APIs, filters records, or produces structured output. Moving this work out of the agent's token budget makes it deterministic, testable, and cheaper.
+
+Pure procedure skills (how to structure prompts, how to route tasks, behavioral guidance) do not need a CLI — `SKILL.md` alone is correct.
+
+### CLI output contract
+
+All CLIs in this system follow the same contract:
+
+- **stdout:** JSON always — the structured data the agent acts on
+- **stderr:** human-readable error messages only
+- **exit 0:** success
+- **exit 1:** error — emit `{"error": "..."}` to stderr
+
+---
+
+## Declarative Installation
+
+Skills are **declarative** — git is the source of truth, not the workspace. Every `nixos-rebuild` runs `skills-sync --remove-missing` which installs all skills in `skills/*/` and removes any workspace skills not tracked in git.
+
+**You do not need to run `zeroclaw skills install` after a rebuild** — the activation hook handles it.
+
+`zeroclaw skills install` from external URLs or GitHub is **blocked** by the wrapper. Source must be in `/etc/nixos/zeroclaw/skills/` first.
+
+---
+
 ## Workflow — Creating and Installing a Skill
 
 Follow these steps in order:
@@ -134,32 +180,33 @@ Follow these steps in order:
 mkdir -p /etc/nixos/zeroclaw/skills/my-skill
 
 # Step 2: Write SKILL.md (minimum required)
-# Edit /etc/nixos/zeroclaw/skills/my-skill/SKILL.md
 # Add frontmatter (name, description) and markdown instructions
 
-# Step 3: Add any scripts, references, or assets (optional)
-# All files must be regular files — no symlinks
+# Step 3: If the skill needs a callable tool:
+#   - Write SKILL.toml with [[tools]] block
+#   - Write cli.ts (or cli.py) inside the skill dir for TypeScript/Python
+#   - Write bin/my-skill.sh for shell scripts (outside skill dir)
 
 # Step 4: Audit the skill before installing (security check)
 cd /etc/nixos/zeroclaw
 zeroclaw skills audit ./skills/my-skill
 
 # Step 5: Install into ZeroClaw workspace
-zeroclaw skills install ./skills/my-skill
+zeroclaw skills install /etc/nixos/zeroclaw/skills/my-skill
 
 # Step 6: Verify the skill is listed
 zeroclaw skills list
 
-# Step 7: Commit to git (source of truth)
+# Step 7: Commit to git (source of truth — rebuild will sync automatically)
 git add skills/my-skill/
 git commit -m "feat(skills): add my-skill"
 ```
 
-**What audit checks:** Symlinks inside the skill package, script injection patterns, prompt injection attempts. Always run audit before install — it is non-destructive.
+**What audit checks:** Symlinks inside the skill package, `.sh` files, script injection patterns, prompt injection attempts. Always run audit before install — it is non-destructive.
 
-**Where skills live after install:** `~/.zeroclaw/workspace/skills/my-skill/` — this is managed by ZeroClaw. The repo copy at `/etc/nixos/zeroclaw/skills/my-skill/` remains the source of truth.
+**Where skills live after install:** `~/.zeroclaw/workspace/skills/my-skill/` — managed by ZeroClaw. The repo copy remains the source of truth.
 
-**To update an installed skill:** Edit the source in the repo, re-run `zeroclaw skills audit` and `zeroclaw skills install` (install overwrites the existing version), then commit the change to git.
+**To update an installed skill:** Edit source in the repo, re-run `zeroclaw skills audit` and `zeroclaw skills install`, then commit. The next rebuild also auto-syncs.
 
 ---
 
@@ -169,7 +216,10 @@ git commit -m "feat(skills): add my-skill"
 |---------|-------------|
 | `zeroclaw skills list` | List all installed skills with name, version, description |
 | `zeroclaw skills audit <path>` | Security audit a skill before installing (required) |
-| `zeroclaw skills install <path>` | Install a skill from a local directory path |
+| `zeroclaw skills install <path>` | Install from `/etc/nixos/zeroclaw/skills/<name>` only |
 | `zeroclaw skills remove <name>` | Remove an installed skill by name |
+| `skills-sync` | Apply git source to workspace (add/update only) |
+| `skills-sync --remove-missing` | Full sync — also removes workspace skills not in git |
+| `skills-sync --dry-run` | Preview changes without applying |
 
-**Path format:** Use relative paths from repo root (e.g., `./skills/my-skill`) or absolute paths (e.g., `/etc/nixos/zeroclaw/skills/my-skill`). Git URLs are also supported for installing upstream skills.
+**Enforcement:** `zeroclaw skills install` from external sources (GitHub URLs, npm) is blocked. Use absolute paths under `/etc/nixos/zeroclaw/skills/`.

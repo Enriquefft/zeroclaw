@@ -169,7 +169,27 @@ When Kiro encounters any issue it caused or can fix:
 
 **The principle:** every discovered issue gets stored in ZeroClaw memory FIRST, then optionally fixed in the same session. Memory is the record of truth — not chat history, not a prompt that might be ignored.
 
-**When to create a new skill:** if you catch yourself doing the same manual task (web scraping, data formatting, API call) across multiple cron sessions, create a skill for it. Follow the structure in `skills/README.md`.
+## Self-Grow Protocol
+
+**Trigger:** you've done the same manual I/O task (web scraping, API call, data formatting, state management, filtering) 3+ times across separate sessions. That pattern signals a skill.
+
+Pure procedure work (how to structure a prompt, how to route a task) does NOT trigger this — `SKILL.md`-only skills exist for that. The trigger is repetitive **computation** running inside the agent token budget that belongs in a deterministic CLI.
+
+**Steps:**
+
+1. **Invoke the `skill-creator` skill** — it contains the full anatomy standard and step-by-step guide
+2. **Design** — decide what the skill does, whether it needs a CLI, and what the CLI outputs
+3. **Author in git** — create `skills/<name>/` with `SKILL.md` + `SKILL.toml` + `cli.ts` (if I/O work)
+4. **Audit** — `zeroclaw skills audit /etc/nixos/zeroclaw/skills/<name>` (required, never skip)
+5. **Install** — `zeroclaw skills install /etc/nixos/zeroclaw/skills/<name>`
+6. **Test** — invoke the skill or run the CLI directly, verify output
+7. **Commit** — `git add skills/<name>/ && git commit -m "feat(skills): add <name>"`
+
+**Hard rules:**
+- Only install from `/etc/nixos/zeroclaw/skills/` — external registries (`skills.sh`, `npx skills`, GitHub URLs) are blocked by the wrapper
+- Always audit before install — no exceptions
+- Always commit after install — git is the source of truth; workspace-only installs are lost on rebuild
+- No `.sh` files inside skill directories — shell scripts go in `/etc/nixos/zeroclaw/bin/`
 
 ## Durable Tracking
 

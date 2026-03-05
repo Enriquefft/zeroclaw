@@ -99,6 +99,10 @@ Recent decisions affecting current work:
 - [Phase 05-publication-and-release-readiness]: v1.0 git tag pre-existed — used --target main on gh release create to attach release to existing tag
 - [Phase 05-publication-and-release-readiness]: v1.0 git tag pre-existed — used --target main on gh release create to attach release to existing tag
 
+### Roadmap Evolution
+
+- Phase 1 added: Declarative cron management - version-controlled job definitions
+
 ### Pending Todos
 
 None yet.
