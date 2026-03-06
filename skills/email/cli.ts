@@ -487,9 +487,9 @@ async function spacemailSend(
   subject: string,
   body: string,
 ): Promise<object> {
-  const mime = `To: ${to}\nSubject: ${subject}\n\n${body}`;
+  const mime = `From: ${acc.email}\nTo: ${to}\nSubject: ${subject}\n\n${body}`;
   const result =
-    await $`himalaya message send -a ${him(acc)}`.stdin(mime).quiet();
+    await $`echo ${mime} | himalaya message send -a ${him(acc)}`.quiet();
   if (result.exitCode !== 0) err("Failed to send via SpaceMail");
   return { ok: true, account: acc.email, to, subject };
 }

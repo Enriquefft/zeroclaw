@@ -14,6 +14,7 @@ let
       (old: {
         src = inputs.zeroclaw;
         prePatch = ""; # web/dist already exists in full source (upstream packaging bug)
+        cargoBuildFeatures = (old.cargoBuildFeatures or []) ++ [ "browser-native" ];
       });
 
   # cron-sync: reconciles zeroclaw/cron/jobs/*.yaml → ZeroClaw SQLite via CLI.
@@ -45,6 +46,18 @@ let
         esac
       done
 
+      # Resolve bare binary names to full nix store paths.
+      # The ZeroClaw daemon runs as a systemd service without the user's PATH,
+      # so commands like "bun run ..." fail with "No such file or directory".
+      # YAML stays readable; the registered command gets the absolute path.
+      resolve_command() {
+        local cmd="$1"
+        cmd="''${cmd/#bun /${pkgs.bun}/bin/bun }"
+        cmd="''${cmd/#node /${pkgs.nodejs}/bin/node }"
+        cmd="''${cmd/#python3 /${pkgs.python3}/bin/python3 }"
+        printf '%s' "$cmd"
+      }
+
       q() { sqlite3 "$DB" "$1"; }
 
       added=0; updated=0; unchanged=0; removed=0
@@ -56,7 +69,7 @@ let
         name=$(yq -r '.name' "$yaml_file")
         schedule=$(yq -r '.schedule' "$yaml_file")
         tz=$(yq -r '.tz // ""' "$yaml_file")
-        command=$(yq -r '.command' "$yaml_file")
+        command=$(resolve_command "$(yq -r '.command' "$yaml_file")")
 
         YAML_NAMES["$name"]=1
 
@@ -247,6 +260,17 @@ let
     '';
   };
 
+  # Chrome wrapper: sets window class for Hyprland targeting, forces XWayland (wayland+Vulkan crashes renderer)
+  zeroclawChrome = pkgs.writeShellApplication {
+    name = "zeroclaw-chrome";
+    text = ''
+      exec ${pkgs.google-chrome}/bin/google-chrome-stable \
+        --class=zeroclaw-browser \
+        --ozone-platform=x11 \
+        "$@"
+    '';
+  };
+
   kapsoPackages = inputs.kapso-whatsapp-plugin.packages.${pkgs.stdenv.hostPlatform.system};
 
 in
@@ -255,12 +279,15 @@ in
     inputs.kapso-whatsapp-plugin.homeManagerModules.default
   ];
 
-  home.packages = [ zeroclawWrapper cronSync skillsSync ];
+  home.packages = [ zeroclawWrapper cronSync skillsSync zeroclawChrome ];
 
-  # Config file — source is zeroclaw/config.toml (version-controlled), brave_api_key injected at activation
+  # Config file — source is zeroclaw/config.toml (version-controlled), secrets injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD rm -f "$HOME/.zeroclaw/config.toml"
-    $DRY_RUN_CMD sed "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
+    $DRY_RUN_CMD sed \
+      -e "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
+      -e "s|@ZAI_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/zai-api-key".path})|g" \
+      -e "s|@ZEROCLAW_CHROME@|${zeroclawChrome}/bin/zeroclaw-chrome|g" \
       /etc/nixos/zeroclaw/config.toml > "$HOME/.zeroclaw/config.toml"
   '';
 
@@ -431,7 +458,7 @@ in
     };
   };
 
-  # ChromeDriver for headless browser automation (rust_native backend)
+  # ChromeDriver for browser automation (rust_native backend, visible via XWayland)
   systemd.user.services.chromedriver = {
     Unit = {
       Description = "ChromeDriver WebDriver server";
@@ -440,6 +467,7 @@ in
     Service = {
       Type = "simple";
       ExecStart = "${pkgs.chromedriver}/bin/chromedriver --port=9515";
+      Environment = [ "DISPLAY=:0" ];
       Restart = "on-failure";
       RestartSec = 3;
     };

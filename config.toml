@@ -1,6 +1,9 @@
 # ZeroClaw configuration — managed by NixOS, do not edit manually
-# Secret placeholders (replaced at activation time):
-#   @BRAVE_API_KEY@ → zeroclaw/brave-api-key sops secret
+# Secret placeholders (replaced at activation time via sed):
+#   ZAI_API_KEY      → zeroclaw/zai-api-key sops secret (top-level api_key)
+#   BRAVE_API_KEY    → zeroclaw/brave-api-key sops secret
+#   ZEROCLAW_CHROME  → nix store path of zeroclaw-chrome wrapper
+api_key = "@ZAI_API_KEY@"
 default_provider = "zai-coding"
 default_model = "glm-5"
 default_temperature = 0.7
@@ -24,9 +27,9 @@ require_pairing = false
 [browser]
 enabled = true
 backend = "rust_native"
-native_headless = true
+native_headless = false
 native_webdriver_url = "http://127.0.0.1:9515"
-native_chrome_path = "/run/current-system/sw/bin/google-chrome-stable"
+native_chrome_path = "@ZEROCLAW_CHROME@"
 allowed_domains = ["*"]
 
 [web_search]

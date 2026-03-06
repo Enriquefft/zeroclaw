@@ -45,6 +45,5 @@ command: "bun run /etc/nixos/zeroclaw/bin/my-program.ts"
 
 | Program | Purpose | Cron |
 |---------|---------|------|
-| `btc-monitor.ts` | Fetch BTC/USD, alert on 5%+ drop in 1 hour | `*/10 * * * *` |
 | `sentinel-scan.ts` | Scan memory for unresolved issues, alert via WhatsApp | `0 */2 * * *` |
 | `repair-loop.sh` | Emit structured markers for durable issue filing (agent-session helper) | — |
