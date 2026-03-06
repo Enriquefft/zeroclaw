@@ -53,6 +53,27 @@ Do NOT defer this to the EOD summary. Send immediately.
 
 If Step 1 found no unresolved issues: exit. Do not send a "nothing found" message. Silent exit is correct behavior.
 
+## Issue Lifecycle Rules
+
+These rules govern how issues are opened and closed. Violating them causes orphaned issues that Sentinel reports indefinitely.
+
+**Opening an issue:**
+- Use `memory_store("issue:<timestamp-or-slug>", "<description>")` to file an issue.
+- The key MUST be unique and identify the problem (e.g., `issue:20260305-btc-missing-shell`).
+- Never file a "FIXED" or "resolved" message as a new `issue:` key. That is a misuse of the pattern — it creates an orphaned issue that can never be auto-resolved.
+
+**Resolving an issue:**
+- Always resolve by storing: `memory_store("issue:<original-key>:resolved", "Resolved at <timestamp>. Method: <what was done>")`.
+- The `:resolved` suffix on the *exact same base key* is what marks it closed.
+
+**Manual fix rule (critical):**
+When you manually fix something that had sentinel issues filed — removing a cron job, deleting a script, disabling a service — you MUST:
+1. Call `memory_recall("issue:")` to find all open issues.
+2. Identify any issues related to what you just fixed.
+3. Store `:resolved` keys for each of them before considering the task complete.
+
+Skipping this step is the root cause of stale sentinel alerts. The cron job removal is not done until its issues are closed.
+
 ## Constraints
 
 - Never skip Step 1 — always scan memory first before assuming there is nothing to do.
