@@ -8,8 +8,7 @@
 | `/etc/nixos/flake.nix` | Rebuild required | `direnv reload` first, then rebuild |
 | `documents/*.md` | Live edit | Edit in `/etc/nixos/zeroclaw/documents/`, commit — symlink means ZeroClaw sees changes immediately |
 | `skills/<name>/` (source) | Declarative via `skills-sync` | Edit in git, run `skills-sync` or rebuild |
-| `~/.zeroclaw/workspace/skills/` (installed) | Managed by runtime | Do not edit directly — `skills-sync` is the only write path |
-| `bin/*.ts`, `bin/*.sh` | Live edit | Run directly or via cron — no rebuild needed |
+| `bin/*` | Live edit | Run directly or via cron — no rebuild needed |
 | `cron/jobs/*.yaml` | Live via `cron-sync` | Edit YAML, run `cron-sync` — direct CLI mutations are blocked |
 | `config.toml` | Rebuild required | Rendered via sops at activation — symlinked to `/run/secrets/rendered/zeroclaw-config` |
 
