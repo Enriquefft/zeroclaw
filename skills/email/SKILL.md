@@ -1,6 +1,6 @@
 ---
 name: email
-description: Full email control across all of Enrique's accounts (Gmail x2, SpaceMail). Use for reading, searching, sending, replying, forwarding, labeling, archiving, deleting, and managing attachments.
+description: Full email control across all multiple accounts (Gmail, SpaceMail). Use for reading, searching, sending, replying, forwarding, labeling, archiving, deleting, and managing attachments.
 ---
 
 # Email Skill
