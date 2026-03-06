@@ -6,11 +6,11 @@ default_model = "glm-5"
 default_temperature = 0.7
 
 [model_providers.zai]
-base_url = "https://api.z.ai/api/paas/v4"
+base_url = "http://127.0.0.1:5100/api/paas/v4"
 wire_api = "chat_completions"
 
 [model_providers.zai-coding]
-base_url = "https://api.z.ai/api/coding/paas/v4"
+base_url = "http://127.0.0.1:5100/api/coding/paas/v4"
 wire_api = "chat_completions"
 
 [identity]

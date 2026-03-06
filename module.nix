@@ -356,8 +356,8 @@ in
   systemd.user.services.zeroclaw-gateway = {
     Unit = {
       Description = "ZeroClaw Gateway";
-      After = [ "network-online.target" "chromedriver.service" ];
-      Wants = [ "kapso-whatsapp-bridge.service" "chromedriver.service" ];
+      After = [ "network-online.target" "chromedriver.service" "zai-proxy.service" ];
+      Wants = [ "kapso-whatsapp-bridge.service" "chromedriver.service" "zai-proxy.service" ];
     };
     Service = {
       Type = "simple";
@@ -376,6 +376,25 @@ in
   systemd.user.services.kapso-whatsapp-bridge.Service.RestartSec = 3;
   systemd.user.services.kapso-whatsapp-bridge.Unit.StartLimitIntervalSec = 60;
   systemd.user.services.kapso-whatsapp-bridge.Unit.StartLimitBurst = 10;
+
+  # Z.AI tool_stream proxy — injects tool_stream=true into GLM-5 requests
+  # Required for reliable tool calling (without it, glm-5 never generates tool calls)
+  systemd.user.services.zai-proxy = {
+    Unit = {
+      Description = "Z.AI tool_stream proxy";
+      PartOf = [ "zeroclaw-gateway.service" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.bun}/bin/bun run /etc/nixos/zeroclaw/bin/zai-proxy.ts";
+      Environment = [
+        "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+        "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+      ];
+      Restart = "on-failure";
+      RestartSec = 3;
+    };
+  };
 
   # ChromeDriver for headless browser automation (rust_native backend)
   systemd.user.services.chromedriver = {

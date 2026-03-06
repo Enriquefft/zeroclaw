@@ -1,4 +1,0 @@
-name: "Bitcoin Price Monitor"
-schedule: "*/10 * * * *"
-tz: "America/Lima"
-command: "bun run /etc/nixos/zeroclaw/bin/btc-monitor.ts"
