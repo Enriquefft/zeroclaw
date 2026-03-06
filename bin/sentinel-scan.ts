@@ -54,11 +54,11 @@ try {
   let alerted = false;
 
   if (unresolved.length > 0) {
-    const summary = unresolved
-      .map((i) => `- ${i.key}: ${i.content.slice(0, 120)}`)
-      .join("\n");
+    const issueBlocks = unresolved
+      .map((i, idx) => `[${idx + 1}] ${i.key}\n${i.content}`)
+      .join("\n\n");
 
-    const msg = `Sentinel: ${unresolved.length} unresolved issue${unresolved.length > 1 ? "s" : ""} found.\n\n${summary}`;
+    const msg = `🔴 Sentinel — ${unresolved.length} unresolved issue${unresolved.length > 1 ? "s" : ""}\n${"─".repeat(32)}\n\n${issueBlocks}\n\n${"─".repeat(32)}\nRun sentinel skill to attempt repairs.`;
     try {
       await $`kapso-whatsapp-cli send --to ${ALERT_TO} --text ${msg}`.quiet();
       alerted = true;
@@ -72,7 +72,7 @@ try {
       found: rows.length,
       unresolved: unresolved.length,
       alerted,
-      issues: unresolved.map((i) => ({ key: i.key, content: i.content.slice(0, 200) })),
+      issues: unresolved.map((i) => ({ key: i.key, content: i.content })),
     })
   );
 } catch (err) {
