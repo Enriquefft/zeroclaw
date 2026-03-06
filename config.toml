@@ -51,12 +51,12 @@ allowed_commands = [
   "node", "bun", "npm", "python3", "bash", "sh",
   "ls", "cat", "grep", "find", "cp", "mv", "rm",
   "mkdir", "chmod", "chown", "curl", "wget", "jq",
-  "direnv", "sudo"
+  "direnv", "sudo", "gog", "himalaya", "skills-sync", "cron-sync"
 ]
 forbidden_paths = [
   "/root", "/usr", "/bin", "/sbin", "/lib", "/opt",
   "/boot", "/dev", "/proc", "/sys", "/var", "/tmp",
-  "~/.ssh", "~/.gnupg", "~/.aws", "~/.config"
+  "~/.ssh", "~/.gnupg", "~/.aws"
 ]
 non_cli_excluded_tools = [
   "memory_forget",
