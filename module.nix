@@ -337,6 +337,7 @@ in
     gateway = {
       type = "zeroclaw";
       url = "ws://127.0.0.1:42617/ws/chat";
+      errorMessage = "Sorry, I'm having trouble right now. Please try again in a moment.";
     };
 
     security = {
