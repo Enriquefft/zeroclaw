@@ -288,6 +288,40 @@ in
     fi
   '';
 
+  # Himalaya config — SpaceMail IMAP/SMTP (password read from SPACEMAIL_PASSWORD env at runtime)
+  home.file.".config/himalaya/config.toml".text = ''
+    [accounts.spacemail]
+    email = "enriquefft@404tf.com"
+    display-name = "Enrique"
+    default = true
+
+    [accounts.spacemail.backend]
+    type = "imap"
+    host = "mail.spacemail.com"
+    port = 993
+    login = "enriquefft@404tf.com"
+
+    [accounts.spacemail.backend.encryption]
+    type = "tls"
+
+    [accounts.spacemail.backend.auth]
+    type = "password"
+    cmd = "printenv SPACEMAIL_PASSWORD"
+
+    [accounts.spacemail.message.send.backend]
+    type = "smtp"
+    host = "mail.spacemail.com"
+    port = 465
+    login = "enriquefft@404tf.com"
+
+    [accounts.spacemail.message.send.backend.encryption]
+    type = "tls"
+
+    [accounts.spacemail.message.send.backend.auth]
+    type = "password"
+    cmd = "printenv SPACEMAIL_PASSWORD"
+  '';
+
   # Reference directory (DIR-04) — upstream-docs already symlinks to ~/Projects/zeroclaw/docs
   home.file.".zeroclaw/reference".source =
     config.lib.file.mkOutOfStoreSymlink "/etc/nixos/zeroclaw/reference";
