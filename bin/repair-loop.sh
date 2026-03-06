@@ -8,6 +8,23 @@
 
 set -euo pipefail
 
+# Emit existing open issues so the agent can check for duplicates before filing a new one.
+MEMORY_DB="${HOME}/.zeroclaw/workspace/memory/brain.db"
+if [ -f "$MEMORY_DB" ]; then
+  EXISTING=$(bun -e "
+    const { Database } = require('bun:sqlite');
+    const db = new Database('$MEMORY_DB', { readonly: true });
+    const all = db.query(\"SELECT key, content FROM memories WHERE key LIKE 'issue:%'\").all();
+    const resolved = new Set(all.filter(r => r.key.endsWith(':resolved')).map(r => r.key.replace(/:resolved\$/, '')));
+    const open = all.filter(r => !r.key.endsWith(':resolved') && !resolved.has(r.key));
+    console.log(JSON.stringify(open));
+    db.close();
+  " 2>/dev/null || echo "[]")
+  echo "EXISTING_OPEN_ISSUES=${EXISTING}"
+  echo "ACTION_REQUIRED_DEDUP: Before filing, check EXISTING_OPEN_ISSUES for a semantically equivalent open issue. If one exists, do not file a new one — reference the existing key instead."
+  echo ""
+fi
+
 ISSUE_DESC="${1:-unknown issue}"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 KEY="issue:${TIMESTAMP}"

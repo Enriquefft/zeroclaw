@@ -16,6 +16,16 @@ interface Issue {
   created_at: string;
 }
 
+// Types that are silently skipped (not real issues, never alert)
+const SKIP_TYPES = new Set(["test"]);
+// Types that are logged in JSON but do not trigger a WhatsApp alert
+const SILENT_TYPES = new Set(["status", "info"]);
+
+function parseType(content: string): string | null {
+  const match = content.match(/\|\s*type:\s*(\S+)/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
 try {
   const db = new Database(MEMORY_DB, { readonly: true });
 
@@ -43,22 +53,34 @@ try {
     }
   }
 
-  // Find unresolved issues
+  // Find unresolved issues, classified by alertability
   const unresolved: Issue[] = [];
+  const skipped: Issue[] = [];
+  const silent: Issue[] = [];
+
   for (const [key, data] of issueKeys) {
     if (!resolvedKeys.has(key)) {
-      unresolved.push({ key, content: data.content, created_at: data.created_at });
+      const issue = { key, content: data.content, created_at: data.created_at };
+      const type = parseType(data.content);
+      if (type && SKIP_TYPES.has(type)) {
+        skipped.push(issue); // e.g. type: test — ignored entirely
+      } else if (type && SILENT_TYPES.has(type)) {
+        silent.push(issue);  // e.g. type: status — logged but not alerted
+      } else {
+        unresolved.push(issue); // real issues — alert
+      }
     }
   }
 
+  const alertable = unresolved;
   let alerted = false;
 
-  if (unresolved.length > 0) {
-    const issueBlocks = unresolved
+  if (alertable.length > 0) {
+    const issueBlocks = alertable
       .map((i, idx) => `[${idx + 1}] ${i.key}\n${i.content}`)
       .join("\n\n");
 
-    const msg = `🔴 Sentinel — ${unresolved.length} unresolved issue${unresolved.length > 1 ? "s" : ""}\n${"─".repeat(32)}\n\n${issueBlocks}\n\n${"─".repeat(32)}\nRun sentinel skill to attempt repairs.`;
+    const msg = `🔴 Sentinel — ${alertable.length} unresolved issue${alertable.length > 1 ? "s" : ""}\n${"─".repeat(32)}\n\n${issueBlocks}\n\n${"─".repeat(32)}\nRun sentinel skill to attempt repairs.`;
     try {
       await $`kapso-whatsapp-cli send --to ${ALERT_TO} --text ${msg}`.quiet();
       alerted = true;
@@ -70,9 +92,12 @@ try {
   console.log(
     JSON.stringify({
       found: rows.length,
-      unresolved: unresolved.length,
+      unresolved: alertable.length,
+      silent: silent.length,
+      skipped: skipped.length,
       alerted,
-      issues: unresolved.map((i) => ({ key: i.key, content: i.content })),
+      issues: alertable.map((i) => ({ key: i.key, content: i.content })),
+      silent_issues: silent.map((i) => ({ key: i.key, content: i.content })),
     })
   );
 } catch (err) {

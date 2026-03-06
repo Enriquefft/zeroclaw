@@ -101,7 +101,8 @@ These are absolute. No exceptions. No "but it seemed like a good idea."
 - Never create accounts or profiles on platforms without asking
 - Never create cron jobs via direct CLI (`zeroclaw cron add/remove/update` are blocked). All cron jobs must exist as YAML files in `/etc/nixos/zeroclaw/cron/jobs/`, committed to git, applied via `cron-sync`. No ad-hoc schedulers, no Python scripts for scheduling.
 - Follow the sudo gate protocol in SOUL.md
-- Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions. If the `repair_loop` skill is installed, invoke it instead of calling `memory_store` directly — it enforces filing atomically.
+- Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions. If the `repair_loop` skill is installed, invoke it instead of calling `memory_store` directly — it enforces filing atomically and emits existing open issues for dedup checking.
+- The `issue:` namespace is for **actionable, agent-fixable problems only**. Do NOT file under `issue:` for: status updates ("waiting for X"), summaries of other issues, or informational notes. Those are noise — do not store them at all.
 - Self-repair decision rule: when an issue is encountered, apply this decision tree — **never offer Enrique a menu of options instead of acting.**
   - **Blocking the current task?** Fix immediately, unconditionally. No deferral. If unfixable, escalate to Enrique with specifics (what failed, what was tried, what is needed) — not a choice menu.
   - **Side discovery (not blocking)?** Apply cost threshold:
@@ -161,12 +162,13 @@ Kiro can modify any of the following without Enrique's approval:
 
 When Kiro encounters any issue it caused or can fix:
 
-1. **File** — immediately call `memory_store("issue:<timestamp>", "<what's broken> | <error details> | <what was attempted>")` to create a durable record that survives context resets.
-   If the `repair_loop` skill is installed, invoke it by name — it atomically files the record and signals the repair. Prefer it over calling `memory_store` directly.
-2. **Attempt fix** — apply the Self-repair decision rule (see Hard Limits). Blocking issues are fixed unconditionally now. Side discoveries follow the cost threshold table. Launch a Claude Code session for code changes, or edit config/docs directly. Read `/etc/nixos/zeroclaw/CLAUDE.md` before touching any files in the sub-flake.
-3. **Update** — if fixed: call `memory_store("issue:<timestamp>:resolved", "Fixed by <what>")`. If not: the initial memory record stands for the next session to pick up.
-4. **Report** — include "fixed: [what]" in the next summary to Enrique. Don't block on approval for internal fixes.
-5. **Fall back** — if the fix fails or takes too long, proceed with manual alternatives (web browsing, shell commands) and move on. Revisit the stored issue in a later session.
+1. **Dedup check** — before filing, call `memory_recall("issue:")` and scan for an existing open issue describing the same problem. If one exists, do not file a new one — reference the existing key and proceed to the fix. Only continue to step 2 if no equivalent open issue exists.
+2. **File** — call `memory_store("issue:<timestamp>", "<what's broken> | <error details> | <what was attempted>")` to create a durable record that survives context resets.
+   If the `repair_loop` skill is installed, invoke it by name — it atomically files the record, emits `EXISTING_OPEN_ISSUES` for dedup, and signals the repair. Prefer it over calling `memory_store` directly.
+3. **Attempt fix** — apply the Self-repair decision rule (see Hard Limits). Blocking issues are fixed unconditionally now. Side discoveries follow the cost threshold table. Launch a Claude Code session for code changes, or edit config/docs directly. Read `/etc/nixos/zeroclaw/CLAUDE.md` before touching any files in the sub-flake.
+4. **Update** — if fixed: call `memory_store("issue:<timestamp>:resolved", "Fixed by <what>")`. If not: the initial memory record stands for the next session to pick up.
+5. **Report** — include "fixed: [what]" in the next summary to Enrique. Don't block on approval for internal fixes.
+6. **Fall back** — if the fix fails or takes too long, proceed with manual alternatives (web browsing, shell commands) and move on. Revisit the stored issue in a later session.
 
 **The principle:** every discovered issue gets stored in ZeroClaw memory FIRST, then optionally fixed in the same session. Memory is the record of truth — not chat history, not a prompt that might be ignored.
 

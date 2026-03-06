@@ -61,6 +61,8 @@ These rules govern how issues are opened and closed. Violating them causes orpha
 - Use `memory_store("issue:<timestamp-or-slug>", "<description>")` to file an issue.
 - The key MUST be unique and identify the problem (e.g., `issue:20260305-btc-missing-shell`).
 - Never file a "FIXED" or "resolved" message as a new `issue:` key. That is a misuse of the pattern — it creates an orphaned issue that can never be auto-resolved.
+- **Dedup rule:** Before calling `repair_loop` or `memory_store` to file a new issue, call `memory_recall("issue:")` and check if an open issue already covers the same problem. If yes: do not file a new one — reference the existing key in your repair attempt.
+- **Namespace contract:** Only file under `issue:` for actionable, agent-fixable problems. Status updates ("waiting for X"), summaries of other issues, and informational notes must not be filed under `issue:`. They are noise that sentinel will alert on indefinitely.
 
 **Resolving an issue:**
 - Always resolve by storing: `memory_store("issue:<original-key>:resolved", "Resolved at <timestamp>. Method: <what was done>")`.
@@ -73,6 +75,16 @@ When you manually fix something that had sentinel issues filed — removing a cr
 3. Store `:resolved` keys for each of them before considering the task complete.
 
 Skipping this step is the root cause of stale sentinel alerts. The cron job removal is not done until its issues are closed.
+
+## Test Verification Teardown
+
+If you seed an `issue:` entry (e.g., `| type: test |`) to verify sentinel is working, you MUST resolve it in the same session immediately after confirming the alert arrived:
+
+```
+memory_store("issue:<key>:resolved", "Test seed — verified sentinel alert at <timestamp>. Closing.")
+```
+
+Never leave test seeds open. The cron scanner cannot distinguish test entries from real ones. The `type: test` field suppresses alerts in the scanner, but the resolved entry is still required to keep the memory namespace clean.
 
 ## Constraints
 
