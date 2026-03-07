@@ -25,7 +25,16 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 
 ### Active
 
-(None — v1.1 shipped all publication requirements. Next milestone defined via `/gsd:new-milestone`.)
+#### Current Milestone: v2.0 Heartbeat
+
+**Goal:** Build the complete infrastructure layer (state, notifications, orchestration, cron overhaul) and wire all Heartbeat crons — making Kiro a fully proactive, scheduled assistant.
+
+**Target features:**
+- Shared state database (SQLite) for all programs and trackers
+- Centralized notification module (WhatsApp + retry + env-var config)
+- Cron-sync overhaul for agent job type support via daemon REST API
+- Orchestration engine for complex multi-step task decomposition
+- 11 Heartbeat crons: morning briefing, job scanner, content scout, follow-up enforcer, build-in-public drafter, EOD summary, self-audit, weekly company refresh, paper scout, engagement scout, freelance scanner
 
 ### Out of Scope
 
@@ -72,4 +81,4 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 | On-demand reference pattern | OpenClaw docs symlinked to reference/ but not auto-loaded into context — only pulled when needed | ✓ Good — keeps daily context lean |
 
 ---
-*Last updated: 2026-03-05 after v1.1 milestone*
+*Last updated: 2026-03-06 after v2.0 milestone start*
