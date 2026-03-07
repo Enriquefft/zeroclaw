@@ -65,7 +65,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 - [x] **DOCS-01**: LORE.md updated to reference state.db instead of `~/zeroclaw-data/` JSON trackers
 - [x] **DOCS-02**: cron/README.md updated with agent job type YAML schema and removed stale references
 - [x] **DOCS-03**: ORCHESTRATION.md status updated to reflect implementation
-- [ ] **DOCS-04**: AGENTS.md updated with heartbeat cron references
+- [x] **DOCS-04**: AGENTS.md updated with heartbeat cron references
 - [ ] **DOCS-05**: bin/README.md updated with all new programs
 
 ## Future Requirements
@@ -134,7 +134,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-01 | Phase 6 | Complete |
 | DOCS-02 | Phase 7 | Complete |
 | DOCS-03 | Phase 7 | Complete |
-| DOCS-04 | Phase 8 | Pending |
+| DOCS-04 | Phase 8 | Complete |
 | DOCS-05 | Phase 10 | Pending |
 
 **Coverage:**
