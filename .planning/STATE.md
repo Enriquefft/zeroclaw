@@ -68,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 06-03]: notify() accepts dbPath + _retryDelayMs parameters for test isolation — consistent with initStateDb() testability pattern
 - [Phase 06-03]: _retryDelayMs prefixed with _ to signal test-only intent; default 1000ms in production
 - [Phase 06-03]: Rate limit query checks success=1 AND priority='normal' — urgent sends don't start 5-min clock
+- [Phase 06-04]: notify() takes recipient as parameter — caller specifies who to notify, no NOTIFY_TARGET env var. FIX-08 superseded.
+- [Phase 06-04]: Schema bumped to v2 — notify_log gains recipient column, v1→v2 migration via ALTER TABLE
+- [Phase 06-04]: sentinel-scan.ts uses --notify <phone> CLI flag, cron YAML passes the number
 
 ### Pending Todos
 

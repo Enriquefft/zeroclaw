@@ -9,23 +9,23 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### Foundation Fixes
 
-- [ ] **FIX-01**: NixOS rebuild applied to activate resolve_command() and skills-sync cleanup
+- [x] **FIX-01**: NixOS rebuild applied to activate resolve_command() and skills-sync cleanup
 - [x] **FIX-02**: All cron YAMLs include `tz: America/Lima`
 - [x] **FIX-03**: `bin/repair-loop.sh` removed (orphaned after skill refactor)
 - [x] **FIX-04**: Stale workspace state cleaned (`memory_hygiene_state.json`, `runtime-trace.jsonl`)
 - [x] **FIX-05**: Stale `.planning/phases/` directory cleaned
 - [x] **FIX-06**: `ORCHESTRATION.md` consumed into planning docs and removed from repo root
 - [ ] **FIX-07**: `max_cost_per_day_cents` raised to calibrated value after measuring agent cron costs
-- [ ] **FIX-08**: `NOTIFY_TARGET` env var added to sops secrets and `zeroclaw.env` rendering
+- [x] **FIX-08**: ~~`NOTIFY_TARGET` env var~~ Superseded — caller passes recipient directly to `notify()`, no env var needed
 
 ### Infrastructure
 
 - [x] **INFRA-01**: Shared SQLite state database at `~/.zeroclaw/workspace/state.db` with WAL mode, busy_timeout, and schema versioning
 - [x] **INFRA-02**: Centralized notification module (`bin/notify.ts`) with WhatsApp retry (3 attempts, exponential backoff) and rate limiting (5-min gap)
-- [x] **INFRA-03**: Notification target phone number read from `NOTIFY_TARGET` environment variable
+- [x] **INFRA-03**: Notification recipient passed by caller as parameter — no hardcoded phone numbers in notify module
 - [ ] **INFRA-04**: Cron-sync supports `type: agent` YAML field and registers agent jobs via daemon REST API or SQLite fallback
-- [ ] **INFRA-05**: `resolve_command()` extended to cover `claude` binary path
-- [ ] **INFRA-06**: Sentinel scan refactored to use notify module instead of inline WhatsApp logic
+- [x] **INFRA-05**: `resolve_command()` extended to cover `claude` binary path
+- [x] **INFRA-06**: Sentinel scan refactored to use notify module with `--notify <phone>` flag instead of inline WhatsApp logic
 - [x] **INFRA-07**: Cron execution logging (what ran, duration, success/fail) to state.db
 
 ### Orchestration
@@ -99,20 +99,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 6 | Pending |
+| FIX-01 | Phase 6 | Complete |
 | FIX-02 | Phase 6 | Complete |
 | FIX-03 | Phase 6 | Complete |
 | FIX-04 | Phase 6 | Complete |
 | FIX-05 | Phase 6 | Complete |
 | FIX-06 | Phase 6 | Complete |
 | FIX-07 | Phase 10 | Pending |
-| FIX-08 | Phase 6 | Pending |
+| FIX-08 | Phase 6 | Superseded (caller passes recipient) |
 | INFRA-01 | Phase 6 | Complete |
 | INFRA-02 | Phase 6 | Complete |
 | INFRA-03 | Phase 6 | Complete |
 | INFRA-04 | Phase 7 | Pending |
-| INFRA-05 | Phase 6 | Pending |
-| INFRA-06 | Phase 6 | Pending |
+| INFRA-05 | Phase 6 | Complete |
+| INFRA-06 | Phase 6 | Complete |
 | INFRA-07 | Phase 6 | Complete |
 | ORCH-01 | Phase 7 | Pending |
 | ORCH-02 | Phase 7 | Pending |

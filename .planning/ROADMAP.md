@@ -44,11 +44,11 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 ### Phase 6: Foundation Fixes and Shared Infrastructure
 **Goal**: All stale artifacts cleaned, shared state database live, centralized notification module operational — every future program has a ready foundation to build on
 **Depends on**: Phase 5
-**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06, FIX-08, INFRA-01, INFRA-02, INFRA-03, INFRA-05, INFRA-06, INFRA-07, DOCS-01
+**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06, FIX-08 (superseded), INFRA-01, INFRA-02, INFRA-03, INFRA-05, INFRA-06, INFRA-07, DOCS-01
 **Success Criteria** (what must be TRUE):
-  1. `bun run /etc/nixos/zeroclaw/bin/notify.ts` sends a WhatsApp message to the number in `NOTIFY_TARGET` with no hardcoded phone numbers in any source file
-  2. `~/.zeroclaw/workspace/state.db` exists with WAL mode enabled and all v2.0 schema tables present (job_applications, freelance_leads, daily_state, content_log, orchestration_tasks, notify_log, cron_log)
-  3. Sentinel scan sends notifications via the shared notify module — no inline WhatsApp logic remains in sentinel-scan.ts
+  1. `bun run /etc/nixos/zeroclaw/bin/notify.ts --to +51926689401 "test"` sends a WhatsApp message — caller specifies recipient, no env var needed
+  2. `~/.zeroclaw/workspace/state.db` exists with WAL mode enabled and all v2.0 schema tables present (job_applications, freelance_leads, daily_state, content_log, orchestration_tasks, notify_log, cron_log) plus recipient column in notify_log
+  3. Sentinel scan sends notifications via the shared notify module with `--notify <phone>` flag — no inline WhatsApp logic remains in sentinel-scan.ts
   4. Running `ls /etc/nixos/zeroclaw/bin/` shows no `repair-loop.sh`; running `ls /etc/nixos/zeroclaw/.planning/` shows no `phases/` directory; repo root contains no `ORCHESTRATION.md`
   5. All existing cron YAML files include `tz: America/Lima` and a NixOS rebuild has been applied
 **Plans**: 4 plans
