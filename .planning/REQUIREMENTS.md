@@ -21,8 +21,8 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 ### Infrastructure
 
 - [x] **INFRA-01**: Shared SQLite state database at `~/.zeroclaw/workspace/state.db` with WAL mode, busy_timeout, and schema versioning
-- [ ] **INFRA-02**: Centralized notification module (`bin/notify.ts`) with WhatsApp retry (3 attempts, exponential backoff) and rate limiting (5-min gap)
-- [ ] **INFRA-03**: Notification target phone number read from `NOTIFY_TARGET` environment variable
+- [x] **INFRA-02**: Centralized notification module (`bin/notify.ts`) with WhatsApp retry (3 attempts, exponential backoff) and rate limiting (5-min gap)
+- [x] **INFRA-03**: Notification target phone number read from `NOTIFY_TARGET` environment variable
 - [ ] **INFRA-04**: Cron-sync supports `type: agent` YAML field and registers agent jobs via daemon REST API or SQLite fallback
 - [ ] **INFRA-05**: `resolve_command()` extended to cover `claude` binary path
 - [ ] **INFRA-06**: Sentinel scan refactored to use notify module instead of inline WhatsApp logic
@@ -108,8 +108,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-07 | Phase 10 | Pending |
 | FIX-08 | Phase 6 | Pending |
 | INFRA-01 | Phase 6 | Complete |
-| INFRA-02 | Phase 6 | Pending |
-| INFRA-03 | Phase 6 | Pending |
+| INFRA-02 | Phase 6 | Complete |
+| INFRA-03 | Phase 6 | Complete |
 | INFRA-04 | Phase 7 | Pending |
 | INFRA-05 | Phase 6 | Pending |
 | INFRA-06 | Phase 6 | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Heartbeat
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-07T07:01:19.687Z"
-last_activity: "2026-03-07 — Plan 06-01 complete: initStateDb() with 8-table v2.0 schema, WAL mode, schema v1"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-03-07T07:08:30Z"
+last_activity: "2026-03-07 — Plan 06-03 complete: notify() module with WhatsApp delivery, retry, rate limiting"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 3
+  completed_plans: 3
+  percent: 4
 ---
 
 # Project State
@@ -26,27 +26,27 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 6 of 10 (Foundation Fixes and Shared Infrastructure)
-Plan: 1 of 7 complete (06-01 done)
+Plan: 3 of 7 complete (06-01, 06-02, 06-03 done)
 Status: Executing
-Last activity: 2026-03-07 — Plan 06-01 complete: initStateDb() with 8-table v2.0 schema, WAL mode, schema v1
+Last activity: 2026-03-07 — Plan 06-03 complete: notify() module with WhatsApp delivery, retry, rate limiting
 
-Progress: [░░░░░░░░░░] 3%
+Progress: [░░░░░░░░░░] 4%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1 (v2.0)
-- Average duration: 1 min
-- Total execution time: 1 min
+- Total plans completed: 3 (v2.0)
+- Average duration: 3 min
+- Total execution time: ~9 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 06 - Foundation Fixes | 1/7 | 1 min | 1 min |
+| 06 - Foundation Fixes | 3/7 | ~9 min | ~3 min |
 
 *Updated after each plan completion*
-| Phase 06 P02 | 2 | 2 tasks | 2 files |
+| Phase 06 P03 | 1 | 2 files | 5 min |
 
 ## Accumulated Context
 
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [06-01]: initStateDb accepts optional dbPath parameter for testability
 - [Phase 06-02]: ORCHESTRATION.md SQL schema verified in 06-RESEARCH.md before deletion — no additional capture needed
 - [Phase 06-02]: Cron YAMLs always include tz field: America/Lima established as standard
+- [Phase 06-03]: notify() accepts dbPath + _retryDelayMs parameters for test isolation — consistent with initStateDb() testability pattern
+- [Phase 06-03]: _retryDelayMs prefixed with _ to signal test-only intent; default 1000ms in production
+- [Phase 06-03]: Rate limit query checks success=1 AND priority='normal' — urgent sends don't start 5-min clock
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T07:01:19.682Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-07T07:08:30Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
