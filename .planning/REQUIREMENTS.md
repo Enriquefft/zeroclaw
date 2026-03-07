@@ -99,49 +99,49 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | TBD | Pending |
-| FIX-02 | TBD | Pending |
-| FIX-03 | TBD | Pending |
-| FIX-04 | TBD | Pending |
-| FIX-05 | TBD | Pending |
-| FIX-06 | TBD | Pending |
-| FIX-07 | TBD | Pending |
-| FIX-08 | TBD | Pending |
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| INFRA-04 | TBD | Pending |
-| INFRA-05 | TBD | Pending |
-| INFRA-06 | TBD | Pending |
-| INFRA-07 | TBD | Pending |
-| ORCH-01 | TBD | Pending |
-| ORCH-02 | TBD | Pending |
-| ORCH-03 | TBD | Pending |
-| ORCH-04 | TBD | Pending |
-| DAILY-01 | TBD | Pending |
-| DAILY-02 | TBD | Pending |
-| DAILY-03 | TBD | Pending |
-| DAILY-04 | TBD | Pending |
-| SCAN-01 | TBD | Pending |
-| SCAN-02 | TBD | Pending |
-| SCAN-03 | TBD | Pending |
-| DIST-01 | TBD | Pending |
-| DIST-02 | TBD | Pending |
-| DIST-03 | TBD | Pending |
-| DIST-04 | TBD | Pending |
-| HEALTH-01 | TBD | Pending |
-| HEALTH-02 | TBD | Pending |
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| DOCS-03 | TBD | Pending |
-| DOCS-04 | TBD | Pending |
-| DOCS-05 | TBD | Pending |
+| FIX-01 | Phase 6 | Pending |
+| FIX-02 | Phase 6 | Pending |
+| FIX-03 | Phase 6 | Pending |
+| FIX-04 | Phase 6 | Pending |
+| FIX-05 | Phase 6 | Pending |
+| FIX-06 | Phase 6 | Pending |
+| FIX-07 | Phase 10 | Pending |
+| FIX-08 | Phase 6 | Pending |
+| INFRA-01 | Phase 6 | Pending |
+| INFRA-02 | Phase 6 | Pending |
+| INFRA-03 | Phase 6 | Pending |
+| INFRA-04 | Phase 7 | Pending |
+| INFRA-05 | Phase 6 | Pending |
+| INFRA-06 | Phase 6 | Pending |
+| INFRA-07 | Phase 6 | Pending |
+| ORCH-01 | Phase 7 | Pending |
+| ORCH-02 | Phase 7 | Pending |
+| ORCH-03 | Phase 7 | Pending |
+| ORCH-04 | Phase 7 | Pending |
+| DAILY-01 | Phase 8 | Pending |
+| DAILY-02 | Phase 8 | Pending |
+| DAILY-03 | Phase 8 | Pending |
+| DAILY-04 | Phase 8 | Pending |
+| SCAN-01 | Phase 9 | Pending |
+| SCAN-02 | Phase 9 | Pending |
+| SCAN-03 | Phase 9 | Pending |
+| DIST-01 | Phase 10 | Pending |
+| DIST-02 | Phase 10 | Pending |
+| DIST-03 | Phase 10 | Pending |
+| DIST-04 | Phase 10 | Pending |
+| HEALTH-01 | Phase 9 | Pending |
+| HEALTH-02 | Phase 9 | Pending |
+| DOCS-01 | Phase 6 | Pending |
+| DOCS-02 | Phase 7 | Pending |
+| DOCS-03 | Phase 7 | Pending |
+| DOCS-04 | Phase 8 | Pending |
+| DOCS-05 | Phase 10 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 37 total
-- Mapped to phases: 0
-- Unmapped: 37 ⚠️
+- Mapped to phases: 37
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
