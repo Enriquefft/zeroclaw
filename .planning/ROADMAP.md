@@ -36,7 +36,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 - [ ] **Phase 6: Foundation Fixes and Shared Infrastructure** — Clean up stale artifacts, establish shared state DB and notification module that all programs depend on
 - [x] **Phase 7: Orchestration Engine and Agent Cron Support** — Build task decomposition engine and extend cron-sync for agent-type jobs (requires NixOS rebuild) (completed 2026-03-07)
 - [x] **Phase 8: Daily Automation Crons** — Wire morning briefing, EOD summary, follow-up enforcer, and content scout (completed 2026-03-07)
-- [ ] **Phase 9: Opportunity Scanning and System Health** — Wire job scanner, freelance scanner, and self-audit
+- [x] **Phase 9: Opportunity Scanning and System Health** — Wire job scanner, freelance scanner, and self-audit (completed 2026-03-07)
 - [ ] **Phase 10: Research, Distribution, and Cost Calibration** — Wire research/distribution crons, calibrate cost cap, finalize docs
 
 ## Phase Details
@@ -131,5 +131,5 @@ Plans:
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
 | 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete    | 2026-03-07 | - |
 | 8. Daily Automation Crons | 2/2 | Complete   | 2026-03-07 | - |
-| 9. Opportunity Scanning and System Health | 1/2 | In Progress|  | - |
+| 9. Opportunity Scanning and System Health | 2/2 | Complete   | 2026-03-07 | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |

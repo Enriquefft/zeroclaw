@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Heartbeat
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-07T22:03:00Z"
-last_activity: "2026-03-07 — Plan 09-01 complete: job-scanner and freelance-scanner agent cron YAMLs"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-07T22:15:00Z"
+last_activity: "2026-03-07 — Plan 09-02 complete: self-audit drift detector, weekly cron, all Phase 9 jobs activated"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 9 of 10 (Opportunity Scanning and System Health)
-Plan: 1 of 2 complete (09-01 done)
+Plan: 2 of 2 complete (09-02 done — phase complete)
 Status: Executing
-Last activity: 2026-03-07 — Plan 09-01 complete: job-scanner and freelance-scanner agent cron YAMLs
+Last activity: 2026-03-07 — Plan 09-02 complete: self-audit drift detector, weekly cron, all Phase 9 jobs activated
 
 Progress: [██████████] 100%
 
@@ -90,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 09-01]: Scoring rubric descriptions use '--' dash separator not colon-space — 'rubric -- role fit up to N points' avoids Go YAML mapping parse error
 - [Phase 09-01]: INSERT OR IGNORE used in step 4 for URL uniqueness — defensive against re-discovery between dedup step and insert step
 - [Phase 09-01]: Both scanner YAMLs include notify: field for orchestrate.ts failure alerts (distinct from in-step WhatsApp digest sends)
+- [Phase 09-02]: self-audit.ts check functions are synchronous — no async needed for fs/sqlite operations, simplifies testability
+- [Phase 09-02]: lstatSync used before realpathSync to detect symlink type without following the link
+- [Phase 09-02]: Cron DB opened read-only — audit program must never mutate what it inspects
+- [Phase 09-02]: Shell cron job type (not agent) — deterministic drift detector needs no LLM reasoning
 
 ### Pending Todos
 
@@ -103,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T21:25:38.930Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-03-07T22:15:00Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None

@@ -57,8 +57,8 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### System Health
 
-- [ ] **HEALTH-01**: Self-audit program detects config/doc drift between git source and deployed state
-- [ ] **HEALTH-02**: Self-audit runs weekly as a shell cron job
+- [x] **HEALTH-01**: Self-audit program detects config/doc drift between git source and deployed state
+- [x] **HEALTH-02**: Self-audit runs weekly as a shell cron job
 
 ### Documentation
 
@@ -129,8 +129,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-02 | Phase 10 | Pending |
 | DIST-03 | Phase 10 | Pending |
 | DIST-04 | Phase 10 | Pending |
-| HEALTH-01 | Phase 9 | Pending |
-| HEALTH-02 | Phase 9 | Pending |
+| HEALTH-01 | Phase 9 | Complete |
+| HEALTH-02 | Phase 9 | Complete |
 | DOCS-01 | Phase 6 | Complete |
 | DOCS-02 | Phase 7 | Complete |
 | DOCS-03 | Phase 7 | Complete |
