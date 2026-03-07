@@ -32,7 +32,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 - [ ] **ORCH-01**: Orchestration engine (`bin/orchestrate.ts`) decomposes tasks via `claude -p` into a subtask graph
 - [ ] **ORCH-02**: Orchestration engine executes subtasks in parallel with dependency ordering
-- [ ] **ORCH-03**: Orchestration engine checkpoints progress to state.db (resumable on failure)
+- [x] **ORCH-03**: Orchestration engine checkpoints progress to state.db (resumable on failure)
 - [ ] **ORCH-04**: Orchestration skill (`skills/orchestrate/`) wraps the engine for agent invocation
 
 ### Daily Automation
@@ -116,7 +116,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-07 | Phase 6 | Complete |
 | ORCH-01 | Phase 7 | Pending |
 | ORCH-02 | Phase 7 | Pending |
-| ORCH-03 | Phase 7 | Pending |
+| ORCH-03 | Phase 7 | Complete |
 | ORCH-04 | Phase 7 | Pending |
 | DAILY-01 | Phase 8 | Pending |
 | DAILY-02 | Phase 8 | Pending |
