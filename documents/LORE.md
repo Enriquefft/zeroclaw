@@ -150,27 +150,15 @@ Content builds audience -> audience creates inbound job opportunities -> job hun
 
 ## Application Tracker
 
-Maintained at `~/zeroclaw-data/job-tracker.json`
-
-Format:
-```json
-{
-  "company": "",
-  "role": "",
-  "url": "",
-  "status": "new|applied|interview|offer|rejected|ghosted",
-  "date_applied": "",
-  "follow_up_date": "",
-  "contact_person": "",
-  "outreach_channel": "email|linkedin|twitter|ats",
-  "notes": ""
-}
-```
+Tracked in state.db (`~/.zeroclaw/workspace/state.db`), table `job_applications`.
+Schema: title, company, url, status (new|applied|interview|offer|rejected),
+found_date, salary_range, location, match_score, source_platform, notes,
+applied_date, last_updated.
 
 ## Freelance Tracker
 
-Same location: `~/zeroclaw-data/freelance-tracker.json`
-For Upwork/Toptal/Contra gigs that extend runway.
+Tracked in state.db (`~/.zeroclaw/workspace/state.db`), table `freelance_leads`.
+Same schema as job_applications. For Upwork/Toptal/Contra gigs that extend runway.
 
 ## Lessons Learned
 
