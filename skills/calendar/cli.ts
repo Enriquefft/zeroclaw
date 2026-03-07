@@ -8,7 +8,7 @@
  *
  * Commands:
  *   calendars, events, get, create, update, delete, search,
- *   freebusy, conflicts, rsvp, focus, ooo
+ *   freebusy, conflicts, rsvp, focus, ooo, batch
  *
  * Output: JSON on stdout, errors on stderr.
  */
@@ -85,6 +85,23 @@ async function gog(cmdArgs: string[]): Promise<string> {
     err(`gog calendar failed: ${stderr}`);
   }
   return result.stdout.toString().trim();
+}
+
+/** Like gog() but returns {ok, data} | {ok, error} instead of throwing. */
+async function gogSafe(
+  cmdArgs: string[],
+): Promise<{ ok: true; data: string } | { ok: false; error: string; retryable: boolean }> {
+  const result = await $`gog calendar ${cmdArgs}`.quiet();
+  if (result.exitCode !== 0) {
+    const stderr = result.stderr.toString().trim();
+    const retryable = stderr.includes("rateLimitExceeded") || stderr.includes("429");
+    return { ok: false, error: stderr, retryable };
+  }
+  return { ok: true, data: result.stdout.toString().trim() };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function parseJSON(raw: string): unknown {
@@ -348,7 +365,7 @@ const cmd = positional[0];
 
 if (!cmd)
   err(
-    "No command. Use: calendars, events, get, create, update, delete, search, freebusy, conflicts, rsvp, focus, ooo",
+    "No command. Use: calendars, events, get, create, update, delete, search, freebusy, conflicts, rsvp, focus, ooo, batch",
   );
 
 const account = args.account as string | undefined;
@@ -553,8 +570,121 @@ switch (cmd) {
     break;
   }
 
+  // ─── batch ───────────────────────────────────────────────────────────────
+  case "batch": {
+    // Reads a JSON array of operations from stdin, executes sequentially
+    // with exponential backoff on rate limits. One tool call, N operations.
+    //
+    // Input (stdin): JSON array of operations, each with:
+    //   { "op": "create"|"update"|"delete", "account": "...", ...args }
+    //
+    // Output: JSON array of results, one per operation:
+    //   { "index": 0, "op": "update", "ok": true, "result": {...} }
+    //   { "index": 1, "op": "create", "ok": false, "error": "..." }
+
+    const input = await Bun.stdin.text();
+    if (!input.trim()) err("batch requires JSON array on stdin");
+
+    let ops: Record<string, unknown>[];
+    try {
+      ops = JSON.parse(input);
+    } catch {
+      err("batch: invalid JSON on stdin");
+    }
+    if (!Array.isArray(ops)) err("batch: stdin must be a JSON array");
+
+    const MAX_RETRIES = 3;
+    const BASE_DELAY_MS = 2000;
+    const results: Record<string, unknown>[] = [];
+
+    for (let i = 0; i < ops.length; i++) {
+      const op = ops[i];
+      const opType = op.op as string;
+      const opAccount = op.account as string;
+      const opCalendar = (op.calendar as string) ?? "primary";
+
+      if (!opType) {
+        results.push({ index: i, op: null, ok: false, error: "missing 'op' field" });
+        continue;
+      }
+      if (!opAccount) {
+        results.push({ index: i, op: opType, ok: false, error: "missing 'account' field" });
+        continue;
+      }
+
+      let gogArgs: string[];
+      try {
+        switch (opType) {
+          case "create": {
+            gogArgs = ["create", opCalendar, "-a", opAccount, "-j", "--no-input"];
+            for (const flag of ["summary", "from", "to", "description", "location", "attendees",
+              "rrule", "reminder", "visibility", "transparency", "event-color", "send-updates"]) {
+              if (op[flag]) gogArgs.push(`--${flag}`, op[flag] as string);
+            }
+            if (op["all-day"] === true) gogArgs.push("--all-day");
+            if (op["with-meet"] === true) gogArgs.push("--with-meet");
+            break;
+          }
+          case "update": {
+            const eventId = op.event as string;
+            if (!eventId) { results.push({ index: i, op: opType, ok: false, error: "missing 'event'" }); continue; }
+            gogArgs = ["update", opCalendar, eventId, "-a", opAccount, "-j", "--no-input"];
+            for (const flag of ["summary", "from", "to", "description", "location", "attendees",
+              "add-attendee", "rrule", "reminder", "visibility", "transparency", "event-color",
+              "scope", "original-start", "send-updates"]) {
+              if (op[flag] !== undefined) gogArgs.push(`--${flag}`, op[flag] as string);
+            }
+            if (op["all-day"] === true) gogArgs.push("--all-day");
+            break;
+          }
+          case "delete": {
+            const eventId = op.event as string;
+            if (!eventId) { results.push({ index: i, op: opType, ok: false, error: "missing 'event'" }); continue; }
+            gogArgs = ["delete", opCalendar, eventId, "-a", opAccount, "-j", "-y"];
+            if (op.scope) gogArgs.push("--scope", op.scope as string);
+            break;
+          }
+          default:
+            results.push({ index: i, op: opType, ok: false, error: `unknown op: ${opType}. Use: create, update, delete` });
+            continue;
+        }
+      } catch (e) {
+        results.push({ index: i, op: opType, ok: false, error: String(e) });
+        continue;
+      }
+
+      // Execute with retry + exponential backoff on rate limits
+      let succeeded = false;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        const r = await gogSafe(gogArgs);
+        if (r.ok) {
+          let parsed: unknown = null;
+          if (r.data) { try { parsed = JSON.parse(r.data); } catch { parsed = r.data; } }
+          results.push({ index: i, op: opType, ok: true, result: parsed ?? { ok: true, action: opType } });
+          succeeded = true;
+          break;
+        }
+        if (!r.retryable || attempt === MAX_RETRIES) {
+          results.push({ index: i, op: opType, ok: false, error: r.error });
+          break;
+        }
+        // Exponential backoff: 2s, 4s, 8s
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        await sleep(delay);
+      }
+
+      // Small delay between operations to avoid rate limits
+      if (succeeded && i < ops.length - 1) {
+        await sleep(500);
+      }
+    }
+
+    console.log(JSON.stringify(results, null, 2));
+    break;
+  }
+
   default:
     err(
-      `Unknown command: ${cmd}. Use: calendars, events, get, create, update, delete, search, freebusy, conflicts, rsvp, focus, ooo`,
+      `Unknown command: ${cmd}. Use: calendars, events, get, create, update, delete, search, freebusy, conflicts, rsvp, focus, ooo, batch`,
     );
 }
