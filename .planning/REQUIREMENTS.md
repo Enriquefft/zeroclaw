@@ -10,23 +10,23 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 ### Foundation Fixes
 
 - [ ] **FIX-01**: NixOS rebuild applied to activate resolve_command() and skills-sync cleanup
-- [ ] **FIX-02**: All cron YAMLs include `tz: America/Lima`
-- [ ] **FIX-03**: `bin/repair-loop.sh` removed (orphaned after skill refactor)
-- [ ] **FIX-04**: Stale workspace state cleaned (`memory_hygiene_state.json`, `runtime-trace.jsonl`)
-- [ ] **FIX-05**: Stale `.planning/phases/` directory cleaned
-- [ ] **FIX-06**: `ORCHESTRATION.md` consumed into planning docs and removed from repo root
+- [x] **FIX-02**: All cron YAMLs include `tz: America/Lima`
+- [x] **FIX-03**: `bin/repair-loop.sh` removed (orphaned after skill refactor)
+- [x] **FIX-04**: Stale workspace state cleaned (`memory_hygiene_state.json`, `runtime-trace.jsonl`)
+- [x] **FIX-05**: Stale `.planning/phases/` directory cleaned
+- [x] **FIX-06**: `ORCHESTRATION.md` consumed into planning docs and removed from repo root
 - [ ] **FIX-07**: `max_cost_per_day_cents` raised to calibrated value after measuring agent cron costs
 - [ ] **FIX-08**: `NOTIFY_TARGET` env var added to sops secrets and `zeroclaw.env` rendering
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Shared SQLite state database at `~/.zeroclaw/workspace/state.db` with WAL mode, busy_timeout, and schema versioning
+- [x] **INFRA-01**: Shared SQLite state database at `~/.zeroclaw/workspace/state.db` with WAL mode, busy_timeout, and schema versioning
 - [ ] **INFRA-02**: Centralized notification module (`bin/notify.ts`) with WhatsApp retry (3 attempts, exponential backoff) and rate limiting (5-min gap)
 - [ ] **INFRA-03**: Notification target phone number read from `NOTIFY_TARGET` environment variable
 - [ ] **INFRA-04**: Cron-sync supports `type: agent` YAML field and registers agent jobs via daemon REST API or SQLite fallback
 - [ ] **INFRA-05**: `resolve_command()` extended to cover `claude` binary path
 - [ ] **INFRA-06**: Sentinel scan refactored to use notify module instead of inline WhatsApp logic
-- [ ] **INFRA-07**: Cron execution logging (what ran, duration, success/fail) to state.db
+- [x] **INFRA-07**: Cron execution logging (what ran, duration, success/fail) to state.db
 
 ### Orchestration
 
@@ -62,7 +62,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: LORE.md updated to reference state.db instead of `~/zeroclaw-data/` JSON trackers
+- [x] **DOCS-01**: LORE.md updated to reference state.db instead of `~/zeroclaw-data/` JSON trackers
 - [ ] **DOCS-02**: cron/README.md updated with agent job type YAML schema and removed stale references
 - [ ] **DOCS-03**: ORCHESTRATION.md status updated to reflect implementation
 - [ ] **DOCS-04**: AGENTS.md updated with heartbeat cron references
@@ -100,20 +100,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FIX-01 | Phase 6 | Pending |
-| FIX-02 | Phase 6 | Pending |
-| FIX-03 | Phase 6 | Pending |
-| FIX-04 | Phase 6 | Pending |
-| FIX-05 | Phase 6 | Pending |
-| FIX-06 | Phase 6 | Pending |
+| FIX-02 | Phase 6 | Complete |
+| FIX-03 | Phase 6 | Complete |
+| FIX-04 | Phase 6 | Complete |
+| FIX-05 | Phase 6 | Complete |
+| FIX-06 | Phase 6 | Complete |
 | FIX-07 | Phase 10 | Pending |
 | FIX-08 | Phase 6 | Pending |
-| INFRA-01 | Phase 6 | Pending |
+| INFRA-01 | Phase 6 | Complete |
 | INFRA-02 | Phase 6 | Pending |
 | INFRA-03 | Phase 6 | Pending |
 | INFRA-04 | Phase 7 | Pending |
 | INFRA-05 | Phase 6 | Pending |
 | INFRA-06 | Phase 6 | Pending |
-| INFRA-07 | Phase 6 | Pending |
+| INFRA-07 | Phase 6 | Complete |
 | ORCH-01 | Phase 7 | Pending |
 | ORCH-02 | Phase 7 | Pending |
 | ORCH-03 | Phase 7 | Pending |
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-04 | Phase 10 | Pending |
 | HEALTH-01 | Phase 9 | Pending |
 | HEALTH-02 | Phase 9 | Pending |
-| DOCS-01 | Phase 6 | Pending |
+| DOCS-01 | Phase 6 | Complete |
 | DOCS-02 | Phase 7 | Pending |
 | DOCS-03 | Phase 7 | Pending |
 | DOCS-04 | Phase 8 | Pending |

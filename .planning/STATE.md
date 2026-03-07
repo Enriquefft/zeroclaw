@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Heartbeat
-status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-07T05:58:05.810Z"
-last_activity: 2026-03-07 — Roadmap created, 37/37 requirements mapped across phases 6-10
+status: executing
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-03-07T07:01:19.687Z"
+last_activity: "2026-03-07 — Plan 06-01 complete: initStateDb() with 8-table v2.0 schema, WAL mode, schema v1"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 4
+  completed_plans: 2
+  percent: 3
 ---
 
 # Project State
@@ -26,26 +26,27 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 6 of 10 (Foundation Fixes and Shared Infrastructure)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-03-07 — Roadmap created, 37/37 requirements mapped across phases 6-10
+Plan: 1 of 7 complete (06-01 done)
+Status: Executing
+Last activity: 2026-03-07 — Plan 06-01 complete: initStateDb() with 8-table v2.0 schema, WAL mode, schema v1
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 3%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v2.0)
-- Average duration: -
-- Total execution time: -
+- Total plans completed: 1 (v2.0)
+- Average duration: 1 min
+- Total execution time: 1 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 06 - Foundation Fixes | 1/7 | 1 min | 1 min |
 
 *Updated after each plan completion*
+| Phase 06 P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,11 @@ Recent decisions affecting current work:
 - [Pre-milestone]: Phase 9 can start in parallel with Phase 8 — shell programs don't depend on agent cron support
 - [Roadmap]: FIX-07 (cost cap) deferred to Phase 10 — must measure empirically before setting value
 - [Roadmap]: DOCS distributed across phases where the thing they document gets built
+- [06-01]: PRAGMA user_version used for schema versioning (not migration table) — single consumer, simpler
+- [06-01]: WAL + busy_timeout=5000 set before DDL to handle concurrent init edge cases
+- [06-01]: initStateDb accepts optional dbPath parameter for testability
+- [Phase 06-02]: ORCHESTRATION.md SQL schema verified in 06-RESEARCH.md before deletion — no additional capture needed
+- [Phase 06-02]: Cron YAMLs always include tz field: America/Lima established as standard
 
 ### Pending Todos
 
@@ -72,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T05:58:05.806Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-foundation-fixes-and-shared-infrastructure/06-CONTEXT.md
+Last session: 2026-03-07T07:01:19.682Z
+Stopped at: Completed 06-02-PLAN.md
+Resume file: None
