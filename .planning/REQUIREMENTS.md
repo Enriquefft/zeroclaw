@@ -37,10 +37,10 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### Daily Automation
 
-- [ ] **DAILY-01**: Morning briefing cron sends daily agenda (calendar + email + pending follow-ups) via WhatsApp at 07:30 Lima time (uses orchestrate.ts for multi-source synthesis)
-- [ ] **DAILY-02**: EOD summary cron sends day recap (what moved, unanswered threads, tomorrow priorities) via WhatsApp at 20:00 (uses orchestrate.ts)
-- [ ] **DAILY-03**: Follow-up enforcer cron detects stale commitments and nudges at 10:00, 14:00, 17:00
-- [ ] **DAILY-04**: Content scout cron delivers daily digest of trending topics + RSS feeds relevant to content pillars
+- [x] **DAILY-01**: Morning briefing cron sends daily agenda (calendar + email + pending follow-ups) via WhatsApp at 07:30 Lima time (uses orchestrate.ts for multi-source synthesis)
+- [x] **DAILY-02**: EOD summary cron sends day recap (what moved, unanswered threads, tomorrow priorities) via WhatsApp at 20:00 (uses orchestrate.ts)
+- [x] **DAILY-03**: Follow-up enforcer cron detects stale commitments and nudges at 10:00, 14:00, 17:00
+- [x] **DAILY-04**: Content scout cron delivers daily digest of trending topics + RSS feeds relevant to content pillars
 
 ### Opportunity Scanning
 
@@ -118,10 +118,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ORCH-02 | Phase 7 | Complete |
 | ORCH-03 | Phase 7 | Complete |
 | ORCH-04 | Phase 7 | Complete |
-| DAILY-01 | Phase 8 | Pending |
-| DAILY-02 | Phase 8 | Pending |
-| DAILY-03 | Phase 8 | Pending |
-| DAILY-04 | Phase 8 | Pending |
+| DAILY-01 | Phase 8 | Complete |
+| DAILY-02 | Phase 8 | Complete |
+| DAILY-03 | Phase 8 | Complete |
+| DAILY-04 | Phase 8 | Complete |
 | SCAN-01 | Phase 9 | Pending |
 | SCAN-02 | Phase 9 | Pending |
 | SCAN-03 | Phase 9 | Pending |
