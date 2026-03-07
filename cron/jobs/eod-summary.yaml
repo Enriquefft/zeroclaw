@@ -1,0 +1,12 @@
+name: "EOD Summary"
+schedule: "0 20 * * *"
+tz: "America/Lima"
+type: agent
+goal: "Compile an end-of-day recap of what moved today and send a compact summary via WhatsApp"
+steps:
+  - Run git log --since='today midnight' --oneline in /etc/nixos/zeroclaw to count commits today. Also query state.db orchestration_tasks for parent tasks completed today (status='completed' and updated_at >= start of today in epoch ms). Output commit count and completed task count.
+  - Query state.db job_applications with last_updated >= today midnight for status changes. Query freelance_leads with last_updated >= today midnight. Use email_cli list --since 720 to estimate emails received today.
+  - Fetch tomorrow's calendar events using calendar_cli events --from tomorrow --to tomorrow. List event times and titles.
+  - Query state.db job_applications for entries with status='applied' and applied_date older than 5 days -- these are follow-up priorities for tomorrow.
+  - Check daily_state for today using date('now', '-5 hours') -- if eod_sent=1, output SKIP and stop. Otherwise compose a 5-line headline WhatsApp message. Format -- line 1: N commits | N tasks done | N emails. Line 2: N jobs updated | N new leads. Line 3: Tomorrow: N events. Lines 4-5: Priority follow-up or top action item. Send to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text '<message>'. Then INSERT OR REPLACE INTO daily_state (date, eod_sent, updated_at) VALUES (date('now', '-5 hours'), 1, unixepoch()).
+notify: "+51926689401"
