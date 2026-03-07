@@ -114,10 +114,11 @@ Plans:
   2. The paper scout delivers a weekly arXiv digest filtered by research interests via WhatsApp every Monday
   3. `max_cost_per_day_cents` in config.toml is set to a value derived from at least 3 days of measured actual spend — not the default 500
   4. bin/README.md lists all programs added in v2.0 with their cron schedule, inputs, and output contract
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md — Create 4 agent cron YAMLs (build-in-public drafter, engagement scout, paper scout, company refresh)
+- [ ] 10-02-PLAN.md — bin/README.md rewrite, cron-sync + rebuild, cost cap calibration
 
 ## Progress
 
@@ -132,4 +133,4 @@ Plans:
 | 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete    | 2026-03-07 | - |
 | 8. Daily Automation Crons | 2/2 | Complete   | 2026-03-07 | - |
 | 9. Opportunity Scanning and System Health | 2/2 | Complete   | 2026-03-07 | - |
-| 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |
+| 10. Research, Distribution, and Cost Calibration | v2.0 | 0/2 | Not started | - |
