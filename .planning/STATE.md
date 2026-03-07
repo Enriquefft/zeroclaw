@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Heartbeat
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-07T08:08:16.054Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-07T08:13:40.481Z"
 last_activity: "2026-03-07 — Plan 06-03 complete: notify() module with WhatsApp delivery, retry, rate limiting"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 4
 ---
 
@@ -48,6 +48,7 @@ Progress: [░░░░░░░░░░] 4%
 *Updated after each plan completion*
 | Phase 06 P03 | 1 | 2 files | 5 min |
 | Phase 07-orchestration-engine-and-agent-cron-support P01 | 2 | 2 tasks | 3 files |
+| Phase 07 P02 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 06-04]: sentinel-scan.ts uses --notify <phone> CLI flag, cron YAML passes the number
 - [Phase 07-01]: Schema v3 — orchestration_tasks gains 5 subtask columns: parent_id, step_index, step_output, parent_goal, yaml_source
 - [Phase 07-01]: v1→v3 migration chains through v2 steps; probe-claude-p.sh is manual-only (cannot run inside Claude Code)
+- [Phase 07]: parseYaml() uses regex line-by-line parsing — yq not available in bin/ execution context (it's wrapped only in cron-sync's Nix shell)
+- [Phase 07]: orchestrate() runner injected via opts parameter — tests pass mocks, production uses defaultRunner with claude -p
+- [Phase 07]: Auto-decomposition (goal-only YAML without steps) deferred — Phase 8 cron YAMLs always include explicit steps arrays
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T08:08:16.050Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-03-07T08:13:40.476Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
