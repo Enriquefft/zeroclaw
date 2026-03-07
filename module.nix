@@ -70,7 +70,16 @@ let
         name=$(yq -r '.name' "$yaml_file")
         schedule=$(yq -r '.schedule' "$yaml_file")
         tz=$(yq -r '.tz // ""' "$yaml_file")
-        command=$(resolve_command "$(yq -r '.command' "$yaml_file")")
+        job_type=$(yq -r '.type // "shell"' "$yaml_file")
+
+        if [[ "$job_type" == "agent" ]]; then
+          # Agent job: auto-generate command from orchestrate.ts + yaml path
+          # User writes goal/steps/notify in YAML, NOT a command field
+          command="${pkgs.bun}/bin/bun run /etc/nixos/zeroclaw/bin/orchestrate.ts $(realpath "$yaml_file")"
+        else
+          # Shell job: existing behavior — read command from YAML and resolve
+          command=$(resolve_command "$(yq -r '.command' "$yaml_file")")
+        fi
 
         YAML_NAMES["$name"]=1
 
