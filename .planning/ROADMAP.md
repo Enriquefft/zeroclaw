@@ -51,10 +51,13 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
   3. Sentinel scan sends notifications via the shared notify module — no inline WhatsApp logic remains in sentinel-scan.ts
   4. Running `ls /etc/nixos/zeroclaw/bin/` shows no `repair-loop.sh`; running `ls /etc/nixos/zeroclaw/.planning/` shows no `phases/` directory; repo root contains no `ORCHESTRATION.md`
   5. All existing cron YAML files include `tz: America/Lima` and a NixOS rebuild has been applied
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 6 to break down)
+- [ ] 06-01-PLAN.md — State DB initialization module with full v2.0 schema (TDD)
+- [ ] 06-02-PLAN.md — Cleanup stale artifacts, fix cron timezone, update LORE.md
+- [ ] 06-03-PLAN.md — Centralized notification module with retry and rate limiting (TDD)
+- [ ] 06-04-PLAN.md — Sentinel refactor, resolve_command, sops secrets, NixOS rebuild
 
 ### Phase 7: Orchestration Engine and Agent Cron Support
 **Goal**: The orchestrate.ts engine can decompose and execute multi-step tasks via `claude -p`, cron-sync accepts agent-type YAML jobs and registers them correctly, and the full capability is validated in a real systemd cron context
@@ -121,7 +124,7 @@ Plans:
 | 3. Self-Modification and Resilience | v1.0 | 4/4 | Complete | 2026-03-05 |
 | 4. Sentinel Verification and Cleanup | v1.0 | 2/2 | Complete | 2026-03-05 |
 | 5. Publication and Release Readiness | v1.1 | 2/2 | Complete | 2026-03-05 |
-| 6. Foundation Fixes and Shared Infrastructure | v2.0 | 0/TBD | Not started | - |
+| 6. Foundation Fixes and Shared Infrastructure | v2.0 | 0/4 | Planning | - |
 | 7. Orchestration Engine and Agent Cron Support | v2.0 | 0/TBD | Not started | - |
 | 8. Daily Automation Crons | v2.0 | 0/TBD | Not started | - |
 | 9. Opportunity Scanning and System Health | v2.0 | 0/TBD | Not started | - |
