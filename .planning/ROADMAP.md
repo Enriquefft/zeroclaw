@@ -84,10 +84,11 @@ Plans:
   2. A WhatsApp message with the day recap (what moved, unanswered threads, tomorrow priorities) arrives at 20:00 without manual intervention
   3. When a commitment in email is left unanswered, a nudge WhatsApp message arrives at 10:00, 14:00, or 17:00 depending on staleness
   4. A daily content digest with trending topics and RSS feed items relevant to content pillars is delivered via WhatsApp
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 8 to break down)
+- [ ] 08-01-PLAN.md — Create 4 agent cron YAML files with parseYaml validation tests
+- [ ] 08-02-PLAN.md — Update AGENTS.md, run cron-sync, NixOS rebuild
 
 ### Phase 9: Opportunity Scanning and System Health
 **Goal**: Job scanner and freelance scanner find and deduplicate leads daily with persistence to state.db, and the self-audit program runs weekly detecting any drift between git source and deployed state
@@ -128,6 +129,6 @@ Plans:
 | 5. Publication and Release Readiness | v1.1 | 2/2 | Complete | 2026-03-05 |
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
 | 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete    | 2026-03-07 | - |
-| 8. Daily Automation Crons | v2.0 | 0/TBD | Not started | - |
+| 8. Daily Automation Crons | v2.0 | 0/2 | Not started | - |
 | 9. Opportunity Scanning and System Health | v2.0 | 0/TBD | Not started | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |

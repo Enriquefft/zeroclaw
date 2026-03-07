@@ -688,6 +688,82 @@ describe("orchestrate — YAML file handling", () => {
   });
 });
 
+// ---- parseYaml — daily automation YAMLs ----
+
+import { readFileSync } from "fs";
+
+describe("parseYaml — daily automation YAMLs", () => {
+  test("steps with colons parse correctly", () => {
+    const yaml = `
+name: colon-test
+goal: Test colon handling in steps
+steps:
+  - Step 1: gather data from source
+  - Step 2: analyze and filter results
+  - Step 3: send report via WhatsApp
+`;
+    const result = parseYaml(yaml);
+    expect(result.steps).not.toBeNull();
+    expect(result.steps?.length).toBe(3);
+    expect(result.steps?.[0]).toBe("Step 1: gather data from source");
+    expect(result.steps?.[1]).toBe("Step 2: analyze and filter results");
+    expect(result.steps?.[2]).toBe("Step 3: send report via WhatsApp");
+  });
+
+  test("morning-briefing.yaml parses correctly", () => {
+    const content = readFileSync(
+      "/etc/nixos/zeroclaw/cron/jobs/morning-briefing.yaml",
+      "utf8"
+    );
+    const result = parseYaml(content);
+    expect(result.name).toBe("Morning Briefing");
+    expect(result.steps).not.toBeNull();
+    expect(result.steps?.length).toBe(4);
+    expect(result.notify).toBe("+51926689401");
+    expect(result.goal).toBeTruthy();
+    expect(result.goal.toLowerCase()).toContain("morning briefing");
+  });
+
+  test("eod-summary.yaml parses correctly", () => {
+    const content = readFileSync(
+      "/etc/nixos/zeroclaw/cron/jobs/eod-summary.yaml",
+      "utf8"
+    );
+    const result = parseYaml(content);
+    expect(result.name).toBe("EOD Summary");
+    expect(result.steps).not.toBeNull();
+    expect(result.steps?.length).toBe(5);
+    expect(result.notify).toBe("+51926689401");
+    expect(result.goal).toBeTruthy();
+  });
+
+  test("follow-up-enforcer.yaml parses correctly", () => {
+    const content = readFileSync(
+      "/etc/nixos/zeroclaw/cron/jobs/follow-up-enforcer.yaml",
+      "utf8"
+    );
+    const result = parseYaml(content);
+    expect(result.name).toBe("Follow-up Enforcer");
+    expect(result.steps).not.toBeNull();
+    expect(result.steps?.length).toBe(3);
+    expect(result.notify).toBeNull();
+    expect(result.goal).toBeTruthy();
+  });
+
+  test("content-scout.yaml parses correctly", () => {
+    const content = readFileSync(
+      "/etc/nixos/zeroclaw/cron/jobs/content-scout.yaml",
+      "utf8"
+    );
+    const result = parseYaml(content);
+    expect(result.name).toBe("Content Scout");
+    expect(result.steps).not.toBeNull();
+    expect(result.steps?.length).toBe(4);
+    expect(result.notify).toBeNull();
+    expect(result.goal).toBeTruthy();
+  });
+});
+
 // ---- Module structure tests ----
 
 describe("orchestrate — module exports", () => {
