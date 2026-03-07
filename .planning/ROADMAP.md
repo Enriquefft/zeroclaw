@@ -99,10 +99,11 @@ Plans:
   2. Freelance leads from gig platforms appear in the freelance_leads table with status tracking (new/applied/interview/offer/rejected)
   3. Running `bun run /etc/nixos/zeroclaw/bin/self-audit.ts` produces a report listing any files that differ between the git source and deployed state
   4. The self-audit cron runs weekly and sends a WhatsApp notification if any drift is detected
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — Scanner agent cron YAMLs (job-scanner + freelance-scanner)
+- [ ] 09-02-PLAN.md — Self-audit program (TDD), self-audit cron YAML, cron-sync, NixOS rebuild
 
 ### Phase 10: Research, Distribution, and Cost Calibration
 **Goal**: All four research and distribution crons are live, the daily cost cap is set to a calibrated value based on measured spend from previous phases, and all new programs are documented in bin/README.md
@@ -130,5 +131,5 @@ Plans:
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
 | 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete    | 2026-03-07 | - |
 | 8. Daily Automation Crons | 2/2 | Complete   | 2026-03-07 | - |
-| 9. Opportunity Scanning and System Health | v2.0 | 0/TBD | Not started | - |
+| 9. Opportunity Scanning and System Health | v2.0 | 0/2 | Not started | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |
