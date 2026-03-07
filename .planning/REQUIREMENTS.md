@@ -44,9 +44,9 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### Opportunity Scanning
 
-- [ ] **SCAN-01**: Job scanner cron searches job boards daily, filters by target roles/criteria from LORE.md, deduplicates via state.db
-- [ ] **SCAN-02**: Freelance scanner cron searches gig platforms, shares infrastructure with job scanner, higher cadence
-- [ ] **SCAN-03**: Job and freelance leads persisted to state.db with status tracking (new/applied/interview/offer/rejected)
+- [x] **SCAN-01**: Job scanner cron searches job boards daily, filters by target roles/criteria from LORE.md, deduplicates via state.db
+- [x] **SCAN-02**: Freelance scanner cron searches gig platforms, shares infrastructure with job scanner, higher cadence
+- [x] **SCAN-03**: Job and freelance leads persisted to state.db with status tracking (new/applied/interview/offer/rejected)
 
 ### Research & Distribution
 
@@ -122,9 +122,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DAILY-02 | Phase 8 | Complete |
 | DAILY-03 | Phase 8 | Complete |
 | DAILY-04 | Phase 8 | Complete |
-| SCAN-01 | Phase 9 | Pending |
-| SCAN-02 | Phase 9 | Pending |
-| SCAN-03 | Phase 9 | Pending |
+| SCAN-01 | Phase 9 | Complete |
+| SCAN-02 | Phase 9 | Complete |
+| SCAN-03 | Phase 9 | Complete |
 | DIST-01 | Phase 10 | Pending |
 | DIST-02 | Phase 10 | Pending |
 | DIST-03 | Phase 10 | Pending |

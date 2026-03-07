@@ -131,5 +131,5 @@ Plans:
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
 | 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete    | 2026-03-07 | - |
 | 8. Daily Automation Crons | 2/2 | Complete   | 2026-03-07 | - |
-| 9. Opportunity Scanning and System Health | v2.0 | 0/2 | Not started | - |
+| 9. Opportunity Scanning and System Health | 1/2 | In Progress|  | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |

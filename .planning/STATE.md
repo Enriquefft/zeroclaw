@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Heartbeat
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-07T21:25:38.935Z"
-last_activity: "2026-03-07 — Plan 07-03 complete: cron-sync agent detection, orchestrate skill (6 tests), NixOS rebuild"
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-03-07T22:03:00Z"
+last_activity: "2026-03-07 — Plan 09-01 complete: job-scanner and freelance-scanner agent cron YAMLs"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 ## Current Position
 
-Phase: 7 of 10 (Orchestration Engine and Agent Cron Support)
-Plan: 3 of 3 complete (07-01, 07-02, 07-03 done) — Phase 7 COMPLETE
+Phase: 9 of 10 (Opportunity Scanning and System Health)
+Plan: 1 of 2 complete (09-01 done)
 Status: Executing
-Last activity: 2026-03-07 — Plan 07-03 complete: cron-sync agent detection, orchestrate skill (6 tests), NixOS rebuild
+Last activity: 2026-03-07 — Plan 09-01 complete: job-scanner and freelance-scanner agent cron YAMLs
 
 Progress: [██████████] 100%
 
@@ -87,6 +87,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Enforcer and content-scout omit top-level notify: field — conditional in-step sending, silent when nothing actionable
 - [Phase 08]: Idempotency via daily_state briefing_sent/eod_sent flags using date('now', '-5 hours') for Lima timezone
 - [Phase 08]: YAML plain block scalars cannot contain 'key: value' patterns — Go parser rejects them; fixed by replacing 'Line N: content' format descriptions with 'row N is content' phrasing
+- [Phase 09-01]: Scoring rubric descriptions use '--' dash separator not colon-space — 'rubric -- role fit up to N points' avoids Go YAML mapping parse error
+- [Phase 09-01]: INSERT OR IGNORE used in step 4 for URL uniqueness — defensive against re-discovery between dedup step and insert step
+- [Phase 09-01]: Both scanner YAMLs include notify: field for orchestrate.ts failure alerts (distinct from in-step WhatsApp digest sends)
 
 ### Pending Todos
 
