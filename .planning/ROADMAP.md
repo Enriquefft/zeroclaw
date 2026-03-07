@@ -68,10 +68,12 @@ Plans:
   2. `bin/orchestrate.ts` called from a cron context (not interactive session) successfully invokes `claude -p`, captures output, and checkpoints task state to state.db
   3. The orchestrate skill is listed in `zeroclaw skills list` output and can be invoked by the agent
   4. cron/README.md documents the agent job YAML schema with a working example
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 7 to break down)
+- [ ] 07-01-PLAN.md — Schema v3 migration for orchestration subtask columns + claude -p probe test
+- [ ] 07-02-PLAN.md — Orchestration engine (orchestrate.ts) with TDD (TDD)
+- [ ] 07-03-PLAN.md — cron-sync agent support, orchestrate skill, and documentation
 
 ### Phase 8: Daily Automation Crons
 **Goal**: Four daily automation crons are live and delivering value — morning briefing arrives on WhatsApp every day at 07:30, EOD summary at 20:00, follow-up enforcer checks commitments 3x daily, and content scout delivers a digest
@@ -125,7 +127,7 @@ Plans:
 | 4. Sentinel Verification and Cleanup | v1.0 | 2/2 | Complete | 2026-03-05 |
 | 5. Publication and Release Readiness | v1.1 | 2/2 | Complete | 2026-03-05 |
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
-| 7. Orchestration Engine and Agent Cron Support | v2.0 | 0/TBD | Not started | - |
+| 7. Orchestration Engine and Agent Cron Support | v2.0 | 0/3 | Not started | - |
 | 8. Daily Automation Crons | v2.0 | 0/TBD | Not started | - |
 | 9. Opportunity Scanning and System Health | v2.0 | 0/TBD | Not started | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |
