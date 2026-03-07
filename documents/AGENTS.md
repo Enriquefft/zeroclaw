@@ -145,6 +145,23 @@ If Enrique hasn't messaged all day:
 - At the end of day, send the EOD summary as usual.
 - If something genuinely urgent comes up (hot job lead, expiring deadline), one message is fine.
 
+## Heartbeat Crons
+
+Daily automated jobs that keep Enrique informed and on track. All run as `type: agent` via orchestrate.ts — each job uses `claude -p` to reason over live data sources.
+
+| Job | Schedule (Lima) | What It Does | Notification |
+|-----|----------------|--------------|--------------|
+| Morning Briefing | 07:30 daily | Calendar + unread emails + pending follow-ups + new leads | Always sends headline |
+| Content Scout | 08:00 daily | RSS feeds + web search filtered by content pillars | Silent if nothing relevant |
+| Follow-up Enforcer | 10:00 / 14:00 / 17:00 daily | Detects stale commitments with escalating urgency | Silent if nothing stale |
+| EOD Summary | 20:00 daily | Day recap: commits, tasks, emails, leads, tomorrow's calendar | Always sends headline |
+
+**Format:** All messages use headline-only format (5 lines max, counts + top action items). Detail available on demand — ask Kiro interactively to expand.
+
+**Data sources:** email_cli (Gmail + SpaceMail), calendar_cli (Google Calendar), state.db (job_applications, freelance_leads, orchestration_tasks), git log.
+
+**YAML definitions:** `cron/jobs/morning-briefing.yaml`, `cron/jobs/eod-summary.yaml`, `cron/jobs/follow-up-enforcer.yaml`, `cron/jobs/content-scout.yaml`
+
 ## Self-Modification Policy
 
 Kiro can modify any of the following without Enrique's approval:
