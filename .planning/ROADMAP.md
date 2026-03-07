@@ -34,7 +34,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 **Milestone Goal:** Build the complete infrastructure layer (state, notifications, orchestration, cron overhaul) and wire all Heartbeat crons — making Kiro a fully proactive, scheduled assistant.
 
 - [ ] **Phase 6: Foundation Fixes and Shared Infrastructure** — Clean up stale artifacts, establish shared state DB and notification module that all programs depend on
-- [ ] **Phase 7: Orchestration Engine and Agent Cron Support** — Build task decomposition engine and extend cron-sync for agent-type jobs (requires NixOS rebuild)
+- [x] **Phase 7: Orchestration Engine and Agent Cron Support** — Build task decomposition engine and extend cron-sync for agent-type jobs (requires NixOS rebuild) (completed 2026-03-07)
 - [ ] **Phase 8: Daily Automation Crons** — Wire morning briefing, EOD summary, follow-up enforcer, and content scout
 - [ ] **Phase 9: Opportunity Scanning and System Health** — Wire job scanner, freelance scanner, and self-audit
 - [ ] **Phase 10: Research, Distribution, and Cost Calibration** — Wire research/distribution crons, calibrate cost cap, finalize docs
@@ -127,7 +127,7 @@ Plans:
 | 4. Sentinel Verification and Cleanup | v1.0 | 2/2 | Complete | 2026-03-05 |
 | 5. Publication and Release Readiness | v1.1 | 2/2 | Complete | 2026-03-05 |
 | 6. Foundation Fixes and Shared Infrastructure | 3/4 | In Progress|  | - |
-| 7. Orchestration Engine and Agent Cron Support | 2/3 | In Progress|  | - |
+| 7. Orchestration Engine and Agent Cron Support | 3/3 | Complete   | 2026-03-07 | - |
 | 8. Daily Automation Crons | v2.0 | 0/TBD | Not started | - |
 | 9. Opportunity Scanning and System Health | v2.0 | 0/TBD | Not started | - |
 | 10. Research, Distribution, and Cost Calibration | v2.0 | 0/TBD | Not started | - |

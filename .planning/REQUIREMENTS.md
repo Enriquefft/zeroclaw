@@ -23,7 +23,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 - [x] **INFRA-01**: Shared SQLite state database at `~/.zeroclaw/workspace/state.db` with WAL mode, busy_timeout, and schema versioning
 - [x] **INFRA-02**: Centralized notification module (`bin/notify.ts`) with WhatsApp retry (3 attempts, exponential backoff) and rate limiting (5-min gap)
 - [x] **INFRA-03**: Notification recipient passed by caller as parameter — no hardcoded phone numbers in notify module
-- [ ] **INFRA-04**: Cron-sync supports `type: agent` YAML field and registers agent jobs via daemon REST API or SQLite fallback
+- [x] **INFRA-04**: Cron-sync supports `type: agent` YAML field and registers agent jobs via daemon REST API or SQLite fallback
 - [x] **INFRA-05**: `resolve_command()` extended to cover `claude` binary path
 - [x] **INFRA-06**: Sentinel scan refactored to use notify module with `--notify <phone>` flag instead of inline WhatsApp logic
 - [x] **INFRA-07**: Cron execution logging (what ran, duration, success/fail) to state.db
@@ -33,7 +33,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 - [x] **ORCH-01**: Orchestration engine (`bin/orchestrate.ts`) decomposes tasks via `claude -p` into a subtask graph
 - [x] **ORCH-02**: Orchestration engine executes subtasks in parallel with dependency ordering
 - [x] **ORCH-03**: Orchestration engine checkpoints progress to state.db (resumable on failure)
-- [ ] **ORCH-04**: Orchestration skill (`skills/orchestrate/`) wraps the engine for agent invocation
+- [x] **ORCH-04**: Orchestration skill (`skills/orchestrate/`) wraps the engine for agent invocation
 
 ### Daily Automation
 
@@ -63,8 +63,8 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 ### Documentation
 
 - [x] **DOCS-01**: LORE.md updated to reference state.db instead of `~/zeroclaw-data/` JSON trackers
-- [ ] **DOCS-02**: cron/README.md updated with agent job type YAML schema and removed stale references
-- [ ] **DOCS-03**: ORCHESTRATION.md status updated to reflect implementation
+- [x] **DOCS-02**: cron/README.md updated with agent job type YAML schema and removed stale references
+- [x] **DOCS-03**: ORCHESTRATION.md status updated to reflect implementation
 - [ ] **DOCS-04**: AGENTS.md updated with heartbeat cron references
 - [ ] **DOCS-05**: bin/README.md updated with all new programs
 
@@ -110,14 +110,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-01 | Phase 6 | Complete |
 | INFRA-02 | Phase 6 | Complete |
 | INFRA-03 | Phase 6 | Complete |
-| INFRA-04 | Phase 7 | Pending |
+| INFRA-04 | Phase 7 | Complete |
 | INFRA-05 | Phase 6 | Complete |
 | INFRA-06 | Phase 6 | Complete |
 | INFRA-07 | Phase 6 | Complete |
 | ORCH-01 | Phase 7 | Complete |
 | ORCH-02 | Phase 7 | Complete |
 | ORCH-03 | Phase 7 | Complete |
-| ORCH-04 | Phase 7 | Pending |
+| ORCH-04 | Phase 7 | Complete |
 | DAILY-01 | Phase 8 | Pending |
 | DAILY-02 | Phase 8 | Pending |
 | DAILY-03 | Phase 8 | Pending |
@@ -132,8 +132,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEALTH-01 | Phase 9 | Pending |
 | HEALTH-02 | Phase 9 | Pending |
 | DOCS-01 | Phase 6 | Complete |
-| DOCS-02 | Phase 7 | Pending |
-| DOCS-03 | Phase 7 | Pending |
+| DOCS-02 | Phase 7 | Complete |
+| DOCS-03 | Phase 7 | Complete |
 | DOCS-04 | Phase 8 | Pending |
 | DOCS-05 | Phase 10 | Pending |
 
