@@ -31,7 +31,7 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 ### Orchestration
 
 - [x] **ORCH-01**: Orchestration engine (`bin/orchestrate.ts`) decomposes tasks via `claude -p` into a subtask graph
-- [x] **ORCH-02**: Orchestration engine executes subtasks in parallel with dependency ordering
+- [x] **ORCH-02**: Orchestration engine executes subtasks sequentially with output chaining (user decision: flat sequential list)
 - [x] **ORCH-03**: Orchestration engine checkpoints progress to state.db (resumable on failure)
 - [x] **ORCH-04**: Orchestration skill (`skills/orchestrate/`) wraps the engine for agent invocation
 
