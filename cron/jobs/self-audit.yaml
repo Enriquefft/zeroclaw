@@ -1,0 +1,4 @@
+name: "Self-Audit"
+schedule: "0 8 * * 1"
+tz: "America/Lima"
+command: "bun run /etc/nixos/zeroclaw/bin/self-audit.ts --notify +51926689401"
