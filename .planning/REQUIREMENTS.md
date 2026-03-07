@@ -50,10 +50,10 @@ Requirements for the Heartbeat milestone. Each maps to roadmap phases.
 
 ### Research & Distribution
 
-- [ ] **DIST-01**: Build-in-public drafter cron generates draft posts from git activity for human approval
-- [ ] **DIST-02**: Engagement scout cron finds relevant threads/discussions to respond to
-- [ ] **DIST-03**: Paper scout cron delivers weekly arXiv digest filtered by research interests
-- [ ] **DIST-04**: Weekly company refresh cron updates target company watch-list with recent news (uses orchestrate.ts)
+- [x] **DIST-01**: Build-in-public drafter cron generates draft posts from git activity for human approval
+- [x] **DIST-02**: Engagement scout cron finds relevant threads/discussions to respond to
+- [x] **DIST-03**: Paper scout cron delivers weekly arXiv digest filtered by research interests
+- [x] **DIST-04**: Weekly company refresh cron updates target company watch-list with recent news (uses orchestrate.ts)
 
 ### System Health
 
@@ -125,10 +125,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCAN-01 | Phase 9 | Complete |
 | SCAN-02 | Phase 9 | Complete |
 | SCAN-03 | Phase 9 | Complete |
-| DIST-01 | Phase 10 | Pending |
-| DIST-02 | Phase 10 | Pending |
-| DIST-03 | Phase 10 | Pending |
-| DIST-04 | Phase 10 | Pending |
+| DIST-01 | Phase 10 | Complete |
+| DIST-02 | Phase 10 | Complete |
+| DIST-03 | Phase 10 | Complete |
+| DIST-04 | Phase 10 | Complete |
 | HEALTH-01 | Phase 9 | Complete |
 | HEALTH-02 | Phase 9 | Complete |
 | DOCS-01 | Phase 6 | Complete |

@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 ## Current Position
 
-Phase: 9 of 10 (Opportunity Scanning and System Health)
-Plan: 2 of 2 complete (09-02 done — phase complete)
-Status: Executing
-Last activity: 2026-03-07 — Plan 09-02 complete: self-audit drift detector, weekly cron, all Phase 9 jobs activated
+Phase: 10 of 10 (Research Distribution and Cost Calibration)
+Plan: 1 of 1 complete (10-01 done — phase complete)
+Status: Complete
+Last activity: 2026-03-07 — Plan 10-01 complete: build-in-public drafter, engagement scout, paper scout, company refresh cron YAMLs
 
 Progress: [██████████] 100%
 
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - [Phase 09-02]: lstatSync used before realpathSync to detect symlink type without following the link
 - [Phase 09-02]: Cron DB opened read-only — audit program must never mutate what it inspects
 - [Phase 09-02]: Shell cron job type (not agent) — deterministic drift detector needs no LLM reasoning
+- [Phase 10-01]: build-in-public-drafter queries content_log for recently covered commits to avoid redundant posts
+- [Phase 10-01]: engagement-scout applies LORE.md voice filter before drafting to ensure genuine technical contribution
+- [Phase 10-01]: paper-scout covers cs.AI, cs.LG, cs.CL, cs.MA, cs.SE as the five most relevant arXiv categories
+- [Phase 10-01]: company-refresh uses section-replace on LORE.md Target Companies (not full overwrite) to preserve all other sections
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-07T23:04:35.867Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-research-distribution-and-cost-calibration/10-CONTEXT.md
+Last session: 2026-03-07T23:29:18Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: .planning/phases/10-research-distribution-and-cost-calibration/10-01-SUMMARY.md
