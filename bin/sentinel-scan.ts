@@ -9,6 +9,11 @@ import { notify } from "./notify.ts";
 
 const MEMORY_DB = `${Bun.env.HOME}/.zeroclaw/workspace/memory/brain.db`;
 
+// Parse --notify <phone> from CLI args
+const args = process.argv.slice(2);
+const notifyIdx = args.indexOf("--notify");
+const NOTIFY_RECIPIENT = notifyIdx !== -1 ? args[notifyIdx + 1] : undefined;
+
 interface Issue {
   key: string;
   content: string;
@@ -80,7 +85,11 @@ try {
       .join("\n\n");
 
     const msg = `🔴 Sentinel — ${alertable.length} unresolved issue${alertable.length > 1 ? "s" : ""}\n${"─".repeat(32)}\n\n${issueBlocks}\n\n${"─".repeat(32)}\nRun sentinel skill to attempt repairs.`;
-    alerted = await notify(msg, "urgent");
+    if (NOTIFY_RECIPIENT) {
+      alerted = await notify(msg, NOTIFY_RECIPIENT, "urgent");
+    } else {
+      console.error("sentinel: --notify <phone> not provided, skipping alert");
+    }
   }
 
   console.log(

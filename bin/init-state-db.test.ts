@@ -47,13 +47,13 @@ describe("initStateDb", () => {
     expect(result.timeout).toBe(5000);
   });
 
-  test("PRAGMA user_version returns 1 after init", async () => {
+  test("PRAGMA user_version returns 2 after init", async () => {
     const mod = await import("./init-state-db.ts");
     initStateDb = mod.initStateDb;
     const db = initStateDb(dbPath);
     const result = db.query("PRAGMA user_version").get() as { user_version: number };
     db.close();
-    expect(result.user_version).toBe(1);
+    expect(result.user_version).toBe(2);
   });
 
   test("all 8 tables exist", async () => {
@@ -121,19 +121,34 @@ describe("initStateDb", () => {
     }).not.toThrow();
   });
 
-  test("running initStateDb on existing v1 DB skips schema creation", async () => {
+  test("running initStateDb on existing v2 DB skips schema creation", async () => {
     const mod = await import("./init-state-db.ts");
     initStateDb = mod.initStateDb;
 
-    // First run — creates schema at v1
+    // First run — creates schema at v2
     const db1 = initStateDb(dbPath);
     db1.close();
 
-    // Second run — user_version still 1, schema not re-applied
+    // Second run — user_version still 2, schema not re-applied
     const db2 = initStateDb(dbPath);
     const result = db2.query("PRAGMA user_version").get() as { user_version: number };
     db2.close();
 
-    expect(result.user_version).toBe(1);
+    expect(result.user_version).toBe(2);
+  });
+
+  test("notify_log table has recipient column", async () => {
+    const mod = await import("./init-state-db.ts");
+    initStateDb = mod.initStateDb;
+    const db = initStateDb(dbPath);
+
+    // Insert a row with recipient to verify the column exists
+    db.prepare(
+      "INSERT INTO notify_log (message, recipient, sent_at, priority, success) VALUES (?, ?, ?, ?, ?)"
+    ).run("test", "+51926689401", Date.now(), "normal", 1);
+
+    const row = db.query("SELECT recipient FROM notify_log WHERE message = 'test'").get() as { recipient: string };
+    db.close();
+    expect(row.recipient).toBe("+51926689401");
   });
 });

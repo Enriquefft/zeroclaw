@@ -3,7 +3,7 @@ import { mkdirSync } from "fs";
 import { dirname } from "path";
 
 const DEFAULT_DB_PATH = `${Bun.env.HOME}/.zeroclaw/workspace/state.db`;
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const SCHEMA_V1_DDL = `
 -- Job application tracking
@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS orchestration_tasks (
 CREATE TABLE IF NOT EXISTS notify_log (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   message     TEXT NOT NULL,
+  recipient   TEXT NOT NULL,
   sent_at     INTEGER NOT NULL,
   priority    TEXT NOT NULL DEFAULT 'normal',
   success     INTEGER NOT NULL DEFAULT 1,
@@ -121,6 +122,10 @@ export function initStateDb(dbPath: string = DEFAULT_DB_PATH): Database {
 
   if (currentVersion === 0) {
     db.exec(SCHEMA_V1_DDL);
+    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+  } else if (currentVersion === 1) {
+    // v1 → v2: add recipient column to notify_log
+    db.exec("ALTER TABLE notify_log ADD COLUMN recipient TEXT NOT NULL DEFAULT ''");
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
 

@@ -19,13 +19,14 @@ function isRateLimited(db: Database): boolean {
 function logResult(
   db: Database,
   message: string,
+  recipient: string,
   priority: Priority,
   success: boolean,
   error?: string
 ): void {
   db.prepare(
-    "INSERT INTO notify_log (message, sent_at, priority, success, error) VALUES (?, ?, ?, ?, ?)"
-  ).run(message, Date.now(), priority, success ? 1 : 0, error ?? null);
+    "INSERT INTO notify_log (message, recipient, sent_at, priority, success, error) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(message, recipient, Date.now(), priority, success ? 1 : 0, error ?? null);
 }
 
 async function sendWithRetry(
@@ -56,6 +57,7 @@ async function sendWithRetry(
  * Send a WhatsApp notification via kapso-whatsapp-cli.
  *
  * @param message - The message to send
+ * @param recipient - Phone number to send to (e.g., "+51926689401")
  * @param priority - "normal" (rate-limited, 5-min gap) or "urgent" (bypasses rate limit)
  * @param dbPath - Optional DB path override (for testing)
  * @param _retryDelayMs - Optional retry base delay in ms (for testing — default 1000ms)
@@ -63,27 +65,28 @@ async function sendWithRetry(
  */
 export async function notify(
   message: string,
+  recipient: string,
   priority: Priority = "normal",
   dbPath: string = DEFAULT_DB_PATH,
   _retryDelayMs: number = 1000
 ): Promise<boolean> {
-  const target = Bun.env.NOTIFY_TARGET;
-  if (!target) {
-    console.error("notify: NOTIFY_TARGET env var not set");
+  if (!recipient) {
+    console.error("notify: recipient phone number is required");
     return false;
   }
 
   const db = initStateDb(dbPath);
   try {
     if (priority === "normal" && isRateLimited(db)) {
-      logResult(db, message, priority, false, "rate_limited");
+      logResult(db, message, recipient, priority, false, "rate_limited");
       return false;
     }
 
-    const success = await sendWithRetry(target, message, 3, _retryDelayMs);
+    const success = await sendWithRetry(recipient, message, 3, _retryDelayMs);
     logResult(
       db,
       message,
+      recipient,
       priority,
       success,
       success ? undefined : "delivery_failed"
@@ -92,7 +95,7 @@ export async function notify(
   } catch (e) {
     console.error("notify: unexpected error:", e);
     try {
-      logResult(db, message, priority, false, String(e));
+      logResult(db, message, recipient, priority, false, String(e));
     } catch {
       // If logging itself fails, don't throw
     }
@@ -106,17 +109,27 @@ export async function notify(
 if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args.length === 0 || args.includes("--help")) {
-    console.error("Usage: notify.ts [--urgent] <message>");
+    console.error("Usage: notify.ts --to <phone> [--urgent] <message>");
     process.exit(1);
   }
+
+  const toIdx = args.indexOf("--to");
+  const recipient = toIdx !== -1 ? args[toIdx + 1] : undefined;
+  if (!recipient) {
+    console.error("Usage: notify.ts --to <phone> [--urgent] <message>");
+    process.exit(1);
+  }
+
   const priority: Priority = args.includes("--urgent") ? "urgent" : "normal";
-  const message = args.filter((a) => !a.startsWith("--")).join(" ");
+  const message = args
+    .filter((_, i) => i !== toIdx && i !== toIdx + 1 && !args[i].startsWith("--"))
+    .join(" ");
 
   if (!message) {
-    console.error("Usage: notify.ts [--urgent] <message>");
+    console.error("Usage: notify.ts --to <phone> [--urgent] <message>");
     process.exit(1);
   }
 
-  const ok = await notify(message, priority);
+  const ok = await notify(message, recipient, priority);
   process.exit(ok ? 0 : 1);
 }

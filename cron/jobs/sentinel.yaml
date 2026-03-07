@@ -1,4 +1,4 @@
 name: "Sentinel"
 schedule: "0 */2 * * *"
 tz: "America/Lima"
-command: "bun run /etc/nixos/zeroclaw/bin/sentinel-scan.ts"
+command: "bun run /etc/nixos/zeroclaw/bin/sentinel-scan.ts --notify +51926689401"
