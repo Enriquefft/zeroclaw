@@ -1,0 +1,11 @@
+name: "Build-in-Public Drafter"
+schedule: "0 9 * * 1,3,5"
+tz: "America/Lima"
+type: agent
+goal: "Summarize recent git commits and job hunt milestones into draft X and LinkedIn posts for human review, delivered via WhatsApp"
+steps:
+  - Run git log --since=2.days.ago --oneline in /etc/nixos/zeroclaw to collect recent commits. Query state.db at ~/.zeroclaw/workspace/state.db for job_applications with status changes in the last 2 days using SELECT title, company, status, last_updated FROM job_applications WHERE last_updated >= unixepoch() - 172800. Also query SELECT summary FROM content_log ORDER BY created_at DESC LIMIT 5 to see recently covered topics and avoid repetition. Output a structured activity summary listing commits and milestones found.
+  - Read /etc/nixos/zeroclaw/documents/LORE.md content pillars and platform strategy sections. Assess whether the activity from the previous step is substantive -- at least 1 meaningful commit or 1 job hunt milestone qualifies. If not enough material exists, output SILENT and stop.
+  - Draft X version using LORE.md voice guide -- short punchy opinionated max 280 chars. Draft LinkedIn version -- longer professional framing 400 to 800 chars. Label each draft clearly with DRAFT FOR X and DRAFT FOR LINKEDIN as section separators. Note at the end which commits or milestones each draft covers.
+  - Send both drafts to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text with the full draft text including the DRAFT FOR X and DRAFT FOR LINKEDIN labels and the coverage note.
+notify: "+51926689401"
