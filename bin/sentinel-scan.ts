@@ -5,10 +5,9 @@
 // Output: JSON to stdout. Errors to stderr, exit 1.
 
 import { Database } from "bun:sqlite";
-import { $ } from "bun";
+import { notify } from "./notify.ts";
 
 const MEMORY_DB = `${Bun.env.HOME}/.zeroclaw/workspace/memory/brain.db`;
-const ALERT_TO = "+51926689401";
 
 interface Issue {
   key: string;
@@ -81,12 +80,7 @@ try {
       .join("\n\n");
 
     const msg = `🔴 Sentinel — ${alertable.length} unresolved issue${alertable.length > 1 ? "s" : ""}\n${"─".repeat(32)}\n\n${issueBlocks}\n\n${"─".repeat(32)}\nRun sentinel skill to attempt repairs.`;
-    try {
-      await $`kapso-whatsapp-cli send --to ${ALERT_TO} --text ${msg}`.quiet();
-      alerted = true;
-    } catch {
-      console.error("Warning: WhatsApp alert delivery failed");
-    }
+    alerted = await notify(msg, "urgent");
   }
 
   console.log(

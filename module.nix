@@ -55,6 +55,7 @@ let
         cmd="''${cmd/#bun /${pkgs.bun}/bin/bun }"
         cmd="''${cmd/#node /${pkgs.nodejs}/bin/node }"
         cmd="''${cmd/#python3 /${pkgs.python3}/bin/python3 }"
+        cmd="''${cmd/#claude /$HOME/.local/bin/claude }"
         printf '%s' "$cmd"
       }
 
