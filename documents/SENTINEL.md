@@ -1,13 +1,8 @@
----
-name: sentinel
-description: On-demand error sentinel — scan memory for unresolved issues and attempt repairs with agent reasoning. For scheduled scanning, the cron job uses bin/sentinel-scan.ts instead.
----
-
 # Sentinel Protocol (On-Demand)
 
-This skill is for **on-demand** use when Kiro or a user wants a full scan+repair cycle with agent reasoning. The scheduled cron job runs `bin/sentinel-scan.ts` (deterministic scan+alert, no agent) every 2 hours.
+This protocol is for **on-demand** use when Kiro or a user wants a full scan+repair cycle with agent reasoning. The scheduled cron job runs `bin/sentinel-scan.ts` (deterministic scan+alert, no agent) every 2 hours.
 
-Use this skill when:
+Use this protocol when:
 - You want to actively attempt repairs on unresolved issues (not just detect them)
 - The cron sentinel alert identified issues that need agent reasoning to fix
 - You're doing a manual system health check
@@ -26,9 +21,8 @@ If no issue keys are found at all: exit silently. No message needed.
 
 For each unresolved `issue:<timestamp>` key:
 
-1. Invoke the `repair_loop` tool with the issue description from the stored value.
-2. After `repair_loop` returns, call `memory_store` with the `REPAIR_LOOP_KEY` from its output to file the repair attempt.
-3. Attempt to resolve the issue based on the description. Use available tools (shell commands, file edits, service restarts).
+1. File a repair attempt via `memory_store("issue:<timestamp>:repair:<current_timestamp>", "Attempting repair: <issue description>")`.
+2. Attempt to resolve the issue based on the description. Use available tools (shell commands, file edits, service restarts).
 
 ### Step 3: On Successful Repair
 
@@ -44,7 +38,7 @@ If the repair attempt fails or the issue cannot be fixed:
 
 Send an immediate WhatsApp message to Enrique using:
 ```
-kapso-whatsapp-cli send --to +51926689401 --text "Sentinel alert: repair-loop ran for [issue key]. Issue: [issue description]. Attempted: [what was tried]. Result: failed. Your input needed."
+kapso-whatsapp-cli send --to +51926689401 --text "Sentinel alert: repair attempted for [issue key]. Issue: [issue description]. Attempted: [what was tried]. Result: failed. Your input needed."
 ```
 
 Do NOT defer this to the EOD summary. Send immediately.
@@ -61,7 +55,7 @@ These rules govern how issues are opened and closed. Violating them causes orpha
 - Use `memory_store("issue:<timestamp-or-slug>", "<description>")` to file an issue.
 - The key MUST be unique and identify the problem (e.g., `issue:20260305-btc-missing-shell`).
 - Never file a "FIXED" or "resolved" message as a new `issue:` key. That is a misuse of the pattern — it creates an orphaned issue that can never be auto-resolved.
-- **Dedup rule:** Before calling `repair_loop` or `memory_store` to file a new issue, call `memory_recall("issue:")` and check if an open issue already covers the same problem. If yes: do not file a new one — reference the existing key in your repair attempt.
+- **Dedup rule:** Before filing a new issue, call `memory_recall("issue:")` and check if an open issue already covers the same problem. If yes: do not file a new one — reference the existing key in your repair attempt.
 - **Namespace contract:** Only file under `issue:` for actionable, agent-fixable problems. Status updates ("waiting for X"), summaries of other issues, and informational notes must not be filed under `issue:`. They are noise that sentinel will alert on indefinitely.
 
 **Resolving an issue:**

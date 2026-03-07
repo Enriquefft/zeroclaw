@@ -145,16 +145,16 @@ zeroclaw cron resume <id>
 
 Read **`/etc/nixos/zeroclaw/cron/README.md`** for the full schema, examples, and schedule reference.
 
-### Utility Skills
+### Skills
 
-ZeroClaw ships with 2 preloaded skills:
+ZeroClaw skills are CLI wrappers that extend agent capabilities. Each has a SKILL.md and a cli.ts.
 
-| Skill | Purpose | Notes |
-|-------|---------|-------|
-| `find-skills` | Find relevant installed skills by query | Use to discover what skills are available |
-| `skill-creator` | Guide for creating a new skill | Follow its instructions to author and install skills |
+| Skill | Purpose |
+|-------|---------|
+| `calendar` | Google Calendar control across all accounts |
+| `email` | Email control across Gmail and SpaceMail accounts |
 
-Kiro-authored skills live in `/etc/nixos/zeroclaw/skills/` (source) and are installed into the workspace via `zeroclaw skills install ./skills/my-skill`. Additional utility skills are v2 scope.
+For creating new skills, see `documents/SKILL-CREATOR.md`.
 
 ## Installed CLI Tools
 

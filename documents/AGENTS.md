@@ -36,10 +36,10 @@ Classify every actionable task before starting execution.
 
 1. Is it a fix (something broken) or a build (feature, refactor, new code)?
 2. Classify complexity: simple, medium, or heavy.
-3. Route to the correct skill:
-   - Fixes → `fix-task` skill (all tiers)
-   - Builds, simple/medium → `coding-task` skill
-   - Heavy (fix or build) → `heavy-task` skill (handles GSD detection and fallback)
+3. Route to the correct procedure:
+   - Fixes → TASK-ROUTING.md fix procedures (all tiers)
+   - Builds, simple/medium → TASK-ROUTING.md coding procedures
+   - Heavy (fix or build) → TASK-ROUTING.md heavy procedures
 
 **GSD doctrine (absolute rules):**
 - Simple change → **never** use GSD, even if `.planning/` exists in the project
@@ -101,7 +101,7 @@ These are absolute. No exceptions. No "but it seemed like a good idea."
 - Never create accounts or profiles on platforms without asking
 - Never create cron jobs via direct CLI (`zeroclaw cron add/remove/update` are blocked). All cron jobs must exist as YAML files in `/etc/nixos/zeroclaw/cron/jobs/`, committed to git, applied via `cron-sync`. No ad-hoc schedulers, no Python scripts for scheduling.
 - Follow the sudo gate protocol in SOUL.md
-- Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions. If the `repair_loop` skill is installed, invoke it instead of calling `memory_store` directly — it enforces filing atomically and emits existing open issues for dedup checking.
+- Never attempt a repair without first filing a durable record: call `memory_store("issue:<timestamp>", ...)` BEFORE attempting any fix. No exceptions.
 - The `issue:` namespace is for **actionable, agent-fixable problems only**. Do NOT file under `issue:` for: status updates ("waiting for X"), summaries of other issues, or informational notes. Those are noise — do not store them at all.
 - Self-repair decision rule: when an issue is encountered, apply this decision tree — **never offer Enrique a menu of options instead of acting.**
   - **Blocking the current task?** Fix immediately, unconditionally. No deferral. If unfixable, escalate to Enrique with specifics (what failed, what was tried, what is needed) — not a choice menu.
@@ -164,7 +164,6 @@ When Kiro encounters any issue it caused or can fix:
 
 1. **Dedup check** — before filing, call `memory_recall("issue:")` and scan for an existing open issue describing the same problem. If one exists, do not file a new one — reference the existing key and proceed to the fix. Only continue to step 2 if no equivalent open issue exists.
 2. **File** — call `memory_store("issue:<timestamp>", "<what's broken> | <error details> | <what was attempted>")` to create a durable record that survives context resets.
-   If the `repair_loop` skill is installed, invoke it by name — it atomically files the record, emits `EXISTING_OPEN_ISSUES` for dedup, and signals the repair. Prefer it over calling `memory_store` directly.
 3. **Attempt fix** — apply the Self-repair decision rule (see Hard Limits). Blocking issues are fixed unconditionally now. Side discoveries follow the cost threshold table. Launch a Claude Code session for code changes, or edit config/docs directly. Read `/etc/nixos/zeroclaw/CLAUDE.md` before touching any files in the sub-flake.
 4. **Update** — if fixed: call `memory_store("issue:<timestamp>:resolved", "Fixed by <what>")`. If not: the initial memory record stands for the next session to pick up.
 5. **Report** — include "fixed: [what]" in the next summary to Enrique. Don't block on approval for internal fixes.
@@ -186,22 +185,22 @@ Does this need to run on a schedule?
           YES → Skill + agent cron (reference skill by name in prompt)
           NO  → bin/ program + shell cron
   NO  → Is it a reusable agent capability?
-          YES → Skill (procedure or tool)
-          NO  → One-off bin/ program or inline
+          YES → Skill (CLI wrapper)
+          NO  → Document (behavioral guidance in documents/)
 ```
 
 **The LLM test:** can you express the decision logic as an if-statement? Yes → no LLM needed → program. No → LLM stays → skill.
 
-After deciding WHAT to build → classify complexity → route to `coding-task`, `fix-task`, or `heavy-task`.
+After deciding WHAT to build → classify complexity → route to TASK-ROUTING.md procedures.
 
 ### Building a Skill
 
-1. **Invoke the `skill-creator` skill** — it contains the full anatomy standard and step-by-step guide
-2. **Design** — decide what the skill does, whether it needs a CLI, and what the CLI outputs
-3. **Author in git** — create `skills/<name>/` with `SKILL.md` + `SKILL.toml` + `cli.ts` (if I/O work)
+1. **Read `documents/SKILL-CREATOR.md`** — full anatomy, CLI template, step-by-step guide
+2. **Design** — decide what the CLI wraps and what it outputs
+3. **Author in git** — create `skills/<name>/` with `SKILL.md` + `cli.ts`
 4. **Audit** — `zeroclaw skills audit /etc/nixos/zeroclaw/skills/<name>` (required, never skip)
 5. **Install** — `zeroclaw skills install /etc/nixos/zeroclaw/skills/<name>`
-6. **Test** — invoke the skill or run the CLI directly, verify output
+6. **Test** — run the CLI directly, verify output
 7. **Commit** — `git add skills/<name>/ && git commit -m "feat(skills): add <name>"`
 
 ### Building a Program
