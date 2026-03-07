@@ -1,172 +1,177 @@
 # Project Research Summary
 
-**Project:** ZeroClaw / Kiro — Autonomous Personal AI Agent Infrastructure
-**Domain:** NixOS-deployed autonomous AI agent (chief-of-staff)
-**Researched:** 2026-03-04
+**Project:** ZeroClaw v2.0 Heartbeat — Kiro Chief-of-Staff Cron Infrastructure
+**Domain:** Autonomous AI agent infrastructure on NixOS (ZeroClaw daemon + scheduled cron programs)
+**Researched:** 2026-03-06
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project is a migration and hardening of an existing autonomous personal AI agent (previously OpenClaw, now ZeroClaw) running on NixOS. Kiro operates as a chief-of-staff for Enrique: scanning jobs, scheduling tasks, synthesizing research, sending WhatsApp briefings, and managing its own configuration via git-first self-modification. The core infrastructure (gateway daemon, WhatsApp channel via Kapso bridge, model providers via Z.AI, web search via Brave) is already deployed. What is missing is the completeness layer: autonomy config, memory persistence, observability, security rails, and the 13 cron jobs plus 7 skills that make the agent proactively useful rather than just responsive.
+ZeroClaw v2.0 Heartbeat adds 11 scheduled cron jobs to an already-operational autonomous agent system. The research confirms a clean addition pattern: the existing v1.0 three-layer architecture (source-of-truth/deployment/runtime) remains unchanged, and v2.0 slots new components into the runtime layer without touching NixOS services — except for one `module.nix` change to `cron-sync` to support agent-type job registration. The dominant architectural decision is infrastructure-first: a shared SQLite state database and centralized WhatsApp notification module must be built before any heartbeat cron goes live. All 11 jobs depend on these two building blocks. Building them after the jobs would require retrofitting every program.
 
-The recommended approach is a strict two-tier architecture: structural config (model providers, gateway port, channel wiring, autonomy policy) lives in `module.nix` and requires `nixos-rebuild switch` to change; everything Kiro edits at runtime (identity documents, skills, cron job definitions) is wired via `mkOutOfStoreSymlink` to `/etc/nixos/zeroclaw/` and takes effect immediately without a rebuild. This boundary is the load-bearing architectural decision. Violating it — putting mutable content in `config.toml`, or editing `~/.zeroclaw/` directly — causes silent overwrites and breaks self-modification. All self-modification goes through git, making the repo the audit log and rollback mechanism.
+The recommended approach divides the 11 jobs into deterministic shell programs (8 jobs: job scanner, freelance scanner, follow-up enforcer, morning briefing, content scout, paper scout, engagement scout, self-audit) and LLM-driven agent jobs (3 jobs: build-in-public drafter, EOD summary, company research refresh). Shell programs are testable in isolation with `bun run`, use `bun:sqlite` for state, and wire to the cron scheduler without daemon dependency. Agent jobs require the cron-sync overhaul to complete first. This split allows shell program development and cron-sync overhaul to proceed in parallel, reducing the critical path. The orchestration engine (`orchestrate.ts` via `claude -p`) is deferred complexity — build it in Phase 1 infrastructure but only invoke it if a program proves too complex for single-pass execution.
 
-The key risks are concentrated in Phase 1. Seven of ten documented pitfalls are config-layer issues that must be resolved before any cron jobs or skills are added: wrong Z.AI wire API (returns 404 with `openai-responses`, must use `chat_completions`), missing `allowed_commands` (shell tools fail silently), `max_tool_iterations = 20` (cron jobs truncate mid-task), empty `allowed_numbers` on WhatsApp (deny-all by default), missing NixOS-specific `forbidden_paths`, symlink security potentially blocking the `skills/` directory, and `phone_number_id` needing to be quoted as a string. Fix these first, validate with `zeroclaw doctor` + live tests, then add jobs and skills incrementally.
+The key risks cluster around three themes: concurrency (SQLite WAL mode must be enabled at DB creation or concurrent morning jobs deadlock each other), cost (the current 500-cent/day cap was calibrated for a zero-token cron system and will be exhausted by mid-morning with 11 agent crons), and environment (the `claude -p` subprocess and any new cron binaries must be resolved to absolute Nix store paths or they fail silently in systemd's stripped PATH). All three have clear prevention strategies documented in PITFALLS.md and can be addressed in the correct phases before they become production incidents.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is NixOS home-manager (25.11) as the deployment layer, ZeroClaw daemon mode as the runtime, sops-nix for secret delivery, and git as the audit trail and rollback mechanism. No new technologies are needed — everything is already installed. The work is configuration completeness, not installation. `mkOutOfStoreSymlink` is the critical home-manager primitive that enables live-editable files (documents, skills, cron) without triggering a NixOS rebuild every time Kiro self-modifies.
+The v2.0 stack requires only three new npm dependencies on top of the existing foundation: `feedsmith` for RSS/Atom feed parsing (arXiv, content scout), `ts-jobspy` for job board scraping (LinkedIn + Indeed), and `exponential-backoff` for retry logic in complex scenarios. Everything else — `bun:sqlite` (built-in, zero-install), `kapso-whatsapp-cli`, ZeroClaw gateway REST API on port 42617, and the `claude` CLI at `~/.local/bin/claude` — is already present. No NixOS rebuild is required for npm dependencies. The `claude -p` headless mode (version 2.1.63, confirmed working) provides task decomposition for complex multi-source synthesis programs.
 
 **Core technologies:**
-- `home-manager 25.11` + `mkOutOfStoreSymlink`: renders `config.toml`, wires systemd user services, creates live symlinks — the declarative deployment model
-- `zeroclaw daemon`: correct production entrypoint (not `zeroclaw gateway` which omits channels and cron scheduler)
-- `sops-nix` + `EnvironmentFile`: only correct secrets pattern on NixOS — Nix store is world-readable
-- `git` (via `/etc/nixos` repo): audit log, rollback, and single source of truth for all Kiro config changes
-- `systemd user services`: gateway + kapso bridge run as `hybridz`, not root — correct isolation model
-- Z.AI with `wire_api = "chat_completions"`: confirmed working; `openai-responses` returns 404 (documented in MEMORY.md)
+- `bun:sqlite` (built-in): Shared state DB for all programs — zero dependency, WAL-safe, production-validated in sentinel-scan.ts
+- ZeroClaw Gateway `POST /webhook` (port 42617): Trigger agent jobs programmatically — daemon already running, no Bearer token needed locally
+- `claude -p` CLI (v2.1.63 at `~/.local/bin/claude`): Headless orchestration for synthesis tasks — always set `--max-budget-usd 0.10` per call as a cost guardrail
+- `kapso-whatsapp-cli` (existing): Notification delivery — wrap in shared `bin/notify.ts` with retry, never call directly from heartbeat programs
+- `feedsmith` (new npm): TypeScript-native Atom 1.0 feed parsing for arXiv API and content RSS feeds
+- `ts-jobspy` (new npm): LinkedIn + Indeed scraping — LOW-MEDIUM confidence (low download count); wrap all calls in try/catch for HTTP 429s
 
 ### Expected Features
 
-**Must have (table stakes — Phase 1):**
-- `[autonomy]` section with explicit `allowed_commands`, `allowed_roots`, `forbidden_paths` (NixOS-extended), `auto_approve` — agent cannot execute tools without it
-- `[memory]` with `backend = "sqlite"`, `auto_save = true` — agent forgets everything between sessions without it
-- `[observability]` with `runtime_trace_mode = "rolling"` — blind debugging without it, especially for cron
-- `[security.estop]` enabled — kill-switch for runaway autonomous sessions before enabling full autonomy
-- `[agent]` with `max_tool_iterations = 50-80` — default of 20 silently truncates complex cron sessions
-- `[cost]` with `daily_limit_usd = 1.00`, `monthly_limit_usd = 30.00` — matches Z.AI $30/month budget
-- All 6 identity documents wired as live symlinks (IDENTITY, SOUL, AGENTS, USER, TOOLS, LORE)
-- CLAUDE.md for the `/etc/nixos/zeroclaw/` directory (agents working on this infra need it)
-- Upstream docs symlink (`reference/upstream-docs/` → `~/Projects/zeroclaw/docs/`)
+The 11 heartbeat cron jobs split across a dependency graph rooted at two infrastructure pieces. The follow-up enforcer is the highest-complexity job (requires NLP judgment to detect commitment closures in email reply threads). The job scanner and freelance scanner share ~80% of implementation and should be built together. Self-audit has zero external dependencies and can ship in Phase 1 as early validation of the infrastructure pattern.
 
-**Should have (Phase 2 — jobs and skills):**
-- `task-queue` skill — required dependency for all cron jobs (the durable cross-session work tracker)
-- Core cron jobs: `morning-briefing`, `end-of-day`, `task-worker` — minimum viable schedule
-- Job scanning skills: `job-scanner`, `job-tracker` — highest-value cron jobs for Enrique
-- RSS/research skills: `rss-reader`, `git-activity` — enable `content-scout` and `skill-scan` jobs
-- Remaining 10 cron jobs migrated and validated one-by-one
-- `[[model_routes]]` with `hint:fast` and `hint:reasoning` route hints — decouple cron prompts from model names
+**Must have (table stakes — v2.0 milestone blockers):**
+- Shared state DB — foundation for all 11 jobs; without it every job is stateless and produces duplicate notifications
+- Centralized notification module — without it, 11 programs duplicate retry, auth, and phone-number logic
+- Cron-sync agent job support — without it, agent-type jobs cannot be registered in the scheduler
+- Morning briefing — calendar + email + pending follow-ups → WhatsApp at 07:30 (America/Lima)
+- EOD summary — what moved today + unanswered threads → WhatsApp at 20:00
+- Follow-up enforcer — commitment tracker with stale-detection → runs 3x daily (10:00, 14:00, 17:00)
+- Self-audit — filesystem/git drift detection, weekly, no LLM required
 
-**Defer (Phase 3 — intelligence layer):**
-- `[query_classification]` + smart model routing — defer until token costs are a real concern
-- Sub-agent delegation (`[agents.researcher]`, `[agents.coder]`) — add after single-agent is stable
-- `[security.otp]` for shell/browser gating — add if prompt injection risk materializes
-- `track-price-drops` skill (BTC monitoring) — stub exists, low priority
-- Nostr channel — fallback if WhatsApp reliability becomes an issue
+**Should have (ship immediately after daily crons validated):**
+- Job scanner — qualified lead filtering, LinkedIn + Indeed, dedup via state DB
+- Freelance scanner — shares job scanner infrastructure (~80% code reuse), higher cadence
+- Content scout — RSS + trending tech topics, daily digest supplement
+
+**Defer to v2.x (lower urgency, higher complexity):**
+- Build-in-public drafter — git activity → draft posts for human approval
+- Engagement scout — relevant threads for response drafting
+- Weekly company research refresh — watch-list news refresh
+- Paper scout — arXiv/Semantic Scholar weekly digest
+- Orchestration engine integration — defer unless a program proves too complex for single-pass execution
+
+**Anti-features (never build):**
+- Auto-posting to social media, auto-applying to jobs, sub-minute real-time polling, fully automated follow-up sending without human approval, inline LLM prompts in cron YAML
 
 ### Architecture Approach
 
-The architecture is a strict three-layer system: source of truth (`/etc/nixos/zeroclaw/`, git-tracked), deployment (`~/.zeroclaw/`, generated by NixOS build), and runtime (ZeroClaw daemon + Kapso bridge, systemd user services). The boundary between layers is enforced by NixOS build mechanics: `config.toml` is rendered from `module.nix` with `force = true` (overwritten on every rebuild), while `documents/`, `skills/`, and `cron/` are live symlinks that make edits in the source tree immediately visible at the deployment path. The Kapso bridge is declared `PartOf` the gateway service so lifecycle is coupled correctly.
+v2.0 adds four new components inside the runtime layer — `state.db` (shared SQLite), `notify.ts` (notification module), `orchestrate.ts` (task decomposition), and 11 heartbeat programs in `bin/` — plus one modification to `module.nix` (cron-sync agent job support requiring a rebuild). The three-layer architecture is otherwise unchanged. The shared state DB lives at `~/.zeroclaw/workspace/state.db` (inside existing `allowed_roots`, no config change needed). All programs use absolute import paths for shared modules to avoid cwd-dependent failures in the daemon context.
 
 **Major components:**
-1. `module.nix` — the only file requiring `nixos-rebuild switch`; owns structural config (providers, ports, autonomy policy, service declarations)
-2. `documents/` (symlinked) — Kiro's runtime identity; live-editable by Kiro without rebuild
-3. `skills/` (symlinked) — SKILL.toml manifests + implementations; live-editable, deployed via ZeroClaw skill subsystem
-4. `cron/` (symlinked) — job definitions picked up by ZeroClaw scheduler; live-editable
-5. `zeroclaw-gateway.service` — persistent daemon; gateway + channels + cron scheduler as one process
-6. `kapso-whatsapp-bridge.service` — WhatsApp relay; `PartOf` gateway, crash-isolated with `StartLimitBurst`
-7. `zeroclaw.env` (sops-rendered) — all secrets injected via `EnvironmentFile`, never in Nix store
+1. `~/.zeroclaw/workspace/state.db` — shared SQLite (WAL mode); tables: job_applications, freelance_leads, daily_state, content_log, orchestration_tasks, notify_log
+2. `bin/notify.ts` — shared WhatsApp module with deduplication via notify_log; imported by all 11 programs via absolute path
+3. `bin/orchestrate.ts` — task decomposition engine calling `claude -p` subprocess; checkpoints to state.db; used only by complex programs (morning briefing, EOD, company research)
+4. `cron-sync` (modified in module.nix) — extended to detect `type: agent` in YAML and register via gateway REST API or direct SQLite fallback
+5. 11 heartbeat programs in `bin/` — each idempotent (CREATE TABLE IF NOT EXISTS at startup), reads secrets from zeroclaw.env, outputs JSON to stdout
 
 ### Critical Pitfalls
 
-1. **Wrong Z.AI wire API (`openai-responses`)** — set `wire_api = "chat_completions"` explicitly; validate with `zeroclaw chat "hello"` before anything else; this is already burned in MEMORY.md
-2. **`allowed_commands` empty = shell tools silently fail** — ZeroClaw is secure-by-default; empty list means no shell access; populate explicitly in Phase 1 with `["git", "zeroclaw", "bash", "cat", "ls", "grep", "find", "jq", "curl", "gpush", "systemctl", "journalctl"]` and expand as needed
-3. **Editing `~/.zeroclaw/` directly** — `config.toml` has `force = true` and is overwritten on every rebuild; document in CLAUDE.md and AGENTS.md that `~/.zeroclaw/` is read-only from Kiro's perspective
-4. **`max_tool_iterations = 20` silently truncates cron** — complex jobs (job-scan, morning-briefing) exceed 20 tool calls; set to 50-80 before first cron job runs
-5. **Missing NixOS-specific `forbidden_paths`** — ZeroClaw defaults cover standard Unix paths but not `/run/secrets/`, `~/.config/sops/`, `/nix/store/`; add these explicitly to prevent Kiro reading sops age keys
-6. **Symlink security may block `skills/` directory** — ZeroClaw WASM runtime defaults have `reject_symlink_tools_dir = true`; must validate with `zeroclaw skills list` after first rebuild before building skills; if blocked, redesign the path mapping in `module.nix`
-7. **`phone_number_id` bare integer breaks YAML parsing** — always quote it: `phone_number_id: "123456789012345"`; already documented in MEMORY.md from OpenClaw era
+1. **SQLite WAL mode not enabled** — Without `PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;` at DB creation, concurrent morning jobs (3+ overlap at 8-9am) deadlock with SQLITE_BUSY. Prevention: set both pragmas in the shared DB init function imported by every program. Address in Phase 1 before any program is written.
+
+2. **Daily cost cap (`max_cost_per_day_cents = 500`) exhausted by mid-morning** — The current cap was set for a zero-token cron system. 11 agent crons will blow this budget on day 1. Prevention: measure actual per-job cost with 2-3 isolated runs first, then raise cap to a calibrated figure (target 2000+). Address before enabling any agent crons in Phase 5.
+
+3. **`claude -p` not found in systemd PATH** — The binary at `~/.local/bin/claude` is not in systemd's stripped PATH. Prevention: use absolute path `/home/hybridz/.local/bin/claude` in all orchestration calls; add `ANTHROPIC_API_KEY` to `zeroclaw.env` EnvironmentFile. Address in Phase 4 with a cron-context probe test before wiring real programs.
+
+4. **Agent cron registration startup race** — `home.activation` hooks run before the ZeroClaw daemon is necessarily up; REST API calls fail silently if the daemon is not responsive. Prevention: use direct SQLite fallback for agent job registration; never block on daemon availability in activation hooks. Address in Phase 2 when designing the cron-sync overhaul.
+
+5. **WhatsApp burst throttle** — 6 notification-sending jobs potentially firing in the same morning window triggers Meta's per-number message rate limit. Prevention: enforce minimum 5-minute gap between messages in `notify.ts` using notify_log timestamps; stagger cron schedules by at least 10 minutes. Address in Phase 1 when building notify.ts.
 
 ## Implications for Roadmap
 
-Based on research, the dependency graph is clear: you cannot run cron jobs until the gateway is fully configured; you cannot run skills until the autonomy config allows shell execution; you cannot trust cron job output until observability is enabled; and you cannot self-modify safely until the git-first workflow is documented and enforced. This drives a 4-phase structure.
+The dependency graph mandates a 5-phase structure. Shell program development and agent-type cron wiring are parallel branches that converge at the final deployment phase. The critical insight is that Phases 3 and 4 can begin simultaneously — shell programs don't need the agent cron REST path, and the cron-sync overhaul can be investigated while shell programs are being built.
 
-### Phase 1: Config Foundation
+### Phase 1: Shared Infrastructure
+**Rationale:** All 11 heartbeat programs depend on state.db and notify.ts. These must exist before any program is written. The self-audit program has zero external dependencies and validates the infrastructure pattern. The orchestrate.ts engine is built here as infrastructure but intentionally not wired to any cron — it is available, not deployed.
+**Delivers:** state.db schema + init module (WAL mode, all tables, idempotent CREATE TABLE IF NOT EXISTS), notify.ts module with rate limiting + deduplication, orchestrate.ts task decomposition engine, bin/self-audit.ts, bin/state-init.ts
+**Addresses:** Shared state DB and centralized notification module (table stakes), self-audit (low-complexity early win)
+**Avoids:** SQLite WAL deadlock (Pitfall 1), JSON-to-SQLite migration divergence (Pitfall 6), state DB outside allowed_roots (Pitfall 10), WhatsApp burst throttle (Pitfall 5 — rate limiter built here)
 
-**Rationale:** Seven of ten pitfalls are config-layer issues. Nothing else can be validated until the gateway is properly configured, secrets are wiring correctly, autonomy rules allow shell execution, and safety rails are in place. This phase has no external dependencies — it is pure `module.nix` work.
-**Delivers:** A fully configured ZeroClaw gateway that passes `zeroclaw doctor` with zero warnings, can hold a real conversation via WhatsApp and CLI, and has shell autonomy working in a test session.
-**Addresses:** Autonomy config (P1), memory persistence (P1), observability (P1), emergency stop (P1), cost limits (P1), upstream docs symlink + CLAUDE.md (P1), all symlink wiring declared
-**Avoids:** Wrong API type (Pitfall 1), missing `allowed_commands` (Pitfall 3), missing NixOS forbidden_paths (Pitfall 4), `phone_number_id` parsing (Pitfall 6), `max_tool_iterations` too low (Pitfall 7), empty `allowed_numbers` (Pitfall 10)
-**Validation:** `zeroclaw doctor` zero warnings; `zeroclaw chat "hello"` returns successful Z.AI response; send WhatsApp message and receive response; shell tool call succeeds in test session; `zeroclaw estop` / `zeroclaw estop resume` cycle tested
+### Phase 2: Cron-sync Agent Job Support
+**Rationale:** The cron-sync overhaul is the only Phase in this milestone that requires a NixOS rebuild. It must be complete before any agent-type YAML files are authored. Shell-type cron jobs do not depend on this phase, so Phase 3 can begin in parallel. The critical task here is validating the ZeroClaw daemon REST API endpoint for cron management — if no REST path exists, the SQLite direct-write fallback must be designed and tested.
+**Delivers:** module.nix extended with `type: agent` YAML detection, agent job registration via gateway REST API (confirmed endpoint) or direct sqlite3 fallback, `resolve_command()` extended to cover all new binaries, NixOS rebuild applied
+**Uses:** ZeroClaw gateway REST API (`/api/cron/jobs` endpoint — needs validation) or direct sqlite3 write to jobs.db
+**Avoids:** Agent cron startup race (Pitfall 2), resolve_command missing new binaries (Pitfall 7), config.toml `@` corruption in new sections (Pitfall 9)
 
-### Phase 2: Identity and Self-Modification Workflow
+### Phase 3: Shell-type Heartbeat Programs
+**Rationale:** Shell programs are deterministic, testable with `bun run` independently of the daemon, and cover the highest-value daily crons (morning briefing, follow-up enforcer). The job scanner and freelance scanner share ~80% of implementation and should ship together. This phase can run in parallel with Phase 2 — shell-type cron YAMLs use the existing cron-sync path and don't need the agent job support.
+**Delivers:** morning-briefing.ts, follow-up-enforcer.ts, job-scanner.ts, freelance-scanner.ts, content-scout.ts, paper-scout.ts, engagement-scout.ts + corresponding `type: shell` cron YAML files
+**Uses:** bun:sqlite (state.db write patterns for job_applications, freelance_leads, daily_state), email + calendar skill CLIs, feedsmith (arXiv), ts-jobspy (job boards)
+**Avoids:** Hardcoded phone numbers (Anti-pattern 1), per-program JSON state files (Anti-pattern 2), blocking on notification failure (Anti-pattern 3)
 
-**Rationale:** Before adding jobs or skills, Kiro's operational directives must be complete and the self-modification workflow must be documented and tested. AGENTS.md is particularly important — it is the behavioral constitution that governs how Kiro handles approval gates, git commits, and self-repair. Symlink security for `skills/` must also be validated here, before Phase 3 builds on top of it.
-**Delivers:** Complete identity document set (AGENTS.md with full operational directives, TOOLS.md with current capability inventory), validated `mkOutOfStoreSymlink` behavior for all three paths (documents, skills, cron), and a demonstrated Kiro self-modification round-trip (edit → commit → verify in git log).
-**Addresses:** Self-modification without git commit (Pitfall 5), OpenClaw patterns applied to ZeroClaw (Pitfall 9), identity document system completeness
-**Avoids:** Behavioral drift from incomplete AGENTS.md; symlink security blocking skills (Pitfall 8) — validate here before Phase 3 depends on it
-**Validation:** Kiro edits a test document, commits it, and `git log` shows the commit; `zeroclaw skills list` resolves correctly via symlink; AGENTS.md documents the self-modification workflow explicitly
+### Phase 4: Agent-type Crons + Orchestration Validation
+**Rationale:** Agent jobs (build-in-public, EOD summary, company research) depend on Phase 2 completing. The `orchestrate.ts` engine must be validated in a systemd/cron context (not interactive) before any program invokes it. A probe job that runs from cron context and calls `claude -p` is the first deliverable — everything else in this phase depends on that probe passing.
+**Delivers:** Cron-context probe test for `claude -p` subprocess, build-in-public.yaml, eod-summary.yaml, company-refresh.yaml (agent-type jobs), optional orchestrate.ts wiring for complex programs, paper-scout.yaml + engagement-scout.yaml
+**Uses:** Absolute path for `claude` binary, ANTHROPIC_API_KEY in zeroclaw.env, orchestrate.ts for multi-source synthesis programs only
+**Avoids:** claude subprocess systemd PATH failure (Pitfall 3), running orchestrate.ts for simple programs (Anti-pattern 4)
 
-### Phase 3: Cron Jobs and Skills Migration
-
-**Rationale:** Skills and cron jobs share the same dependency chain (task-queue must exist before any cron job runs) and should be built together incrementally, not all at once. Start with the minimum viable schedule (morning-briefing, end-of-day, task-worker) and the skills they depend on. Add remaining jobs one-by-one with validation before the next.
-**Delivers:** Operational cron schedule with at minimum: task-queue skill, task-worker cron, morning-briefing, end-of-day. Then: job-scanner + job-tracker skills and their associated cron jobs (job-scan-am, job-scan-pm). Then: rss-reader, git-activity skills and their consumers (content-scout, skill-scan, paper-scout-*). Finally: remaining jobs (follow-up-enforcer, self-audit, build-in-public).
-**Addresses:** Task queue skill (P1 dependency), core cron jobs (P1), job-scanning skills (P2), RSS/research skills (P2), remaining 10 jobs (P2)
-**Avoids:** Migrating all 13 jobs at once (creates undebuggable mess); applying OpenClaw YAML+sync patterns (Pitfall 9 — use ZeroClaw native cron format); cron jobs firing before config is validated (UX pitfall)
-**Validation:** Each cron job fires at least once with complete (non-truncated) output visible in runtime traces; task-queue entries are created and resolved correctly; morning WhatsApp briefing arrives formatted correctly
-
-### Phase 4: Intelligence Layer
-
-**Rationale:** Once the core agent is stable and cron jobs are running reliably, add the optimization layer: smart model routing by task type, sub-agent delegation for scoped research tasks, and OTP gating if prompt injection risk has materialized. These are all deferred intentionally — adding routing complexity before single-agent stability creates debugging hell.
-**Delivers:** `[[model_routes]]` with `hint:fast` / `hint:reasoning` routing, optional `[query_classification]` for automatic routing, optional sub-agent delegation config, optional OTP gating for shell/browser actions.
-**Addresses:** Model routing (P3), sub-agent delegation (P3), OTP gating (P3)
-**Avoids:** Premature optimization; sub-agent debugging before single-agent is stable
+### Phase 5: Full Deployment + Cost Calibration
+**Rationale:** Enable all 11 jobs in batches of 3-4, measuring actual per-job token cost before enabling the next batch. A schedule audit is required to prevent cascade failures — no two heavy agent jobs within 20 minutes of each other. The `max_cost_per_day_cents` cap must be raised to a calibrated value based on measured first-week spend before the full set is live.
+**Delivers:** All 11 cron jobs live and passing the 10-item verification checklist, cost cap calibrated from empirical measurement, schedules staggered to prevent cascade, cascade test passed (intentional delay of one job does not block next)
+**Avoids:** Token burn rate exceeding budget cap (Pitfall 4), cron cascade failure (Pitfall 8), enabling all 11 simultaneously (documented technical debt anti-pattern)
 
 ### Phase Ordering Rationale
 
-- Phase 1 must come first because no other work is verifiable until the gateway is correctly configured. Every pitfall in Phase 1 causes silent failures — you won't know things are broken.
-- Phase 2 before Phase 3 because AGENTS.md governs how Kiro handles Phase 3 work (self-repair, git commits, approval gates). Building skills before the behavioral constitution is documented risks creating undocumented habits.
-- Phase 3 is internally ordered by dependency: task-queue skill must exist before any cron job runs; core jobs (briefing, EOD, task-worker) before specialized jobs (job-scan, content-scout).
-- Phase 4 is deferred deliberately: model routing before cost data is known is premature; sub-agent delegation before single-agent is reliable creates compounded failures.
+- Infrastructure (state.db, notify.ts) must precede all programs — every single job depends on both
+- cron-sync overhaul is on the critical path for agent jobs only — shell program development starts in parallel with Phase 2, not after it
+- Shell programs before agent programs — shell programs are testable in isolation; agent jobs require a running daemon and a validated REST API integration
+- Orchestration probe test gates all Phase 4 work — `claude -p` in systemd must be confirmed working before any program invokes orchestrate.ts
+- Cost calibration and schedule auditing are the last gates — can only be done with real data from real cron runs
 
 ### Research Flags
 
-Phases needing deeper research during planning:
-- **Phase 3 (Cron Jobs + Skills):** Each of the 13 cron jobs needs analysis against ZeroClaw's native cron format vs OpenClaw's YAML+sync format. The skill system (SKILL.toml manifests) has different conventions from OpenClaw's SKILL.md + run.ts. Each job migration should be treated as a mini-research task. Recommend `/gsd:research-phase` before planning individual jobs if the ZeroClaw cron format is not yet fully understood.
-- **Phase 3 (Symlink Security for Skills):** Pitfall 8 flags that `reject_symlink_tools_dir = true` may block the `skills/` symlink. This needs a live validation step in Phase 2. If blocked, the module.nix wiring strategy needs redesign before Phase 3 depends on it.
+Phases likely needing deeper research during planning:
+- **Phase 2 (cron-sync agent job support):** The ZeroClaw daemon REST endpoint for cron management is unconfirmed. Must inspect `jobs.db` schema and run `zeroclaw --help` / `zeroclaw cron --help` before implementing. If no REST path exists, the SQLite column layout for agent-type jobs needs reverse-engineering from existing rows.
+- **Phase 4 (orchestration + claude subprocess):** `claude -p` has never been invoked from a ZeroClaw daemon systemd context. A cron-context probe test is required before building on this pattern. Budget behavior under the zai-proxy is also unverified for subprocess-spawned claude calls.
+- **Phase 5 (cost calibration):** Per-job token budgets are estimates only. Actual cost must be measured empirically during the first week of live runs. The current 500-cent/day cap is a hard blocker — must be raised before enabling any agent crons.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Config Foundation):** All config sections are documented in the live ZeroClaw config-reference (verified Feb 25 2026). The module.nix TOML template pattern is already established. No unknown unknowns.
-- **Phase 2 (Identity + Self-Modification):** Pattern is fully defined (mkOutOfStoreSymlink, git-first, AGENTS.md as behavioral constitution). Content work, not architectural work.
-- **Phase 4 (Intelligence Layer):** ZeroClaw native support for model routes, query classification, and sub-agents is documented. Deferred but not unknown.
+- **Phase 1 (state.db + notify.ts):** The WAL SQLite pattern is identical to the existing production sentinel-scan.ts code. notify.ts is a wrapper with established retry logic. Zero unknown unknowns.
+- **Phase 3 (shell programs):** All skill CLIs (email, calendar) are shipped and fully documented. State DB write patterns are established in Phase 1. Job scanner pattern is documented in STACK.md with working code examples.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Primary source: live ZeroClaw config-reference (verified Feb 25 2026) + current module.nix. No speculation. |
-| Features | HIGH | Based on live config schema, first-hand OpenClaw system as prior art, and PROJECT.md requirements. MVP vs v2 distinction is clear. |
-| Architecture | HIGH | Based on current deployed module.nix + operations runbook. The two-tier boundary pattern is implemented and working. |
-| Pitfalls | HIGH | Mix of first-hand pain (OpenClaw post-mortem, MEMORY.md session-learned), official docs defaults, and NixOS-specific gotchas. All cross-referenced with live config. |
+| Stack | HIGH | Primary sources: live binaries, confirmed CLI flags (`claude --help`), existing production code (sentinel-scan.ts), ZeroClaw gateway wiki. Only ts-jobspy is LOW-MEDIUM (low npm activity, wrap defensively). |
+| Features | HIGH | Based on live codebase inspection, existing skill capabilities, PROJECT.md milestone scope. Dependency graph verified against actual tool signatures in email/cli.ts and calendar/cli.ts. |
+| Architecture | HIGH | Directly derived from live module.nix, sentinel-scan.ts, and existing DB schemas. Component interactions fully traced. Patterns are extensions of already-working v1.0 patterns. |
+| Pitfalls | HIGH | All 10 pitfalls derived from first-hand v1.0 retrospective and direct code inspection of module.nix and config.toml. None are speculative — each references a specific file, existing behavior, or confirmed system quirk from MEMORY.md. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Cron format validation:** It is not fully confirmed whether ZeroClaw cron definitions load from TOML files in a watched directory, from YAML, or only from CLI commands (`zeroclaw cron add`). STACK.md notes this: "Confirm via `zeroclaw config schema` whether cron definitions load from files or only from CLI commands." Resolve with `zeroclaw cron --help` and `zeroclaw config schema` before Phase 3 planning.
-- **Symlink security for skills directory:** Whether `reject_symlink_tools_dir` applies to ZeroClaw's native SKILL.toml skills (not just WASM modules) is flagged as uncertain in Pitfall 8. Must be validated with `zeroclaw skills list` after Phase 1/2 symlink wiring before Phase 3 builds on top of it.
-- **`[[model_routes]]` config:** Research confirms the feature exists and route hints are the right abstraction, but the exact TOML syntax for declaring routes was not validated against a live example. Verify against `zeroclaw config schema` before Phase 4 planning.
-- **Self-modification approval gate:** OpenClaw had hard PreToolUse hooks to enforce approval gates; ZeroClaw relies on behavioral instructions in AGENTS.md. This is a deliberate architectural tradeoff (less infra, less enforcement). If Kiro bypasses its own AGENTS.md directives during autonomous cron sessions, there is no runtime backstop. Monitor during Phase 3 and enable `[security.otp]` if needed.
+- **ZeroClaw REST API for agent cron management:** No confirmed endpoint for creating agent-type cron jobs via REST. Must inspect `jobs.db` schema (`sqlite3 ~/.zeroclaw/workspace/cron/jobs.db .schema`) and run `zeroclaw cron --help` before Phase 2 implementation. The SQLite direct-write fallback is fully viable if the REST path doesn't exist.
+- **`claude -p` subprocess in systemd:** Works interactively but never tested from a cron/daemon context. A 5-minute probe cron job should be the first deliverable of Phase 4, before any real programs invoke orchestrate.ts. Specifically validate: (1) binary found at absolute path, (2) ANTHROPIC_API_KEY available, (3) stdout captured correctly by Bun subprocess.
+- **ts-jobspy reliability under daily cadence:** LinkedIn rate-limiting under daily 50-result queries is untested in this environment. Wrap all calls defensively with try/catch and exponential backoff. Keep python-jobspy subprocess as the fallback plan if ts-jobspy proves too unreliable.
+- **Z.AI rate limits on concurrent agent sessions:** If 2-3 agent cron jobs fire simultaneously and each spawns an LLM session through the zai-proxy, the upstream Z.AI API may rate-limit. The 60-second proxy timeout is documented but concurrent session behavior is not. Address in Phase 5 via schedule staggering and empirical monitoring.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `/home/hybridz/Projects/zeroclaw/docs/config-reference.md` — ZeroClaw config schema, all sections, defaults, and notes (verified Feb 25 2026)
-- `/home/hybridz/Projects/zeroclaw/docs/commands-reference.md` — CLI surface, cron, skills, doctor (verified Feb 25 2026)
-- `/etc/nixos/zeroclaw/reference/upstream-docs/operations-runbook.md` — Operational patterns, verified Feb 18 2026
-- `/etc/nixos/zeroclaw/module.nix` — Current deployed module, authoritative for what is already configured
-- `/etc/nixos/openclaw/summary.md` — First-hand OpenClaw architecture and post-mortem; primary source for feature requirements and pitfall history
+- `/etc/nixos/zeroclaw/bin/sentinel-scan.ts` — bun:sqlite + notification pattern in production
+- `/etc/nixos/zeroclaw/module.nix` — cron-sync implementation, resolve_command whitelist, systemd EnvironmentFile config
+- `/etc/nixos/zeroclaw/config.toml` — gateway port 42617, max_cost_per_day_cents, allowed_roots, @PLACEHOLDER@ sed pattern
+- `/etc/nixos/zeroclaw/skills/email/cli.ts`, `skills/calendar/cli.ts` — skill CLI patterns, env-var secret loading
+- `/etc/nixos/zeroclaw/bin/README.md`, `cron/README.md` — program standard, job type distinction, YAML schema
+- `/etc/nixos/zeroclaw/.planning/RETROSPECTIVE.md` — v1.0/v1.1 post-mortems, first-hand failure modes
+- [ZeroClaw Gateway API Reference wiki](https://github.com/zeroclaw-labs/zeroclaw/wiki/10.2-gateway-api-reference) — /webhook endpoint confirmed
+- `claude --help` — Confirmed -p/--print flag, --output-format json, --max-budget-usd. Version 2.1.63.
+- [bun:sqlite docs](https://bun.com/docs/runtime/sqlite) — Built-in, WAL mode, concurrent access
+- [arXiv API docs](https://info.arxiv.org/help/api/user-manual.html) — Free Atom 1.0 API, no auth required
 
-### Secondary (HIGH confidence, first-hand)
-- `/home/hybridz/.claude/projects/-etc-nixos/memory/MEMORY.md` — Session-learned gotchas: Z.AI API type, phone_number_id quoting
-- `/etc/nixos/zeroclaw/.planning/PROJECT.md` — Project constraints and key decisions
-- `/etc/nixos/zeroclaw/documents/AGENTS.md`, `TOOLS.md` — Behavioral requirements, capability inventory
+### Secondary (MEDIUM confidence)
+- [feedsmith GitHub](https://github.com/macieklamberski/feedsmith) — TypeScript Atom/RSS parser (not Context7 verified)
+- [ts-jobspy npm](https://www.npmjs.com/package/ts-jobspy) — LinkedIn + Indeed scrapers (low download count, treat as fragile)
+- `/home/hybridz/.claude/projects/-etc-nixos-zeroclaw/memory/MEMORY.md` — Confirmed system quirks (@PLACEHOLDER@ sed corruption, systemd PATH stripping)
 
-### Tertiary (supporting context)
-- `/home/hybridz/Projects/zeroclaw/CLAUDE.md` — ZeroClaw engineering principles (why principles exist reveals past pain points)
-- `/etc/nixos/openclaw/CLAUDE.md` — Prior OpenClaw architecture reference for migration context
+### Tertiary (LOW confidence — needs validation during implementation)
+- ZeroClaw daemon REST API for cron management (endpoint existence unconfirmed — must inspect before Phase 2)
+- `claude -p` subprocess behavior in ZeroClaw daemon systemd context (works interactively, unverified in cron)
+- ts-jobspy LinkedIn rate limit behavior under daily cron cadence (untested in this environment)
 
 ---
-*Research completed: 2026-03-04*
+*Research completed: 2026-03-06*
 *Ready for roadmap: yes*

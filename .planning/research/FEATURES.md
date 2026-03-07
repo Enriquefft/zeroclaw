@@ -1,201 +1,232 @@
 # Feature Research
 
-**Domain:** Autonomous personal AI agent infrastructure (chief-of-staff)
-**Researched:** 2026-03-04
-**Confidence:** HIGH — based on live config reference, prior system architecture (OpenClaw summary), and existing ZeroClaw deployment
+**Domain:** Autonomous personal AI agent — Heartbeat crons (v2.0 milestone)
+**Researched:** 2026-03-06
+**Confidence:** HIGH — based on live codebase, existing skill implementations, and verified patterns from current AI agent ecosystem
+
+---
+
+## Scope
+
+This document covers only the **new features in v2.0 Heartbeat**: the 11 scheduled cron jobs and the infrastructure layer that supports them. v1.x features (sentinel, email skill, calendar skill, repair-loop, self-modification, cron-sync) are already shipped and out of scope here.
+
+---
 
 ## Feature Landscape
 
-### Table Stakes (Users Expect These)
+### Table Stakes (Kiro Needs These to Be a Real Chief-of-Staff)
 
-Features Kiro must have to function as a chief-of-staff agent. Missing any of these means the agent cannot operate autonomously.
+These are the features that make Kiro a proactive agent rather than a reactive chatbot. Missing any of these means scheduled autonomy is broken or noisy.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Identity document system (IDENTITY, SOUL, AGENTS, USER, LORE, TOOLS) | Agent has no personality or operational directives without it — it's the brain | LOW | 6 documents, all exist in `/etc/nixos/zeroclaw/documents/`. Live-editable via `mkOutOfStoreSymlink`. Already deployed. |
-| WhatsApp channel (Kapso bridge) | Primary communication interface with Enrique — without it the agent is deaf and mute | HIGH | Already deployed via `kapso-whatsapp-plugin`. Allowlist of 4 numbers. Voice note transcription via local Whisper (Spanish). |
-| ZeroClaw gateway daemon | The runtime that everything runs through — no daemon, no agent | MEDIUM | Systemd user service `zeroclaw-gateway` already configured. Port 42617, loopback only, pairing disabled for localhost trust. |
-| Approval gate enforcement | Agent with outbound capability but no gate is a liability — it must ask before acting externally | LOW | Documented in AGENTS.md. Hard limits defined. Implemented as behavioral rules (not a runtime hook like OpenClaw had). |
-| Cron job system | Scheduled tasks are the agent's heartbeat — without them, Kiro only reacts, never initiates | MEDIUM | ZeroClaw has native cron. YAML job definitions in `cron/jobs/`. `cron-sync` script syncs to gateway. No jobs currently migrated. |
-| Task queue (persistent work tracker) | Context resets between sessions — the queue is the only durable record of work across sessions | MEDIUM | `task-queue` skill from OpenClaw. Needs porting or replacement with ZeroClaw-native equivalent. |
-| Web search capability | Agent cannot research jobs, companies, papers, or trends without web access | LOW | Already configured: `[web_search] enabled = true, provider = "brave"`. Brave Search API wired. |
-| Web reader / browser | Agent needs to read full pages, not just search snippets — job descriptions, articles, docs | LOW | Already configured: `[browser] enabled = true, backend = "kiro-browser"`. Chrome profile dedicated to agent. |
-| Autonomy config (supervised mode, allowed commands) | Without proper autonomy config, agent either can't run shell commands or runs unconstrained | MEDIUM | Currently only basic config in `module.nix`. Needs `[autonomy]` section with `allowed_commands`, `allowed_roots`, and `workspace_only = false` for cross-repo access. |
-| Model routing (zai, zai-coding) | ZeroClaw needs to know which provider and model to call — wrong wire API = 404 errors | LOW | Already configured: `zai` and `zai-coding` providers with `chat_completions` wire API. MEMORY.md confirms `openai-responses` returns 404. |
-| Memory / state persistence | Agent forgets everything between sessions without memory — preferences, past work, context | MEDIUM | Not yet configured. ZeroClaw supports `sqlite`, `lucid`, `markdown`, `none` backends. SQLite is the right default. |
-| Self-repair protocol | Broken tools during cron runs will silently fail without a self-repair mandate | LOW | Documented in AGENTS.md. Behavioral instruction, not infrastructure — Kiro files issues, attempts fixes, reports. |
+| Feature | Why Expected | Complexity | Job Type | Notes |
+|---------|--------------|------------|----------|-------|
+| **Morning briefing** (agenda + priorities) | Any chief-of-staff starts the day with a briefing. Without it, Kiro is silent at the moment it's most needed | MEDIUM | Agent | Requires: calendar skill (agenda), email skill (overnight messages), memory_recall for pending tasks. Output: WhatsApp summary. Critical dependency: shared state DB for "pending follow-ups today" |
+| **EOD summary** (daily digest + what moved) | Bookends the day. Closes loops opened in the morning briefing. Sets up tomorrow | MEDIUM | Agent | Requires: memory_recall for tasks opened today, calendar for what actually happened vs planned. Must write state for next morning's context carryover |
+| **Follow-up enforcer** (commitment tracker, nudge loop) | Professionals make commitments constantly. Without tracking, they vanish into context-loss. This is the highest-ROI feature for a chief-of-staff | HIGH | Agent | Requires: shared state DB (commitments table or memory_store keys), email skill (detect replies closing the loop), WhatsApp alert. Pattern: scan open commitments, check if reply received, nudge if stale >N hours |
+| **Shared state database** (SQLite, cross-job) | Without durable shared state, every cron job starts blind. Jobs can't hand off context to each other | MEDIUM | Infrastructure | Single SQLite file at `~/.zeroclaw/state.db`. All programs write/read here. Needed before any heartbeat cron goes live |
+| **Centralized notification module** | Every cron sends WhatsApp alerts. Without a shared module, each job reimplements retry logic and env-var resolution | LOW | Infrastructure | Thin Bun module exporting `notify(msg)`. Reads `KAPSO_API_KEY` from `zeroclaw.env`. Used by all programs. Avoids 11x duplication |
+| **Self-audit** (config/doc drift detection) | Git-first edits are the law, but drift happens (direct edits to `~/.zeroclaw/`, stale symlinks, orphaned skills). Without auditing, the system silently degrades | MEDIUM | Shell/Program | Compares `/etc/nixos/zeroclaw/` source vs `~/.zeroclaw/` deployment. Detects: broken symlinks, skills in deployment not in git, config hash mismatch. Weekly cadence. Output: WhatsApp alert if drift found |
 
-### Differentiators (Competitive Advantage)
+### Differentiators (What Makes Kiro Exceptional vs a Generic Scheduler)
 
-Features that elevate Kiro from a basic chatbot to a genuine chief-of-staff that operates proactively and grows over time.
+These features go beyond "reminder bot" into genuine intelligence amplification.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Self-modifying identity docs | Kiro updates its own SOUL, AGENTS, LORE, TOOLS as it learns preferences — no manual maintenance | LOW | Infrastructure is ready (symlinks). Behavioral instruction in AGENTS.md. Missing: a workflow hook or convention to gate doc changes through Enrique's approval before commit. |
-| Proactive trigger system | Kiro surfaces hot job leads, trending topics, stale tasks without waiting for scheduled time — acts on urgency | MEDIUM | Documented in AGENTS.md. Requires a running gateway listening for inbound events + defined trigger conditions. Currently behavioral, not infrastructure-enforced. |
-| Model routing by task type (query classification) | Heavy tasks use `zai` (reasoning), fast tasks use `zai-coding` (code). Right model for right job = cost and quality optimization | MEDIUM | ZeroClaw `[query_classification]` and `[[model_routes]]` support this. Not yet configured in `module.nix`. |
-| Sub-agent delegation | Delegate research, code review, or summarization to a specialized sub-agent with limited tool scope | HIGH | ZeroClaw `[agents.<name>]` with `agentic = true` + `allowed_tools` scoping. Not configured. Enables isolating risky operations. |
-| Git-first self-modification | All Kiro changes go through git — auditability, rollback, no ad-hoc runtime drift | LOW | Architecture decision already made. Kiro edits in `/etc/nixos/zeroclaw/`, commits via `gpush`. Symlinks ensure changes are live immediately. |
-| Observability (runtime traces) | Debugging cron failures, malformed tool calls, and model output issues requires structured trace logs | LOW | ZeroClaw supports `[observability]` with `runtime_trace_mode = "rolling"`. Currently set to `none`. Worth enabling for debugging. |
-| Cost tracking and daily limits | With autonomous cron jobs running all day, unchecked API spend is a risk | LOW | `[cost]` section in ZeroClaw config. `enabled = false` by default. Should be enabled with a daily limit once traffic volume is known. |
-| Voice note support (bilingual) | Enrique communicates in Spanish casually — voice notes in Spanish are transcribed locally via Whisper | MEDIUM | Already deployed in Kapso config (`transcribe.provider = "local"`, model at `~/ggml-base.bin`, `language = "es"`). This is a significant UX differentiator for a personal agent. |
-| OTP gating for sensitive actions | Shell execution, browser open, file writes gated behind TOTP — protection against prompt injection / runaway autonomy | HIGH | ZeroClaw `[security.otp]` supports this. Not configured. High value for a system with WhatsApp as an input channel (untrusted text input surface). |
-| Session isolation per WhatsApp number | Each allowed number gets its own conversation context — prevents cross-contamination | LOW | Already deployed via `sessionIsolation = true` in Kapso config. |
-| Cron jobs as LLM agent sessions | Every scheduled job is a full agent run, not a script — agent applies judgment, uses tools, handles failures | MEDIUM | This is ZeroClaw's native model. Replaces OpenClaw's YAML-prompt-based cron sessions. 13 jobs to migrate. |
-| Skill system (reusable CLI tools) | Repetitive tasks get formalized as typed, tested CLI tools with JSON output — not ad-hoc shell scripts | HIGH | ZeroClaw `SKILL.toml` manifest system. OpenClaw had 7 skills (job-scanner, job-tracker, task-queue, rss-reader, git-activity, track-price-drops, cron-manager). Need to port or rebuild under ZeroClaw conventions. |
-| Emergency stop (estop) | Hard-stop switch that persists across restarts — kill-switch for runaway agent behavior | LOW | ZeroClaw `[security.estop]` supports this. Not configured. Prudent safety rail for a fully-autonomous system. |
+| Feature | Value Proposition | Complexity | Job Type | Notes |
+|---------|-------------------|------------|----------|-------|
+| **Job board scanner** (quality-filtered leads) | Manually scanning job boards daily is 30+ minutes of noise filtering. An agent that pre-qualifies leads and surfaces only matches is a force multiplier for job search | HIGH | Agent | Pattern: search LinkedIn/Indeed/Wellfound via browser tool + web search, filter against USER.md preferences (stack, seniority, remote/hybrid), deduplicate via state DB, WhatsApp only new qualified leads. Requires: browser skill, web search, shared state for seen-job-ids |
+| **Freelance gig scanner** | Same value as job scanner but for contract work. Different platforms (Upwork, Toptal, Fiverr for services), different signal (budget, duration, skills match) | HIGH | Agent | Can share most infrastructure with job scanner. Separate cron because cadence differs (more frequent) and signal threshold differs (smaller opportunities warrant faster response). Dedup via shared state |
+| **Build-in-public content drafter** | Shipping in public requires consistent content. Manually drafting posts is a bottleneck. Agent that monitors git activity and generates draft posts removes the bottleneck without requiring discipline | MEDIUM | Agent | Pattern: read recent git commits/PRs (git log or GitHub API), draft 2-3 Twitter/X post variants, store draft in memory/state, WhatsApp with draft for approval. NOT auto-posting — human approves. Input: `git log --since 24h` or GitHub CLI |
+| **Content scout** (RSS + trending topics) | Staying current in tech requires active monitoring. Surfacing relevant articles and threads eliminates manual RSS reading | MEDIUM | Agent | Requires: web search for trending tech topics, RSS parsing (fetch + summarize). Output: curated digest with brief rationale for each item. Scope: topics defined in USER.md or a scout-config doc. Daily cadence |
+| **Academic paper scout** | ML/AI moves fast. Missing a key paper means working from stale assumptions. Weekly scout of arXiv/Semantic Scholar for relevant papers is high signal for low effort | MEDIUM | Agent | Pattern: search arXiv API (no auth required) by topic keywords from USER.md, filter by recency + citation velocity if available, summarize abstracts, WhatsApp digest. Weekly cadence. Dedup via state DB |
+| **Weekly company research refresh** | Job applications need fresh company intel (recent news, fundraising, leadership changes). Stale research = weak applications | HIGH | Agent | Pattern: maintain a watch-list of target companies in state DB (or a doc), run weekly web search per company for recent news, update state, surface changes. Requires: web search + browser for deeper reads |
+| **Engagement scout** (relevant threads to respond to) | Build-in-public strategy requires engaging with relevant discussions, not just posting. Finding the right threads manually is noisy | MEDIUM | Agent | Pattern: search Twitter/X, LinkedIn, Reddit for threads matching USER.md interests/expertise, filter by recency + engagement signal, surface top 3-5 for Kiro to draft response to. Human approves before sending |
 
-### Anti-Features (Commonly Requested, Often Problematic)
+### Anti-Features (Commonly Requested, Consistently Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Unrestricted shell access (`allowed_commands = "*"`) | Seems convenient — agent can do anything | Opens prompt injection attacks via WhatsApp; a malicious message could cause arbitrary command execution | Explicit allowlist of needed commands in `[autonomy]`. Expand incrementally. |
-| Multi-agent IPC (agents talking to each other) | Sounds powerful — Kiro coordinates with other agents | Adds coordination complexity and blast radius before single-agent is stable. ZeroClaw's `[agents_ipc]` exists but should not be enabled yet | Single-agent first. Delegate via `[agents.<name>]` sub-agents when needed for scoped tasks. |
-| Public gateway bind (`allow_public_bind = true`) | Seems needed for webhooks | Exposes the agent runtime to the internet; Kapso handles the external surface via Tailscale delivery mode | Keep gateway on loopback (`127.0.0.1`). Kapso bridge already handles external delivery. |
-| Ad-hoc scripts as cron replacements | Faster to write a Python script than create a YAML job | Creates parallel infrastructure, bypasses agent judgment, impossible to audit, breaks self-repair chain | Always use ZeroClaw native cron. The YAML job runs as a full agent session. |
-| Writing state files directly (bypassing task-queue) | Seems simpler for quick task tracking | Survives one session, then gets lost. Can't be processed by the task worker cron. Can't be queried or resolved. | Always use `task-queue add`. The queue is the durable record of truth. |
-| WASM runtime for skills | Sandbox isolation sounds good | Adds build complexity; `reject_symlink_modules = true` by default blocks our `mkOutOfStoreSymlink` live-editing pattern | Native runtime + explicit `[autonomy]` command allowlist achieves the safety goal without breaking live-edit workflow. |
-| Open skills (community registry) | Free skills from the community | Unvetted skills are a supply chain risk on a personal agent with shell access and WhatsApp | Keep `open_skills_enabled = false`. Build private skills in `/etc/nixos/zeroclaw/skills/`. |
-| Replying to all WhatsApp group messages | Agent in groups sounds useful | Noisy, high-risk surface, hard to moderate | Keep `allowed_numbers` to explicit allowlist. No group participation. |
+| **Auto-posting to social media** | "Just post it — I approved the draft" | One hallucinated stat or wrong tone goes live immediately. Recovery is public. The approval gate is the value, not a bottleneck | Keep human in the loop for all public-facing content. Kiro drafts + notifies, human approves via WhatsApp reply |
+| **Auto-applying to jobs** | "Filter the leads, then just apply" | Applications require customization per role. Auto-apply produces generic spam that damages reputation. Rate-limiting on platforms triggers shadow-banning | Kiro surfaces qualified leads + drafts cover letter variant. Human submits |
+| **Real-time engagement monitoring** (sub-minute polling) | "Don't miss anything" | API rate limits, cost, noise. Most platforms block aggressive scraping. High-frequency polling provides no meaningful value over hourly | Hourly or daily cadence is sufficient for all engagement patterns. Real-time is only needed for time-sensitive alerts (sentinel already handles those) |
+| **Fully automated follow-up sending** | "Just send the nudge if they haven't replied" | Automated messages from personal accounts damage relationships. Context matters — sometimes no reply is intentional | Kiro detects stale commitments and drafts the nudge. Human sends (or explicitly approves auto-send per commitment type) |
+| **Monolithic daily-digest cron** | "One job to rule them all" | One failure breaks everything. Impossible to tune cadence per job type. Job output sizes vary wildly making a single digest unreadable | Separate jobs with separate cadences. Morning briefing aggregates selectively, not by running all jobs again |
+| **Storing raw email/calendar content in state DB** | "So jobs can share context" | Privacy risk, storage cost, and latency. Skills already have access to live data | Store only identifiers and metadata (job IDs, commitment status, seen-paper hashes). Fetch full content from the source skill on demand |
+| **Inline LLM prompts in cron YAML** | "Faster to write" | ZeroClaw's architecture explicitly rejects this — cron jobs reference skills or programs. Inline prompts are opaque, untestable, and violate the single-source-of-truth rule | Always reference a SKILL.md or a `bin/` program. The prompt lives in the skill's identity doc |
+
+---
 
 ## Feature Dependencies
 
 ```
-[WhatsApp channel]
-    └──requires──> [ZeroClaw gateway daemon]
-                       └──requires──> [Model provider config (zai)]
-                                          └──requires──> [Secrets (zeroclaw.env)]
+[Shared state DB]
+    └──required-by──> [Morning briefing]     (reads pending follow-ups)
+    └──required-by──> [Follow-up enforcer]   (writes/reads commitments)
+    └──required-by──> [Job scanner]          (dedup seen-job-ids)
+    └──required-by──> [Freelance scanner]    (dedup seen-gig-ids)
+    └──required-by──> [Company research]     (stores watch-list + last-seen state)
+    └──required-by──> [Paper scout]          (dedup seen-paper hashes)
+    └──required-by──> [EOD summary]          (reads tasks opened today)
 
-[Cron jobs]
-    └──requires──> [ZeroClaw gateway daemon]
-    └──requires──> [Skills (job-scanner, rss-reader, task-queue, etc.)]
-                       └──requires──> [Task queue]
+[Centralized notification module]
+    └──required-by──> ALL 11 cron jobs      (WhatsApp delivery)
 
-[Proactive triggers]
-    └──requires──> [Cron job system] (for session context)
-    └──requires──> [WhatsApp channel] (for outbound notification)
+[Email skill] (already shipped)
+    └──enhances──> [Morning briefing]        (overnight messages)
+    └──enhances──> [Follow-up enforcer]      (scan for replies closing loops)
+    └──enhances──> [EOD summary]             (unanswered emails surfaced)
 
-[Self-modifying identity docs]
-    └──requires──> [Git-first workflow] (for auditability)
-    └──enhances──> [Identity document system]
+[Calendar skill] (already shipped)
+    └──enhances──> [Morning briefing]        (agenda for the day)
+    └──enhances──> [EOD summary]             (what actually happened)
 
-[Sub-agent delegation]
-    └──requires──> [Model routing (query classification)]
-    └──enhances──> [Cron jobs] (delegate heavy research to sub-agent)
+[Web search] (already configured)
+    └──required-by──> [Job scanner]
+    └──required-by──> [Freelance scanner]
+    └──required-by──> [Content scout]
+    └──required-by──> [Paper scout]
+    └──required-by──> [Company research]
+    └──required-by──> [Engagement scout]
 
-[OTP gating]
-    └──requires──> [Security.otp config]
-    └──enhances──> [WhatsApp channel] (gates shell/browser from untrusted input)
+[Browser tool] (already configured)
+    └──enhances──> [Job scanner]             (read full job descriptions)
+    └──enhances──> [Company research]        (read company pages)
+    └──enhances──> [Engagement scout]        (navigate social threads)
 
-[Cost tracking]
-    └──enhances──> [Model routing] (tracks spend per route)
+[Morning briefing]
+    └──feeds-into──> [EOD summary]           (what was planned vs completed)
 
-[Observability (runtime traces)]
-    └──enhances──> [Cron jobs] (post-mortem for failures)
-    └──enhances──> [Self-repair protocol] (structured evidence for what broke)
+[Follow-up enforcer]
+    └──feeds-into──> [Morning briefing]      (stale follow-ups surfaced at start of day)
 
-[Emergency stop]
-    └──enhances──> [ZeroClaw gateway daemon] (persisted kill-switch)
+[Build-in-public drafter]
+    └──feeds-into──> [Engagement scout]      (context for drafting responses)
+
+[Self-audit]
+    └──standalone──> no dependencies (reads filesystem + git)
 ```
 
 ### Dependency Notes
 
-- **WhatsApp channel requires ZeroClaw gateway:** The Kapso bridge connects to the gateway WebSocket (`ws://127.0.0.1:42617/ws/chat`). No gateway = no WhatsApp.
-- **Cron jobs require skills:** The 13 scheduled jobs each invoke specific skills (`job-scanner`, `rss-reader`, `task-queue`, etc.). Jobs should not be migrated until their required skills are available.
-- **Proactive triggers require both cron and WhatsApp:** The agent needs an active session context (from cron) to detect conditions, and a channel to fire the notification through.
-- **OTP gating enhances WhatsApp security:** WhatsApp is an untrusted text input surface. Gating shell and browser_open behind TOTP protects against prompt injection before shell access is approved.
-- **Sub-agent delegation should come after single-agent is stable:** Adding delegation complexity before the primary agent is reliable creates debugging hell.
+- **Shared state DB must ship before any heartbeat cron.** It is the foundation. All 11 jobs either read or write shared state. Without it, every job is stateless and will produce duplicate notifications.
+- **Centralized notification module must ship before any heartbeat cron.** Without it, each program duplicates retry/auth logic. This is infrastructure, not a feature.
+- **Follow-up enforcer is highest complexity** because it requires both detecting commitments (NLP/agent judgment) and tracking their resolution (email scan + state updates). Do not underestimate.
+- **Job scanner and freelance scanner share ~80% of implementation.** Build job scanner first, generalize to freelance scanner. Do not build independently.
+- **Content scout and paper scout share feed-aggregation logic.** Different sources, same pipeline. Build content scout first.
+- **Self-audit has zero external dependencies.** Can be built at any time. Ship early to catch infrastructure drift.
 
-## MVP Definition
+---
 
-### Launch With (v1 — Infrastructure Phase)
+## Shell vs Agent Classification
 
-Minimum configuration for Kiro to be operational and safe. No job migration yet.
+This is the critical build decision for each cron job. Agent jobs invoke the LLM for judgment. Shell/Program jobs are deterministic and run without LLM involvement.
 
-- [x] ZeroClaw gateway daemon (already deployed)
-- [x] WhatsApp channel via Kapso bridge (already deployed)
-- [x] Identity documents: IDENTITY, SOUL, AGENTS, USER, TOOLS, LORE (already deployed, need content audit)
-- [x] Web search (Brave) + browser (kiro-browser) (already configured)
-- [x] Model providers: zai + zai-coding with `chat_completions` (already configured)
-- [ ] `[autonomy]` section: `allowed_commands` allowlist, `allowed_roots` for `~/Projects/` and `/etc/nixos/`, `workspace_only = false`
-- [ ] `[memory]` section: `backend = "sqlite"`, `auto_save = true`
-- [ ] `[observability]`: `runtime_trace_mode = "rolling"` for debugging early issues
-- [ ] `[security.estop]`: enabled with `require_otp_to_resume = true` as a safety rail
-- [ ] Upstream docs symlink: `reference/upstream-docs/` → `~/Projects/zeroclaw/docs/`
-- [ ] CLAUDE.md for this directory (LLM agents working on the infra need it)
+| Cron Job | Classification | Rationale |
+|----------|---------------|-----------|
+| Morning briefing | **Agent** | Requires synthesis: pull calendar + email + pending state, write a coherent prioritized briefing. LLM judgment needed |
+| EOD summary | **Agent** | Requires synthesis: what actually moved today, what's still open, what to carry to tomorrow |
+| Follow-up enforcer | **Agent** | Requires judgment: is this email a closure? Is this commitment stale enough to nudge? Context-dependent |
+| Job scanner | **Agent** | Requires judgment: does this role match USER.md preferences? Quality filtering is the value |
+| Freelance scanner | **Agent** | Same as job scanner |
+| Build-in-public drafter | **Agent** | Content generation is inherently LLM work |
+| Content scout | **Agent** | Curation requires relevance judgment — not all recent articles are relevant |
+| Self-audit | **Program (Shell)** | Purely deterministic: compare file hashes, check symlinks, verify git status. No LLM needed. Should be a `bin/` script |
+| Weekly company research | **Agent** | Requires synthesis of web search results into actionable intelligence |
+| Paper scout | **Agent** | Abstract summarization and relevance filtering requires LLM judgment |
+| Engagement scout | **Agent** | Relevance filtering of social threads requires context-awareness |
 
-### Add After Validation (v1.x — Jobs + Skills Phase)
+**Rule:** If the job output is deterministic given the inputs, use a Program (`bin/`). If the job requires relevance judgment, synthesis, or content generation, use an Agent (ZeroClaw cron session).
 
-After the infrastructure is confirmed stable and Kiro can operate interactively.
+---
 
-- [ ] Task queue skill (port from OpenClaw or build native) — required before any cron job
-- [ ] Core cron jobs: morning-briefing, end-of-day, task-worker (minimum viable schedule)
-- [ ] Job scanning skills: job-scanner, job-tracker — enables income priority
-- [ ] RSS / research skills: rss-reader, git-activity — enables content and skill-scan jobs
-- [ ] Remaining 10 cron jobs migrated and tested
-- [ ] `[cost]` tracking enabled with a daily limit (after traffic volume is known)
+## MVP Definition for v2.0 Heartbeat
 
-### Future Consideration (v2+ — Intelligence Phase)
+### Phase 1: Infrastructure First (Required Before Any Cron Goes Live)
 
-After core jobs are running reliably.
+- [ ] **Shared state DB** — SQLite schema at `~/.zeroclaw/state.db`, Bun module for read/write, initialized by NixOS activation or first-run script
+- [ ] **Centralized notification module** — `bin/notify.ts`, exports `notify(msg: string)`, reads Kapso env vars, handles retry
+- [ ] **Cron-sync overhaul** — Agent job type support via daemon REST API (as documented in PROJECT.md). Without this, agent crons cannot be registered
+- [ ] **Self-audit program** — `bin/self-audit.ts`, weekly cron, no LLM dependency, validates deployment integrity
 
-- [ ] `[query_classification]` + `[[model_routes]]` — smart model routing by task type. Defer until token costs are a real concern.
-- [ ] Sub-agent delegation (`[agents.researcher]`, `[agents.coder]`) — once delegation patterns are identified from cron job usage.
-- [ ] `[security.otp]` for shell/browser actions — add if prompt injection risk materializes from WhatsApp exposure.
-- [ ] `track-price-drops` skill (BTC monitoring) — currently a stub in OpenClaw, low priority.
-- [ ] Nostr channel — alternative communication channel if WhatsApp reliability becomes an issue.
+### Phase 2: High-Value Daily Crons (Ship These First)
+
+These 3 jobs deliver immediate daily value and validate the infrastructure.
+
+- [ ] **Morning briefing** — calendar + email + pending follow-ups → WhatsApp digest at 07:30
+- [ ] **EOD summary** — tasks opened today + what moved + unanswered emails → WhatsApp at 20:00
+- [ ] **Follow-up enforcer** — scan commitments, check for replies, nudge stale → runs 3x daily (10:00, 14:00, 17:00)
+
+### Phase 3: Opportunity Scanners (Ship After Daily Crons Validated)
+
+- [ ] **Job scanner** — qualified lead filtering, dedup, WhatsApp alert → runs 2x daily
+- [ ] **Freelance scanner** — shares job scanner infrastructure → runs 3x daily
+- [ ] **Content scout** — RSS + trending → morning digest supplement → daily
+
+### Phase 4: Research & Build-in-Public (Ship Last, Lowest Urgency)
+
+- [ ] **Build-in-public drafter** — git activity → draft posts → WhatsApp for approval → daily
+- [ ] **Engagement scout** — relevant threads for response → daily
+- [ ] **Weekly company research** — target company news refresh → weekly Sunday
+- [ ] **Paper scout** — arXiv/Semantic Scholar digest → weekly Saturday
+- [ ] **Orchestration engine** (if complex multi-step decomposition is needed for any of the above)
+
+---
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Autonomy config (`[autonomy]` section) | HIGH | LOW | P1 |
-| Memory persistence (SQLite) | HIGH | LOW | P1 |
-| Runtime trace observability | HIGH | LOW | P1 |
-| Emergency stop | HIGH | LOW | P1 |
-| Upstream docs symlink + CLAUDE.md | HIGH | LOW | P1 |
-| Task queue skill | HIGH | MEDIUM | P1 |
-| Core cron jobs (briefing, EOD, task-worker) | HIGH | MEDIUM | P1 |
-| Job-scanner + job-tracker skills | HIGH | MEDIUM | P2 |
-| RSS-reader + git-activity skills | MEDIUM | MEDIUM | P2 |
-| Remaining 10 cron jobs | MEDIUM | MEDIUM | P2 |
-| Cost tracking | MEDIUM | LOW | P2 |
-| Query classification + model routes | MEDIUM | MEDIUM | P3 |
-| Sub-agent delegation | MEDIUM | HIGH | P3 |
-| OTP gating for shell/browser | MEDIUM | MEDIUM | P3 |
-| track-price-drops skill | LOW | MEDIUM | P3 |
+| Shared state DB | HIGH | LOW | P1 |
+| Centralized notification module | HIGH | LOW | P1 |
+| Cron-sync agent job support | HIGH | MEDIUM | P1 |
+| Self-audit | HIGH | LOW | P1 |
+| Morning briefing | HIGH | MEDIUM | P1 |
+| EOD summary | HIGH | MEDIUM | P1 |
+| Follow-up enforcer | HIGH | HIGH | P1 |
+| Job scanner | HIGH | HIGH | P2 |
+| Freelance scanner | HIGH | MEDIUM | P2 — shares job scanner infra |
+| Content scout | MEDIUM | MEDIUM | P2 |
+| Build-in-public drafter | MEDIUM | MEDIUM | P2 |
+| Weekly company research | MEDIUM | HIGH | P3 |
+| Paper scout | MEDIUM | MEDIUM | P3 |
+| Engagement scout | MEDIUM | HIGH | P3 |
+| Orchestration engine | LOW | HIGH | P3 — defer unless a cron requires it |
 
 **Priority key:**
-- P1: Must have for launch (infrastructure phase)
-- P2: Should have, add when possible (jobs + skills phase)
-- P3: Nice to have, future consideration (intelligence phase)
+- P1: Required for v2.0 milestone, must ship together
+- P2: High value, ship immediately after P1 is validated
+- P3: Defer to v2.x unless infrastructure makes them cheap
 
-## Competitor Feature Analysis
+---
 
-This is a personal agent system, not a product. "Competitors" are prior versions and alternative architectures.
+## Existing Skills Reuse Map
 
-| Feature | OpenClaw (prior system) | Generic AI Chatbot | Kiro / ZeroClaw Approach |
-|---------|------------------------|---------------------|--------------------------|
-| Cron scheduling | Custom YAML + Go gateway + cron-sync | None | Native ZeroClaw cron (no custom sync infra) |
-| Self-modification | 4-layer system (hooks, self-repair, skill creation, doc editing) | None | Git-first edits with symlinks for live-reload |
-| Skill system | Bun/TypeScript CLI tools | None | ZeroClaw SKILL.toml manifests |
-| Approval gates | Plugin hooks (intent-detector + tool-guard) | None | Behavioral (AGENTS.md) — ZeroClaw may support hooks later |
-| Communication | WhatsApp via Kapso | Web UI | WhatsApp via Kapso (same) |
-| Memory | Not documented | Session-only | SQLite via ZeroClaw native memory |
-| Tool guardrails | PreToolUse hook blocking ad-hoc scheduling | None | Behavioral (AGENTS.md) + `[autonomy]` config |
-| Observability | Not documented | None | ZeroClaw runtime traces + OTLP |
-| Security | Plugin-level hooks | None | `[security.otp]` + `[security.estop]` + syscall anomaly detection |
+| Cron Job | Email Skill | Calendar Skill | Notes |
+|----------|-------------|----------------|-------|
+| Morning briefing | `list --since 480` (overnight) | `events --from today --to today` | Both used directly |
+| EOD summary | `list --since 720` (day) + search unanswered | `events --from today --to today` | Cross-reference planned vs actual |
+| Follow-up enforcer | `search` (looking for replies to tracked threads) | None | Track thread IDs in state DB, search for replies |
+| Job scanner | None | None | Web search + browser primary |
+| Freelance scanner | None | None | Web search + browser primary |
+| Build-in-public drafter | None | None | git log + GitHub CLI primary |
+| Content scout | None | None | Web search + RSS fetch primary |
+| Self-audit | None | None | Filesystem only |
+| Company research | None | None | Web search + browser primary |
+| Paper scout | None | None | arXiv API (no auth) primary |
+| Engagement scout | None | None | Web search + browser primary |
 
-Key takeaway: ZeroClaw provides most of what required custom plugin infrastructure in OpenClaw — natively. The skill system is different (SKILL.toml vs SKILL.md + run.ts) but the concept is the same. The main gap is the approval gate enforcement: OpenClaw had hard PreToolUse hooks; ZeroClaw relies on behavioral instructions in AGENTS.md. This is a deliberate tradeoff (less infra, but also less enforcement).
+---
 
 ## Sources
 
-- `/home/hybridz/Projects/zeroclaw/docs/config-reference.md` — ZeroClaw config schema, verified February 25, 2026 (HIGH confidence)
-- `/etc/nixos/openclaw/summary.md` — OpenClaw architecture reference for feature requirements (HIGH confidence — first-hand system)
-- `/etc/nixos/zeroclaw/module.nix` — Current deployment state (HIGH confidence — live config)
-- `/etc/nixos/zeroclaw/documents/AGENTS.md` and `TOOLS.md` — Behavioral requirements and tool inventory (HIGH confidence)
-- `/etc/nixos/zeroclaw/.planning/PROJECT.md` — Project scope and constraints (HIGH confidence)
+- `/etc/nixos/zeroclaw/.planning/PROJECT.md` — Milestone scope and confirmed constraints (HIGH confidence)
+- `/etc/nixos/zeroclaw/skills/email/cli.ts` — Email skill capabilities, confirmed live (HIGH confidence)
+- `/etc/nixos/zeroclaw/skills/calendar/SKILL.md` — Calendar skill capabilities, confirmed live (HIGH confidence)
+- `/etc/nixos/zeroclaw/skills/email/SKILL.md`, `/etc/nixos/zeroclaw/skills/calendar/SKILL.md` — Tool signatures (HIGH confidence)
+- [GitHub: MCP-Personal-Assistant — autonomous morning briefing with Gemini + Calendar + Gmail](https://github.com/paddumelanahalli/MCP-Personal-Assistant) — reference implementation pattern (MEDIUM confidence)
+- [Agents at Work: 2026 Playbook for Reliable Agentic Workflows](https://promptengineering.org/agents-at-work-the-2026-playbook-for-building-reliable-agentic-workflows/) — industry pattern confirmation (MEDIUM confidence)
+- [tmgthb/Autonomous-Agents — daily-updated paper tracking pattern](https://github.com/tmgthb/Autonomous-Agents) — paper scout pattern reference (MEDIUM confidence)
+- [AI Agent Trends 2026 — MachineLearningMastery](https://machinelearningmastery.com/7-agentic-ai-trends-to-watch-in-2026/) — micro-specialization pattern confirmation (MEDIUM confidence)
 
 ---
-*Feature research for: ZeroClaw autonomous agent infrastructure (Kiro)*
-*Researched: 2026-03-04*
+*Feature research for: ZeroClaw v2.0 Heartbeat crons + infrastructure*
+*Researched: 2026-03-06*

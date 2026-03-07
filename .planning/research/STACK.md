@@ -1,8 +1,12 @@
 # Stack Research
 
-**Domain:** Autonomous AI agent configuration infrastructure (NixOS + ZeroClaw)
-**Researched:** 2026-03-04
-**Confidence:** HIGH (primary sources: live ZeroClaw docs verified Feb 25 2026, existing module.nix, NixOS patterns from codebase)
+**Domain:** Autonomous AI agent configuration infrastructure (NixOS + ZeroClaw) — v2.0 Heartbeat additions
+**Researched:** 2026-03-06
+**Confidence:** HIGH (primary sources: live binaries, ZeroClaw gateway API wiki, nixpkgs search, direct CLI inspection)
+
+> **Scope:** This file covers ONLY the new stack additions needed for v2.0 Heartbeat features.
+> Existing v1.0 stack (NixOS home-manager, sops-nix, ZeroClaw daemon, bun:sqlite, kapso-whatsapp)
+> is validated and unchanged. See git history for the v1.0 STACK.md content.
 
 ---
 
@@ -12,79 +16,251 @@
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| NixOS home-manager | 25.11 (nixpkgs) | Renders `config.toml`, installs ZeroClaw, wires systemd user service | Already in use. Declarative deployment is the correct model — config.toml is rendered at build time, not hand-edited. Ensures reproducibility and version control over structural config. |
-| `config.lib.file.mkOutOfStoreSymlink` | home-manager builtin | Symlinks live-editable files (docs, skills, cron) without build-time hashing | The only correct way to allow Kiro to self-edit without triggering a NixOS rebuild. Regular `home.file` copies files into the Nix store — symlinks to `/etc/nixos/zeroclaw/` are required for live editing. |
-| ZeroClaw daemon mode | Current (Rust binary) | Supervised runtime that runs gateway + channels + cron scheduler as a single process | `zeroclaw daemon` is the correct production entrypoint (not `zeroclaw gateway`). It starts all subsystems together. The current module.nix correctly uses `zeroclaw daemon`. |
-| sops-nix | Current | Secret delivery at runtime via `/run/secrets/rendered/zeroclaw.env` | Secrets cannot go in the Nix store (world-readable). sops-nix renders secrets to tmpfs at boot. The `EnvironmentFile` in the systemd unit is the correct injection point. |
-| git (via `/etc/nixos` repo) | System git | Version control for all ZeroClaw config | All changes Kiro makes go through git in `/etc/nixos/zeroclaw/`. Git is the audit log, rollback mechanism, and source of truth. Not optional — required for the git-first self-modification model. |
-| systemd user services | NixOS builtin | Service lifecycle management for gateway and kapso bridge | User services run as `hybridz` without root. Correct isolation model. `zeroclaw-gateway.service` and `kapso-whatsapp-bridge.service` are already defined correctly. |
+| `bun:sqlite` (built-in) | Bun 1.3.3 (already installed) | Shared state database for all `bin/` programs and trackers | Already used in `sentinel-scan.ts`. Zero additional dependencies — SQLite is built into Bun's runtime. WAL mode + prepared statements give safe concurrent reads from multiple cron processes. No npm package needed. |
+| ZeroClaw Gateway REST API (`POST /webhook`) | Current ZeroClaw daemon | Trigger agent jobs from shell programs (the "agent job" cron support) | The daemon runs on port 42617 (localhost). `POST /webhook` with `{"message": "..."}` triggers a full ZeroClaw agent session. This is the correct programmatic interface for `cron-sync` agent job support — no new binary needed. |
+| `claude` CLI (`claude -p`) | 2.1.63 (already at `~/.local/bin/claude`) | Orchestration engine for task decomposition in shell programs | `claude -p "prompt"` is headless, exits after response, supports `--output-format json`, `--model`, `--max-budget-usd`. Confirmed working locally. Use for decomposing complex tasks in `bin/` programs where ZeroClaw's own agent would have model/cost constraints. Requires `ANTHROPIC_API_KEY` env var. |
+| `kapso-whatsapp-cli` (already installed) | Current (via kapso-whatsapp-plugin flake) | Notification delivery for all heartbeat cron alerts | Already used in `sentinel-scan.ts`. Wrap with retry logic in a shared `notify.ts` module — do not call directly from each cron program. |
+| `feedsmith` | Latest npm | RSS/Atom feed parsing for paper scout and content scout crons | TypeScript-native, built on `fast-xml-parser`, fully typed. Works directly with Bun's built-in `fetch`. arXiv and academic RSS feeds are Atom 1.0 — `feedsmith` handles this correctly. No browser needed. |
 
-### ZeroClaw Config Sections to Configure
+### Supporting Libraries
 
-This project's `config.toml` is rendered by `module.nix`. These are the sections that matter and how to approach each:
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `ts-jobspy` | Latest npm | Job board scraping (LinkedIn + Indeed) for job scanner cron | TypeScript port of python-jobspy. LinkedIn + Indeed scrapers currently working. Use for the job-scanner heartbeat cron. Wrap in try/catch — rate limiting (HTTP 429) is expected from LinkedIn. |
+| `fast-xml-parser` | 5.x (latest npm) | Low-level XML parsing for arXiv API responses | Use directly if `feedsmith` is too heavy. arXiv's API returns Atom 1.0. `fetch` + `fast-xml-parser` is the minimal pattern. |
+| `exponential-backoff` | Latest npm | Retry logic for `kapso-whatsapp-cli` and job board requests | Standard pattern for transient failures. Use in the shared `notify.ts` module for WhatsApp retries (3 attempts, delays: 1s, 2s, 4s). Also use for job board 429 handling. |
 
-| Section | Status | Priority | What to Configure |
-|---------|--------|----------|-------------------|
-| `[model_providers.zai]` / `[model_providers.zai-coding]` | Done | — | Wire API must be `chat_completions` (not `openai-responses` — returns 404 on Z.AI) |
-| `[identity]` | Partial | High | Currently `format = "openclaw"`. This is the correct format — ZeroClaw's "openclaw" format loads markdown files from `~/.zeroclaw/documents/`. No change needed, but the 6 document symlinks must all be present. |
-| `[autonomy]` | Missing | High | Must define `allowed_commands`, `allowed_roots`, `level`, and `auto_approve` list. Without this, Kiro cannot execute shell commands or write files. |
-| `[agent]` | Missing | High | Set `max_tool_iterations` (default 20 is low for complex cron tasks), `parallel_tools`, `max_history_messages`. GLM-5 may benefit from `compact_context = false` (it's not a 13B model). |
-| `[research]` | Missing | Medium | Enable with `trigger = "keywords"` — lets Kiro research before responding to queries about files, tasks, status. |
-| `[memory]` | Missing | Medium | Configure `backend = "sqlite"` (default but explicit is better), `auto_save = true`. No embeddings needed unless semantic search becomes useful later. |
-| `[[model_routes]]` | Missing | Medium | Define `hint:fast` (zai/glm-5 for quick tasks) and `hint:reasoning` (zai-coding/glm-5 for code work). Stable hints let cron prompts route correctly without hardcoding model names. |
-| `[observability]` | Missing | Medium | Add `runtime_trace_mode = "rolling"` for debugging tool-call failures in cron. Keep `backend = "none"` (no OTLP collector). |
-| `[security.estop]` | Missing | Low | Enable for emergency stop capability. `require_otp_to_resume = false` for single-user local setup. |
-| `[cost]` | Missing | Low | Enable with `daily_limit_usd = 1.00`, `monthly_limit_usd = 30.00` — matches Enrique's Z.AI $30/month budget. |
-| `[skills]` | Missing | Low | `open_skills_enabled = false` (correct default — no community skills). Local skills live in `~/.zeroclaw/skills/` via symlink. |
-| `[http_request]` | Missing | Low | Enable with scoped `allowed_domains` for cron jobs that hit APIs (job boards, RSS, etc.). |
-| `[channels_config]` | Partial | Done | `cli = true` is set. WhatsApp is handled by kapso bridge externally (correct). |
-| `[gateway]` | Done | — | Port 42617, localhost-only, pairing disabled. Correct for single-user local deployment. |
-| `[browser]` | Done | — | Enabled with `kiro-browser` path. Correct. |
-| `[web_search]` | Done | — | Brave provider. Correct. |
-
-### Symlink Strategy
-
-| Path | Mechanism | Why |
-|------|-----------|-----|
-| `~/.zeroclaw/documents/*.md` | `mkOutOfStoreSymlink` → `/etc/nixos/zeroclaw/documents/*.md` | Identity docs must be live-editable by Kiro. A rebuild to update SOUL.md would be absurd. Kiro edits → git commit → effective immediately via symlink. |
-| `~/.zeroclaw/skills/` | `mkOutOfStoreSymlink` → `/etc/nixos/zeroclaw/skills/` | Skills are created and modified by Kiro at runtime. Nix store would prevent this entirely. |
-| `~/.zeroclaw/cron/` (if ZeroClaw uses file-based cron) | `mkOutOfStoreSymlink` → `/etc/nixos/zeroclaw/cron/` | Cron definitions are Kiro-owned. Must be live-editable and version-controlled. Confirm with `zeroclaw config schema` whether cron definitions load from files or only from CLI commands. |
-| `~/.zeroclaw/config.toml` | `home.file` with `force = true` (Nix store, rendered at build time) | Structural config (providers, ports, autonomy rules) must go through NixOS. Prevents accidental drift. `force = true` is required because ZeroClaw may create this file on first run. |
-| `reference/upstream-docs/` | `mkOutOfStoreSymlink` → `~/Projects/zeroclaw/docs/` | Keeps ZeroClaw docs current via `git pull` in the upstream repo. Any agent working on this infrastructure can read current docs without duplication. |
-
-### Supporting Tools (Already Available System-Wide)
+### Development Tools
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| `zeroclaw doctor` | Validate config, check provider connectivity | Run after every `module.nix` change. Catches TOML errors before restart. |
-| `zeroclaw config schema` | Print JSON Schema for config.toml | Use to verify config options without reading upstream docs. |
-| `zeroclaw status` | Print active config summary | Quick sanity check after rebuild. |
-| `gpush` | git commit + pull + push | Kiro uses this for self-modification commits. Already available via `scripts.nix`. |
-| `journalctl --user -u zeroclaw-gateway -f` | Follow gateway logs | Passwordless via sudo whitelist. Primary debugging tool. |
-| `systemctl --user restart zeroclaw-gateway` | Restart gateway after config changes | No sudo needed for user services. |
+| `bun:sqlite` (no install needed) | State DB reads/writes in all `bin/` programs | Already in Bun runtime. Import as `import { Database } from "bun:sqlite"`. Use WAL mode for cron-safe concurrent access. |
+| `sqlite3` CLI (already available via `pkgs.sqlite` in cron-sync runtimeInputs) | State DB inspection during debugging | `sqlite3 ~/.zeroclaw/workspace/state.db ".tables"` |
+| `jq` (already available system-wide) | Parse `claude -p --output-format json` responses in shell | `claude -p "..." --output-format json \| jq -r '.result'` |
 
 ---
 
 ## Installation
 
-This is not a fresh install — ZeroClaw is already installed as a Nix package via `module.nix`. The relevant deployment commands are:
-
 ```bash
-# After any module.nix or structural config change:
-sudo nixos-rebuild switch --option eval-cache false --flake /etc/nixos#nixos
+# New npm dependencies for bin/ programs (run in /etc/nixos/zeroclaw/):
+bun add feedsmith
+bun add ts-jobspy
+bun add exponential-backoff
 
-# After any document/skill/cron change (no rebuild needed):
-# Changes take effect immediately via symlinks.
-# Commit to git:
-gpush "docs: update IDENTITY.md"
-
-# Validate config before/after rebuild:
-zeroclaw doctor
-zeroclaw status
-
-# Restart gateway after config changes that hot-reload:
-systemctl --user restart zeroclaw-gateway
+# No NixOS rebuild needed — bin/ is live-edit territory.
+# New bun packages are committed to git alongside the programs that use them.
 ```
+
+> Note: `package.json` and `bun.lockb` should be created at `/etc/nixos/zeroclaw/` if not already present.
+> Programs in `bin/` import from relative paths or npm packages resolved by Bun.
+
+---
+
+## Detailed Integration Notes
+
+### 1. Shared State Database (`state.db`)
+
+**Path:** `~/.zeroclaw/workspace/state.db`
+
+**Pattern** (directly from existing `sentinel-scan.ts` which uses `bun:sqlite`):
+
+```typescript
+import { Database } from "bun:sqlite";
+
+const STATE_DB = `${Bun.env.HOME}/.zeroclaw/workspace/state.db`;
+
+function openStateDb() {
+  const db = new Database(STATE_DB, { create: true });
+  db.exec("PRAGMA journal_mode=WAL");  // safe for concurrent cron reads
+  db.exec(`CREATE TABLE IF NOT EXISTS state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+  return db;
+}
+
+// Read
+function getState(key: string): string | null {
+  const db = openStateDb();
+  const row = db.query("SELECT value FROM state WHERE key = ?").get(key) as { value: string } | null;
+  db.close();
+  return row?.value ?? null;
+}
+
+// Write
+function setState(key: string, value: string): void {
+  const db = openStateDb();
+  db.run(
+    "INSERT OR REPLACE INTO state (key, value, updated_at) VALUES (?, ?, datetime('now'))",
+    [key, value]
+  );
+  db.close();
+}
+```
+
+**Key conventions for heartbeat crons:**
+- `job_scan:last_run` — ISO timestamp of last job scanner run
+- `job_scan:seen_ids` — JSON array of already-seen job IDs (dedup)
+- `company_research:last_refresh` — timestamp for weekly refresh cadence
+- `follow_up:pending` — JSON array of pending follow-up items
+- `content_scout:seen_urls` — JSON array of seen content URLs
+
+**Why `state.db` and NOT `brain.db`:** `brain.db` is ZeroClaw's agent memory — only agent sessions write to it via `memory_store`. Programs in `bin/` cannot access `state_get`/`state_set` agent tools (per `bin/README.md`). `state.db` is the correct parallel file for program-level persistence.
+
+---
+
+### 2. Notification Module with WhatsApp Retry
+
+**Create:** `/etc/nixos/zeroclaw/bin/notify.ts` — shared module imported by all heartbeat crons.
+
+```typescript
+// bin/notify.ts — shared WhatsApp notification with retry
+import { $ } from "bun";
+
+const ALERT_TO = "+51926689401";
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
+export async function notify(message: string): Promise<boolean> {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const result = await $`kapso-whatsapp-cli send --to ${ALERT_TO} --text ${message}`.quiet();
+      if (result.exitCode === 0) return true;
+    } catch {}
+    if (attempt < MAX_RETRIES - 1) {
+      await Bun.sleep(BASE_DELAY_MS * Math.pow(2, attempt));  // 1s, 2s, 4s
+    }
+  }
+  console.error("Warning: WhatsApp notification failed after all retries");
+  return false;
+}
+```
+
+**Retry rationale:** `kapso-whatsapp-cli` makes an HTTP call to the Kapso bridge. The bridge can be temporarily unavailable (process restarting, network blip). Three retries with exponential backoff handles transient failures without blocking the cron program for too long (max wait: 7s total).
+
+**Why not the `exponential-backoff` npm package here:** The `kapso-whatsapp-cli` call pattern is simple enough to implement inline without a dependency. Use the npm package only for complex retry scenarios (e.g., job board API calls with different error classifications).
+
+---
+
+### 3. Cron-Sync Agent Job Support via Gateway REST API
+
+**Current limitation:** `cron-sync` creates all jobs as `command` (shell) type. The ZeroClaw cron SQLite schema has a `job_type` column that distinguishes `shell` from `agent` jobs. Agent jobs need a `prompt` field, not a `command` field.
+
+**How the daemon executes agent jobs:** When an agent-type cron fires, the ZeroClaw daemon calls `POST /webhook` on its own gateway (`http://127.0.0.1:42617/webhook`) with the stored prompt as the message body. The gateway spawns a full agent session.
+
+**Gateway API (confirmed from official wiki):**
+```bash
+# The daemon's own gateway (port 42617 per config.toml [gateway] section)
+curl -X POST http://127.0.0.1:42617/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Run the sentinel skill"}'
+# Note: require_pairing = false in config.toml — no Bearer token needed for local calls
+```
+
+**cron-sync update needed:** Add `job_type` field to YAML schema and update `cron-sync` to:
+1. Read `type: agent` from YAML (default: `shell` for backward compatibility)
+2. For agent jobs: use `zeroclaw cron add --agent` flag (verify flag name against upstream) OR write directly to `jobs.db` `job_type` column after `zeroclaw cron add`
+
+**YAML schema extension:**
+```yaml
+name: "Morning Briefing"
+schedule: "0 8 * * *"
+tz: "America/Lima"
+type: agent   # new field — "shell" (default) or "agent"
+command: "Prepare a morning briefing covering emails, calendar, news. Send to WhatsApp."
+```
+
+**Confidence note:** The exact `zeroclaw cron add` flag for agent jobs needs verification against the upstream CLI reference (`~/Projects/zeroclaw/docs/commands-reference.md`). If no flag exists, the SQLite update approach is the fallback: `UPDATE cron_jobs SET job_type='agent', prompt=command, command=NULL WHERE name=?`.
+
+---
+
+### 4. Orchestration Engine using `claude -p`
+
+**What it is:** `claude -p` (the `--print` flag) puts Claude Code in headless mode — takes a prompt, returns a response, exits. Version 2.1.63 is confirmed installed at `~/.local/bin/claude`.
+
+**Usage from a `bin/` program:**
+```typescript
+import { $ } from "bun";
+
+async function orchestrate(task: string): Promise<string> {
+  // Use --output-format json for structured parsing
+  // Use --model sonnet to control cost
+  // Use --max-budget-usd 0.10 as a per-call guardrail
+  const result = await $`claude -p ${task} \
+    --output-format json \
+    --model sonnet \
+    --max-budget-usd 0.10 \
+    --dangerously-skip-permissions`.quiet();
+
+  if (result.exitCode !== 0) {
+    throw new Error(`claude -p failed: ${result.stderr.toString()}`);
+  }
+
+  const parsed = JSON.parse(result.stdout.toString());
+  return parsed.result;  // the text response
+}
+```
+
+**When to use `claude -p` vs ZeroClaw's own agent:**
+- Use `claude -p` when: the orchestration is initiated from a `bin/` program (no agent context), the task needs Claude-specific capabilities (tool use, file edits), or the task is a one-shot decomposition step
+- Use ZeroClaw's own agent (via `POST /webhook` or agent-type cron) when: the task benefits from ZeroClaw's memory, skills, and tool ecosystem
+- Do NOT use both in the same pipeline — pick one per task to avoid double LLM costs
+
+**`ANTHROPIC_API_KEY` requirement:** `claude -p` uses Anthropic's API directly. The key must be available in the environment when ZeroClaw's systemd service runs the cron. Add to `zeroclaw.env` via sops and ensure the systemd `EnvironmentFile` covers it.
+
+**NixOS delivery of `claude`:** The binary is at `~/.local/bin/claude` (npm global install). The ZeroClaw systemd cron service runs as `hybridz` and should have `~/.local/bin` in PATH via the `Environment=` or `ExecSearchPath=` directive in the unit. Verify this — or use the full absolute path `/home/hybridz/.local/bin/claude`.
+
+**Alternative for NixOS:** `claude-code` is in `nixpkgs` as of 2025-03-03 (`legacyPackages.x86_64-linux.claude-code` version 2.1.25). The installed version 2.1.63 is newer. Either add the nixpkgs package to `home.packages` for path stability, or keep the npm install but reference by absolute path in programs.
+
+---
+
+### 5. Job Scanner (ts-jobspy)
+
+**Pattern:**
+```typescript
+import { scrapeJobs } from "ts-jobspy";
+
+const jobs = await scrapeJobs({
+  siteName: ["indeed", "linkedin"],
+  searchTerm: "software engineer",
+  location: "Remote",
+  resultsWanted: 50,
+  hoursOld: 24,
+});
+```
+
+**Known limitations (MEDIUM confidence):**
+- LinkedIn rate-limits at ~10 pages — expect 429s. Wrap in exponential backoff.
+- Indeed has no rate limiting per the library docs.
+- `ts-jobspy` only has LinkedIn + Indeed working as of early 2026 (Glassdoor, ZipRecruiter "coming soon").
+- LinkedIn scraping violates LinkedIn ToS. For personal/private use this is acceptable risk; do not use at scale.
+
+**Dedup via state.db:** Store seen job IDs in `state.db` under `job_scan:seen_ids`. Compare on each run. Only alert on truly new jobs.
+
+---
+
+### 6. Paper Scout (arXiv API)
+
+arXiv provides a public Atom 1.0 API — no scraping needed, no auth required.
+
+```typescript
+import { parseFeed } from "feedsmith";
+
+const query = "machine learning agent autonomous";
+const url = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(query)}&max_results=20&sortBy=submittedDate&sortOrder=descending`;
+
+const response = await fetch(url);
+const xml = await response.text();
+const feed = parseFeed(xml);
+
+for (const entry of feed.entries ?? []) {
+  console.log(entry.title, entry.links?.[0]?.href);
+}
+```
+
+**arXiv API terms:** Free to use, no auth required. Rate limit: ~3 requests/second. Add `await Bun.sleep(1000)` between calls if fetching multiple pages. Always link back to arXiv for paper downloads (license requirement).
 
 ---
 
@@ -92,12 +268,12 @@ systemctl --user restart zeroclaw-gateway
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| `mkOutOfStoreSymlink` for docs/skills | Regular `home.file` (Nix store copy) | Never for live-editable files. Use `home.file` only for files that are structurally part of the NixOS config and should NOT be editable at runtime (e.g., `config.toml`). |
-| `zeroclaw daemon` as systemd entrypoint | `zeroclaw gateway` | Only if you want gateway-only without channels/cron. Wrong for production — use `daemon`. |
-| sops-nix rendered env file | Hardcoding secrets in `config.toml` | Never. Nix store is world-readable. sops-nix + `EnvironmentFile` is the only correct pattern on NixOS. |
-| `format = "openclaw"` identity | `format = "aieos"` with JSON file | Only if migrating to an AIEOS identity format. Not relevant here — openclaw format (markdown files) is simpler and already working. |
-| SQLite memory backend | `lucid` or `markdown` | Use `lucid` only if you need a hosted memory service. Use `markdown` only for human-readable memory that Kiro will manually review. SQLite is the right default: fast, local, no external deps. |
-| Z.AI `chat_completions` wire API | `openai-responses` | Never with Z.AI. Returns 404. `chat_completions` is confirmed working. |
+| `bun:sqlite` for state.db | `state_get`/`state_set` agent IPC tools | Only in agent sessions (ZeroClaw skills). Programs in `bin/` cannot call agent tools — they run as standalone processes outside the agent context. |
+| ZeroClaw Gateway `POST /webhook` for agent crons | `zeroclaw agent -m "..."` CLI | Use the CLI for one-off interactive invocations. For cron jobs, the gateway API is the correct interface — the daemon is already running and managing sessions. |
+| `claude -p` for orchestration | ZeroClaw's built-in agent (via cron job) | Use ZeroClaw's agent for tasks needing memory, skills, and tool ecosystem. Use `claude -p` only when initiating from a `bin/` program that is already running outside the ZeroClaw context. |
+| `feedsmith` for RSS/Atom | `fast-xml-parser` directly | Use `fast-xml-parser` if `feedsmith` introduces unwanted weight or type conflicts. `feedsmith` adds ~5KB of typed convenience wrappers over `fast-xml-parser` — acceptable trade-off. |
+| `ts-jobspy` for job scanning | Python `python-jobspy` via `python3 -c` | `python-jobspy` has more boards and better LinkedIn support, but introduces a Python subprocess in a Bun program. Use if `ts-jobspy` proves too unreliable for LinkedIn. |
+| Inline exponential backoff in `notify.ts` | `exponential-backoff` npm package | Use the npm package if retry logic grows more complex (different delays per error type, circuit breaker pattern). For the current 3-attempt WhatsApp retry, inline is sufficient. |
 
 ---
 
@@ -105,42 +281,39 @@ systemctl --user restart zeroclaw-gateway
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| Ad-hoc cron scripts outside ZeroClaw | Splits cron management across systems, loses version control, breaks the single-source-of-truth model | `zeroclaw cron add` for programmatic cron, or YAML files symlinked via `skills/` for structured job definitions |
-| Editing `~/.zeroclaw/` files directly | Violates single-source-of-truth. Changes will be overwritten on next rebuild or aren't version-controlled | Edit in `/etc/nixos/zeroclaw/`, changes propagate via symlinks or rebuild |
-| Hardcoding API keys in `config.toml` template | `module.nix` renders to Nix store — world-readable. API keys would be exposed | Use `EnvironmentFile` in systemd unit pointing to sops-rendered secrets |
-| `zeroclaw onboard` on an already-configured system | Will overwrite `config.toml` unless `--force` is explicit. Safe refusal exists but adds noise | Only use `onboard` for fresh setups. NixOS manages config declaratively. |
-| `open_skills_enabled = true` | Downloads community skills from the internet. Security audit exists but this is an unnecessary attack surface for a private agent | Keep `false`. Install skills locally from `/etc/nixos/zeroclaw/skills/`. |
-| Multiple `ZEROCLAW_PROVIDER` env var overrides | Bypasses config.toml provider selection. Creates invisible runtime behavior that doesn't match the declared config | Set `default_provider` in config.toml. Only use env vars for deliberate one-off overrides. |
-| `require_pairing = true` on the gateway | Unnecessary for a local-only gateway (bound to 127.0.0.1). Adds friction without security benefit since the gateway is not publicly exposed | Keep `require_pairing = false` for local single-user deployment. |
+| Direct writes to `~/.zeroclaw/workspace/cron/jobs.db` | The cron DB schema is ZeroClaw's internal implementation detail. Direct writes bypass validation and risk corruption. | Use `zeroclaw cron add/update` via `cron-sync` or wait for the `zeroclaw cron add --agent` flag to be confirmed. |
+| Direct writes to `~/.zeroclaw/workspace/memory/brain.db` | `brain.db` is ZeroClaw's agent memory — the schema is internal. Direct writes can corrupt agent memory state. | Write to `state.db` (program-level state) or use `memory_store` from inside an agent session. |
+| Polling `zeroclaw agent -m` in a loop | Creates orphaned agent sessions, burns tokens, no dedup. | Use the gateway webhook with `X-Idempotency-Key` header for safe repeated calls. |
+| `claude -p` without `--max-budget-usd` | Uncapped orchestration calls can exceed daily Z.AI budget. | Always set `--max-budget-usd 0.10` (or similar) per call. Stack-level cost control. |
+| `ts-jobspy` for production-scale scraping | Rate limits are aggressive, IPs can be banned. | Use `python-jobspy` with proxy rotation, or a commercial job data API (Proxycurl, Apify) if scale increases. |
+| Browser automation (Playwright) for job scraping | Heavyweight, flaky, requires display/Xvfb in systemd context. | Use `ts-jobspy` (HTTP-based) which does not require a browser. |
 
 ---
 
 ## Stack Patterns by Variant
 
-**For live-editable Kiro behavior (docs, skills, cron):**
-- Use `mkOutOfStoreSymlink` to `/etc/nixos/zeroclaw/<path>`
-- Edit in source, git commit — effective immediately via symlink
-- No rebuild required
+**For shell-type cron jobs (deterministic logic):**
+- Write a `bin/<name>.ts` Bun program
+- Use `bun:sqlite` for state, `notify.ts` for alerts
+- YAML `type: shell` (or omit — shell is default)
+- `cron-sync` handles registration
 
-**For structural config (providers, ports, autonomy rules, security):**
-- Edit `module.nix` TOML template
-- Requires `sudo nixos-rebuild switch`
-- Run `zeroclaw doctor` after rebuild to validate
+**For agent-type cron jobs (LLM reasoning needed):**
+- Write a focused prompt as the `command` field in YAML
+- YAML `type: agent`
+- ZeroClaw daemon fires `POST /webhook` internally with the prompt
+- Optionally reference a skill: "Run the sentinel skill and report results"
 
-**For secrets (API keys, tokens):**
-- Add to sops YAML at `/etc/nixos/secrets/zeroclaw.yaml`
-- Reference via `EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ]` in systemd unit
-- ZeroClaw reads env vars for provider API keys by convention
+**For orchestration-heavy programs (task decomposition):**
+- Use `claude -p` from a `bin/` program
+- Provide context via stdin or `--append-system-prompt`
+- Parse response with `--output-format json`
+- Budget per call with `--max-budget-usd`
 
-**For cron job definitions:**
-- Use `zeroclaw cron add` CLI for simple jobs
-- For complex jobs requiring SKILL.toml manifests, place in `skills/` directory
-- Confirm via `zeroclaw cron list` after adding
-
-**For new skills:**
-- Create `skills/<name>/SKILL.toml` + implementation in `/etc/nixos/zeroclaw/skills/`
-- Symlink propagates to `~/.zeroclaw/skills/` immediately
-- No rebuild needed
+**For content ingestion (RSS/Atom):**
+- Use `feedsmith` + Bun's built-in `fetch`
+- Store seen item IDs/hashes in `state.db` for dedup
+- No browser, no scraping — prefer official APIs
 
 ---
 
@@ -148,78 +321,29 @@ systemctl --user restart zeroclaw-gateway
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| ZeroClaw binary | Current (Rust, Feb 2026 docs) | `wire_api = "chat_completions"` required for Z.AI (not `openai-responses`) |
-| kapso-whatsapp-plugin | Current | Imported via `inputs.kapso-whatsapp-plugin.homeManagerModules.default` |
-| NixOS | 25.11 | home-manager tracks same channel |
-| sops-nix | Current | Secrets rendered to `/run/secrets/rendered/zeroclaw.env` |
-| GLM-5 via Z.AI | Current | Default model. `default_provider = "zai-coding"`, `default_model = "glm-5"` |
-
----
-
-## Key Config Sections Not Yet in module.nix
-
-Based on the ZeroClaw config reference (verified Feb 25 2026), these sections are missing from the current `module.nix` and should be added:
-
-```toml
-# Autonomy — required for Kiro to use shell and file tools
-[autonomy]
-level = "supervised"
-workspace_only = false
-allowed_commands = ["git", "gh", "node", "uv", "python3", "jq", "rg", "fd", "curl", "systemctl", "journalctl", "gpush", "zeroclaw"]
-allowed_roots = ["/etc/nixos/zeroclaw", "/home/hybridz/Projects"]
-forbidden_paths = ["/etc/nixos/secrets", "/home/hybridz/.ssh", "/home/hybridz/.gnupg"]
-auto_approve = ["file_read", "grep", "memory_search"]
-
-# Agent behavior tuning
-[agent]
-max_tool_iterations = 40
-max_history_messages = 50
-parallel_tools = true
-
-# Research phase — lets Kiro gather context before responding
-[research]
-enabled = true
-trigger = "keywords"
-keywords = ["find", "show", "check", "search", "how many", "what", "list", "status"]
-max_iterations = 5
-
-# Memory — explicit config (SQLite is default but should be declared)
-[memory]
-backend = "sqlite"
-auto_save = true
-
-# Observability — rolling runtime trace for debugging cron failures
-[observability]
-backend = "none"
-runtime_trace_mode = "rolling"
-runtime_trace_max_entries = 200
-
-# Cost guardrail matching Z.AI $30/month budget
-[cost]
-enabled = true
-daily_limit_usd = 1.00
-monthly_limit_usd = 30.00
-warn_at_percent = 80
-
-# HTTP requests for cron jobs hitting external APIs
-[http_request]
-enabled = true
-allowed_domains = ["api.linkedin.com", "news.ycombinator.com", "arxiv.org", "github.com"]
-timeout_secs = 30
-```
+| Bun | 1.3.3 | `bun:sqlite` built-in. `import { Database } from "bun:sqlite"` — no install needed. |
+| `claude` CLI | 2.1.63 | At `~/.local/bin/claude`. Confirmed: `-p`/`--print` flag exits after response. `--output-format json` returns `{"result": "..."}`. |
+| ZeroClaw gateway | Current | Port 42617 (from `config.toml [gateway]`). `require_pairing = false` — no Bearer token needed for local `POST /webhook` calls. |
+| `feedsmith` | Latest | Requires `fast-xml-parser` as peer dep (auto-installed). Works with Bun's native `fetch`. |
+| `ts-jobspy` | Latest npm | LinkedIn + Indeed only currently working. Bun-compatible (uses native fetch internally). |
+| Node.js | 22.22.0 | Available but not primary runtime — use Bun for all `bin/` programs. |
 
 ---
 
 ## Sources
 
-- `/home/hybridz/Projects/zeroclaw/docs/config-reference.md` — Verified Feb 25 2026. PRIMARY source for all config sections, keys, defaults, and notes. HIGH confidence.
-- `/home/hybridz/Projects/zeroclaw/docs/commands-reference.md` — Verified Feb 25 2026. CLI surface, `zeroclaw cron`, `zeroclaw skills`, `zeroclaw doctor`. HIGH confidence.
-- `/etc/nixos/zeroclaw/module.nix` — Current implementation. Authoritative for what is already configured. HIGH confidence.
-- `/etc/nixos/zeroclaw/.planning/PROJECT.md` — Project requirements and constraints. HIGH confidence.
-- NixOS home-manager `mkOutOfStoreSymlink` — Standard NixOS pattern for mutable files managed by home-manager. Confirmed in use in existing module.nix. HIGH confidence.
-- MEMORY.md note: `Z.AI does NOT support openai-responses API type (returns 404) — use openai-completions` — Session-learned from prior debugging. HIGH confidence (already encoded in module.nix).
+- `claude --help` — Direct CLI inspection. Confirmed `-p`/`--print` flag, `--output-format json`, `--max-budget-usd`, `--model`. Version 2.1.63. HIGH confidence.
+- `nix search nixpkgs claude-code` — `claude-code` is in nixpkgs at 2.1.25. Installed version (2.1.63) is newer. MEDIUM confidence for nixpkgs path stability.
+- [ZeroClaw Gateway API Reference wiki](https://github.com/zeroclaw-labs/zeroclaw/wiki/10.2-gateway-api-reference) — Confirmed `/webhook` endpoint, request/response shape, idempotency headers. HIGH confidence.
+- `/etc/nixos/zeroclaw/bin/sentinel-scan.ts` — Existing `bun:sqlite` usage pattern. HIGH confidence (validated, in production).
+- `/etc/nixos/zeroclaw/config.toml` — Gateway on port 42617, `require_pairing = false`. HIGH confidence.
+- [feedsmith GitHub](https://github.com/macieklamberski/feedsmith) — TypeScript-native Atom/RSS parser. MEDIUM confidence (not Context7 verified).
+- [ts-jobspy npm](https://www.npmjs.com/package/ts-jobspy) — LinkedIn + Indeed scrapers working. LOW-MEDIUM confidence (low download count, limited maintenance).
+- [arXiv API docs](https://info.arxiv.org/help/api/user-manual.html) — Free Atom 1.0 API, no auth. HIGH confidence.
+- [bun:sqlite docs](https://bun.com/docs/runtime/sqlite) — Built-in, no install, 3-6x faster than better-sqlite3. HIGH confidence.
+- [speedyapply/JobSpy](https://github.com/speedyapply/JobSpy) — Python reference; confirms ts-jobspy is a port. MEDIUM confidence.
 
 ---
 
-*Stack research for: ZeroClaw agent configuration infrastructure on NixOS*
-*Researched: 2026-03-04*
+*Stack research for: ZeroClaw v2.0 Heartbeat — infrastructure additions*
+*Researched: 2026-03-06*
