@@ -103,6 +103,17 @@ None - no external service configuration required.
 - Run `cron-sync` to register all four new jobs with ZeroClaw scheduler
 - v2.0 Heartbeat cron suite is complete -- all distribution, research, opportunity scanning, and system health crons are in place
 
+## Self-Check: PASSED
+
+- FOUND: cron/jobs/build-in-public-drafter.yaml
+- FOUND: cron/jobs/engagement-scout.yaml
+- FOUND: cron/jobs/paper-scout.yaml
+- FOUND: cron/jobs/company-refresh.yaml
+- FOUND: .planning/phases/10-research-distribution-and-cost-calibration/10-01-SUMMARY.md
+- FOUND: commit 0147c5f (Task 1)
+- FOUND: commit 10f71b1 (Task 2)
+- All 40 orchestrate.test.ts tests pass
+
 ---
 *Phase: 10-research-distribution-and-cost-calibration*
 *Completed: 2026-03-07*

@@ -23,18 +23,42 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 - ✓ Self-repair mandate: unconditional, files durable records, sentinel enforces every 2h — v1.0
 - ✓ Multi-Agent IPC configured and documented — v1.0
 
+## Current State
+
+**Shipped:** v2.0 Heartbeat — 2026-03-08
+
+**What was delivered:**
+- Complete infrastructure layer (state, notifications, orchestration, cron overhaul)
+- 11 Heartbeat crons wired and active
+- State database with WAL mode, schema versioning, and 8 v2.0 tables
+- Orchestration engine with checkpoint/resume support
+- Cron-sync supporting `type: agent` YAML jobs
+- Complete documentation in bin/README.md
+
+**Known gaps:**
+- FIX-07: Cost calibration deferred to manual handling (see `/etc/nixos/zeroclaw/todo.md`)
+
+## Requirements
+
+### Validated
+
+All v1.0, v1.1, and v2.0 requirements shipped. See milestone archives for details:
+- `.planning/milestones/v1.0-REQUIREMENTS.md`
+- `.planning/milestones/v1.1-REQUIREMENTS.md`
+- `.planning/milestones/v2.0-REQUIREMENTS.md`
+
 ### Active
 
-#### Current Milestone: v2.0 Heartbeat
+No active requirements. Next milestone planning required.
 
-**Goal:** Build the complete infrastructure layer (state, notifications, orchestration, cron overhaul) and wire all Heartbeat crons — making Kiro a fully proactive, scheduled assistant.
+## Next Milestone Goals
 
-**Target features:**
-- Shared state database (SQLite) for all programs and trackers
-- Centralized notification module (WhatsApp + retry + env-var config)
-- Cron-sync overhaul for agent job type support via daemon REST API
-- Orchestration engine for complex multi-step task decomposition
-- 11 Heartbeat crons: morning briefing, job scanner, content scout, follow-up enforcer, build-in-public drafter, EOD summary, self-audit, weekly company refresh, paper scout, engagement scout, freelance scanner
+**Status:** Not started — awaiting `/gsd:new-milestone`
+
+Planning notes:
+- Observability: Dashboard or reporting for cron job health and token cost tracking
+- Advanced automation: Auto-apply to high-confidence job matches, smart scheduling
+- Continue expanding research and distribution automation
 
 ### Out of Scope
 
@@ -48,6 +72,7 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 - **Platform:** ZeroClaw is a Rust-based autonomous agent runtime with native support for cron, skills (SKILL.toml manifests), sub-agent delegation, model routing, memory, autonomy controls, and multi-channel communication
 - **Shipped v1.0:** 4 phases, 10 plans, ~72 commits, 2,416 LOC across .nix/.md/.toml, built in 1 day
 - **Shipped v1.1:** 1 phase, 2 plans — public release with README (166 lines), MIT LICENSE, GitHub release v1.0, repo metadata, plus config.toml sops migration and task execution skills
+- **Shipped v2.0:** 5 phases, 13 plans, 37 feature commits — state DB, notification module, orchestration engine, cron overhaul, 11 Heartbeat crons, built in ~4 days
 - **Deployment model:** NixOS flake → home-manager module → systemd user service. Config rendered at build time via `pkgs.writeText`; identity docs and skills symlinked via `home.activation` for live editing
 - **Communication:** WhatsApp via Kapso bridge, CLI for direct interaction
 - **Model providers:** Z.AI (zai, zai-coding) with GLM models; Anthropic available
@@ -79,6 +104,14 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 | config.toml moved to sops template | Enables secret injection at activation time; unblocks cron tool access | ✓ Good — config.toml rendered via sops at NixOS activation |
 | v1.0 tag pre-existed for GitHub release | Used `--target main` on `gh release create` to attach release to existing tag | ✓ Good — no duplicate tags |
 | On-demand reference pattern | OpenClaw docs symlinked to reference/ but not auto-loaded into context — only pulled when needed | ✓ Good — keeps daily context lean |
+| PRAGMA user_version for schema versioning | Single consumer, simpler than migration table | ✓ Good — idempotent DDL with version check |
+| WAL + busy_timeout for SQLite state.db | Handles concurrent access and race conditions | ✓ Good — stable foundation for all automation |
+| Injectable runner for orchestrate.ts tests | Test isolation without global mocking | ✓ Good — full coverage of orchestration logic |
+| Checkpoint-before-execute pattern | Subtask row written BEFORE calling runner — safe for crash/resume | ✓ Good — resumable multi-step workflows |
+| parseYaml regex parsing (no yq dependency) | Avoids yq dependency in bin/ execution context | ✓ Good — works without additional deps |
+| Step scoring rubric uses '--' separator | Avoids Go YAML parse error in agent steps | ✓ Good — consistent with cron-sync patterns |
+| Section-replace pattern for LORE.md | Read full file, replace section, write back — safe for partial updates | ✓ Good — preserves unrelated sections |
+| Cron job type: agent vs shell | Agent jobs use orchestrate.ts, shell jobs are deterministic programs | ✓ Good — clear separation of concerns |
 
 ---
-*Last updated: 2026-03-06 after v2.0 milestone start*
+*Last updated: 2026-03-08 after v2.0 milestone complete*

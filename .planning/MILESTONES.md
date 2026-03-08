@@ -1,5 +1,14 @@
 # Milestones
 
+## v2.0 Heartbeat (Shipped: 2026-03-08)
+
+**Phases completed:** 5 phases, 13 plans, 8 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v1.1 Public Release (Shipped: 2026-03-05)
 
 **Phases completed:** 1 phase, 2 plans
