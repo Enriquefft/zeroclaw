@@ -2,7 +2,7 @@
 
 ## Pending Task
 
-**Status:** Blocking checkpoint in Phase 10 execution
+**Status:** Pending - Manual calibration (not blocking Phase 10 execution)
 
 ### What needs to happen
 
