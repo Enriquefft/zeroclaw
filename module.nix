@@ -437,6 +437,9 @@ in
       Restart = "on-failure";
       RestartSec = 5;
       EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ];
+      Environment = [
+        "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.bun}/bin:/run/current-system/sw/bin:/home/hybridz/.local/bin"
+      ];
     };
     Install = {
       WantedBy = [ "default.target" ];
