@@ -61,28 +61,28 @@ Requirements for the Hardening milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CRON-01 | — | Pending |
-| CRON-02 | — | Pending |
-| CRON-03 | — | Pending |
-| CRON-04 | — | Pending |
-| DOCS-01 | — | Pending |
-| DOCS-02 | — | Pending |
-| DOCS-03 | — | Pending |
-| DOCS-04 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| TEST-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
+| CRON-01 | Phase 11 | Pending |
+| CRON-02 | Phase 11 | Pending |
+| CRON-03 | Phase 11 | Pending |
+| CONF-01 | Phase 11 | Pending |
+| TEST-01 | Phase 12 | Pending |
+| TEST-02 | Phase 12 | Pending |
+| TEST-03 | Phase 12 | Pending |
+| TEST-04 | Phase 12 | Pending |
+| TEST-05 | Phase 12 | Pending |
+| DOCS-01 | Phase 13 | Pending |
+| DOCS-02 | Phase 13 | Pending |
+| DOCS-03 | Phase 13 | Pending |
+| DOCS-04 | Phase 13 | Pending |
+| CONF-02 | Phase 14 | Pending |
+| CONF-03 | Phase 14 | Pending |
+| CRON-04 | Phase 14 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 (pending roadmap creation)
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation*
