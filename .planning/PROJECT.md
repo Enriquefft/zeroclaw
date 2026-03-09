@@ -26,6 +26,7 @@ A robust, extensible foundation that enables Kiro to grow and self-modify withou
 ## Current State
 
 **Shipped:** v2.0 Heartbeat — 2026-03-08
+**Active:** v2.1 Hardening — started 2026-03-09
 
 **What was delivered:**
 - Complete infrastructure layer (state, notifications, orchestration, cron overhaul)
@@ -49,16 +50,19 @@ All v1.0, v1.1, and v2.0 requirements shipped. See milestone archives for detail
 
 ### Active
 
-No active requirements. Next milestone planning required.
+See `.planning/REQUIREMENTS.md` for v2.1 requirements.
 
-## Next Milestone Goals
+## Current Milestone: v2.1 Hardening
 
-**Status:** Not started — awaiting `/gsd:new-milestone`
+**Goal:** Verify and fix all v2.0 automation so every cron job, notification path, document, and skill works reliably in production before adding new capabilities.
 
-Planning notes:
-- Observability: Dashboard or reporting for cron job health and token cost tracking
-- Advanced automation: Auto-apply to high-confidence job matches, smart scheduling
-- Continue expanding research and distribution automation
+**Target features:**
+- End-to-end cron job verification (all 12 jobs run successfully)
+- WhatsApp notification path working (session window, delivery confirmation)
+- MD file audit (stale references, unused docs, consistency)
+- Skill CLI test coverage (every skill CLI has at least 1 test)
+- Config and security hygiene (world-readable warnings, cost calibration)
+- Self-audit passes clean (no drift detected)
 
 ### Out of Scope
 
@@ -114,4 +118,4 @@ Planning notes:
 | Cron job type: agent vs shell | Agent jobs use orchestrate.ts, shell jobs are deterministic programs | ✓ Good — clear separation of concerns |
 
 ---
-*Last updated: 2026-03-08 after v2.0 milestone complete*
+*Last updated: 2026-03-09 after v2.1 Hardening milestone start*

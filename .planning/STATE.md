@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Heartbeat
-status: completed
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-03-08T23:49:23.193Z"
-last_activity: "2026-03-08 — Plan 10-02 complete: bin/README.md documentation, manual cost calibration workflow, all Phase 10 crons active"
+milestone: v2.1
+milestone_name: Hardening
+status: active
+stopped_at: null
+last_updated: "2026-03-09T00:30:00.000Z"
+last_activity: "2026-03-09 — Milestone v2.1 Hardening started"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** A robust, extensible foundation that enables Kiro to grow and self-modify without friction
-**Current focus:** v2.0 Heartbeat — Phase 6: Foundation Fixes and Shared Infrastructure
+**Current focus:** v2.1 Hardening — Verify and fix all v2.0 automation
 
 ## Current Position
 
-Phase: 10 of 10 (Research Distribution and Cost Calibration)
-Plan: 2 of 2 complete (10-02 done — phase complete)
-Status: Complete
-Last activity: 2026-03-09 — Completed quick task 5: Debug and fix all 12 cron jobs showing error status
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-09 — Milestone v2.1 Hardening started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
