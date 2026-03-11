@@ -9,13 +9,16 @@
   ...
 }:
 let
-  zeroclawPkg =
-    inputs.zeroclaw.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
-      (old: {
-        src = inputs.zeroclaw;
-        prePatch = ""; # web/dist already exists in full source (upstream packaging bug)
-        cargoBuildFeatures = (old.cargoBuildFeatures or []) ++ [ "browser-native" ];
-      });
+  # Build zeroclaw directly — upstream flake's packages.default is the Rust toolchain, not the binary
+  zeroclawPkg = pkgs.rustPlatform.buildRustPackage {
+    pname = "zeroclaw";
+    version = "0.1.7";
+    src = inputs.zeroclaw;
+    cargoLock.lockFile = "${inputs.zeroclaw}/Cargo.lock";
+    buildFeatures = [ "browser-native" ];
+    doCheck = false;
+    meta.mainProgram = "zeroclaw";
+  };
 
   # cron-sync: reconciles zeroclaw/cron/jobs/*.yaml → ZeroClaw SQLite via CLI.
   # Uses zeroclawPkg in runtimeInputs so the real binary is found first inside the script,
