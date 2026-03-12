@@ -56,9 +56,11 @@ form-filler prepare google-swe-2024
 ## Browser - Uso Correcto
 
 - Después de `browser screenshot`, la imagen llega **directamente en la respuesta** como bloque visual — no busques el archivo en disco ni uses `image_info`
-- Después de `browser open` o `browser click` que falle, tomar snapshot **antes** de reintentar — los refs cambian con cada nueva sesión
-- Si un clic falla dos veces con el mismo ref, tomar snapshot nuevo y usar el ref actualizado
+- Los refs `@eN` son **temporales** — el JS del sitio puede re-renderizar el DOM entre el snapshot y el clic, invalidando el ref
+- **Siempre tomar un snapshot fresco inmediatamente antes de cada clic** — no reutilizar refs de snapshots anteriores
+- Si un clic falla con "element not found" o similar, tomar snapshot nuevo y usar el ref actualizado
 - **No reabrir el browser** si ya hay una sesión activa — usa `browser snapshot` para obtener refs frescos
+- Flujo correcto: `snapshot` → leer ref → `click ref` (sin pasos intermedios entre snapshot y click)
 
 ## Estructura de Archivos
 
