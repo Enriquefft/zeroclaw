@@ -18,6 +18,9 @@ let
     buildFeatures = [ "browser-native" ];
     doCheck = false;
     meta.mainProgram = "zeroclaw";
+    patches = [
+      ./patches/fix-screenshot-multimodal.patch
+    ];
   };
 
   # cron-sync: reconciles zeroclaw/cron/jobs/*.yaml → ZeroClaw SQLite via CLI.
@@ -378,6 +381,7 @@ in
       type = "zeroclaw";
       url = "ws://127.0.0.1:42617/ws/chat";
       errorMessage = "Sorry, I'm having trouble right now. Please try again in a moment.";
+      tracePath = "${config.home.homeDirectory}/.zeroclaw/workspace/state/runtime-trace.jsonl";
     };
 
     security = {
