@@ -197,7 +197,7 @@ let
   # Uses zeroclawPkg in runtimeInputs so the real binary is found (bypasses wrapper).
   skillsSync = pkgs.writeShellApplication {
     name = "skills-sync";
-    runtimeInputs = [ zeroclawPkg pkgs.coreutils ];
+    runtimeInputs = [ zeroclawPkg pkgs.coreutils pkgs.gnused pkgs.python3 ];
     text = ''
       SKILLS_DIR="/etc/nixos/zeroclaw/skills"
       WORKSPACE="$HOME/.zeroclaw/workspace/skills"
@@ -253,6 +253,34 @@ let
           fi
         fi
         installed=$((installed + 1))
+
+        # Auto-whitelist cli_command from SKILL.toml into allowed_commands
+        toml="$skill_dir/SKILL.toml"
+        if [[ -f "$toml" ]]; then
+          cli_cmd=$(grep -m1 '^cli_command' "$toml" | sed 's/.*=[[:space:]]*"\(.*\)"/\1/')
+          if [[ -n "$cli_cmd" ]]; then
+            config="$HOME/.zeroclaw/config.toml"
+            if [[ -f "$config" ]] && ! grep -q "\"$cli_cmd\"" "$config"; then
+              if $DRY_RUN; then
+                echo "  → would add \"$cli_cmd\" to allowed_commands"
+              else
+                python3 - "$config" "$cli_cmd" <<'PYEOF'
+import sys, re
+path, cmd = sys.argv[1], sys.argv[2]
+text = open(path).read()
+# Insert cmd before the closing ] of the allowed_commands array
+text = re.sub(
+    r'(allowed_commands\s*=\s*\[.*?)(])',
+    lambda m: m.group(1).rstrip() + f',\n  "{cmd}"\n]',
+    text, count=1, flags=re.DOTALL
+)
+open(path, 'w').write(text)
+PYEOF
+                echo "  → added \"$cli_cmd\" to allowed_commands"
+              fi
+            fi
+          fi
+        fi
       done
 
       if $REMOVE_MISSING; then
