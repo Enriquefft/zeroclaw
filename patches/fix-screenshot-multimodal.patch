@@ -1,17 +1,8 @@
 diff --git a/src/providers/anthropic.rs b/src/providers/anthropic.rs
-index 45e9f18b..ea3fcfb9 100644
+index 0319e28b..84da0181 100644
 --- a/src/providers/anthropic.rs
 +++ b/src/providers/anthropic.rs
-@@ -68,6 +68,8 @@ enum NativeContentOut {
-         #[serde(skip_serializing_if = "Option::is_none")]
-         cache_control: Option<CacheControl>,
-     },
-+    #[serde(rename = "image")]
-+    Image { source: ImageSource },
-     #[serde(rename = "tool_use")]
-     ToolUse {
-         id: String,
-@@ -79,12 +81,20 @@ enum NativeContentOut {
+@@ -81,7 +81,7 @@ enum NativeContentOut {
      #[serde(rename = "tool_result")]
      ToolResult {
          tool_use_id: String,
@@ -20,29 +11,7 @@ index 45e9f18b..ea3fcfb9 100644
          #[serde(skip_serializing_if = "Option::is_none")]
          cache_control: Option<CacheControl>,
      },
- }
- 
-+#[derive(Debug, Serialize)]
-+struct ImageSource {
-+    #[serde(rename = "type")]
-+    kind: &'static str,
-+    media_type: String,
-+    data: String,
-+}
-+
- #[derive(Debug, Serialize)]
- struct NativeToolSpec<'a> {
-     name: &'a str,
-@@ -210,7 +220,7 @@ impl AnthropicProvider {
-                     | NativeContentOut::ToolResult { cache_control, .. } => {
-                         *cache_control = Some(CacheControl::ephemeral());
-                     }
--                    NativeContentOut::ToolUse { .. } => {}
-+                    NativeContentOut::ToolUse { .. } | NativeContentOut::Image { .. } => {}
-                 }
-             }
-         }
-@@ -281,16 +291,51 @@ impl AnthropicProvider {
+@@ -293,11 +293,31 @@ impl AnthropicProvider {
              .and_then(serde_json::Value::as_str)
              .unwrap_or("")
              .to_string();
@@ -75,27 +44,7 @@ index 45e9f18b..ea3fcfb9 100644
                  cache_control: None,
              }],
          })
-     }
- 
-+    fn parse_inline_image(marker_content: &str) -> Option<NativeContentOut> {
-+        let rest = marker_content.strip_prefix("data:")?;
-+        let semi_pos = rest.find(';')?;
-+        let media_type = rest[..semi_pos].to_string();
-+        let after_semi = &rest[semi_pos + 1..];
-+        let data = after_semi.strip_prefix("base64,")?;
-+        Some(NativeContentOut::Image {
-+            source: ImageSource {
-+                kind: "base64",
-+                media_type,
-+                data: data.to_string(),
-+            },
-+        })
-+    }
-+
-     fn convert_messages(messages: &[ChatMessage]) -> (Option<SystemPrompt>, Vec<NativeMessage>) {
-         let mut system_text = None;
-         let mut native_messages = Vec::new();
-@@ -880,7 +925,7 @@ mod tests {
+@@ -948,7 +968,7 @@ mod tests {
      fn native_content_tool_result_with_cache_control() {
          let content = NativeContentOut::ToolResult {
              tool_use_id: "tool_123".to_string(),
@@ -104,7 +53,7 @@ index 45e9f18b..ea3fcfb9 100644
              cache_control: Some(CacheControl::ephemeral()),
          };
          let json = serde_json::to_string(&content).unwrap();
-@@ -1021,7 +1066,7 @@ mod tests {
+@@ -1089,7 +1109,7 @@ mod tests {
              role: "user".to_string(),
              content: vec![NativeContentOut::ToolResult {
                  tool_use_id: "tool_123".to_string(),

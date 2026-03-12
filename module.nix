@@ -12,7 +12,7 @@ let
   # Build zeroclaw directly — upstream flake's packages.default is the Rust toolchain, not the binary
   zeroclawPkg = pkgs.rustPlatform.buildRustPackage {
     pname = "zeroclaw";
-    version = "0.1.7";
+    version = "0.1.8";
     src = inputs.zeroclaw;
     cargoLock.lockFile = "${inputs.zeroclaw}/Cargo.lock";
     buildFeatures = [ "browser-native" ];
