@@ -20,6 +20,8 @@ let
     meta.mainProgram = "zeroclaw";
     patches = [
       ./patches/fix-screenshot-multimodal.patch
+      ./patches/fix-browser-xpath-refs.patch
+      ./patches/fix-browser-dedup-per-turn.patch
     ];
   };
 
