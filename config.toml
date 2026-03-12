@@ -53,9 +53,9 @@ allowed_commands = [
   "zeroclaw", "gpush", "gcommit", "gh", "cargo",
   "node", "bun", "npm", "python3", "bash", "sh",
   "ls", "cat", "grep", "find", "cp", "mv", "rm",
-  "mkdir", "chmod", "chown", "curl", "wget", "jq",
+  "mkdir", "chmod", "chown", "curl", "wget", "jq", "pwd",
   "direnv", "sudo", "gog", "himalaya", "skills-sync", "cron-sync",
-  "kapso-whatsapp-cli"
+  "kapso-whatsapp-cli", "form-filler"
 ]
 forbidden_paths = [
   "/root", "/usr", "/bin", "/sbin", "/lib", "/opt",
