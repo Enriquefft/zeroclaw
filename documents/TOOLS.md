@@ -23,6 +23,27 @@
 - Available through Brave Search API
 - Use for: reading job descriptions, articles, documentation, competitor analysis
 
+## Browser (agent-browser)
+
+**SCREENSHOT IS FORBIDDEN.** Never call `browser screenshot` or `image_info` on browser images. Screenshots produce 200k-1M tokens and crash the context window. The ONLY way to see a page is `browser snapshot`.
+
+### Commands
+- `browser navigate "url"` — open URL
+- `browser snapshot -i` — interactive elements only (**always use `-i`**)
+- `browser snapshot -c` — compact mode (use to vary params and avoid dedup)
+- `browser click @eN` — click element by ref
+- `browser fill @eN "text"` — clear + fill input (preferred for forms)
+- `browser type @eN "text"` — type text (append)
+- `browser press "Enter"` — press key
+- `browser get_text "body"` — get all visible text (use when snapshot doesn't show labels)
+
+### Rules
+- **NEVER screenshot** — use `browser snapshot` exclusively
+- **Always use `-i` or `-c` flag** on snapshots to reduce size
+- **Take snapshot before every interaction** — refs `@eN` are tied to current page state
+- **After navigation/click** — take a new snapshot (old refs are stale)
+- **Vary snapshot params** to avoid duplicate tool call detection: alternate `-i`, `-c`, `-i -d 10`, `-c -d 8`
+
 ## Code & Development
 
 ### Claude Code

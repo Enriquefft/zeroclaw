@@ -2,7 +2,6 @@
 # Secret placeholders (replaced at activation time via sed):
 #   ZAI_API_KEY      → zeroclaw/zai-api-key sops secret (top-level api_key)
 #   BRAVE_API_KEY    → zeroclaw/brave-api-key sops secret
-#   ZEROCLAW_CHROME  → nix store path of zeroclaw-chrome wrapper
 api_key = "@ZAI_API_KEY@"
 default_provider = "zai-coding"
 default_model = "glm-5"
@@ -23,14 +22,6 @@ format = "openclaw"
 port = 42617
 host = "127.0.0.1"
 require_pairing = false
-
-[browser]
-enabled = true
-backend = "rust_native"
-native_headless = false
-native_webdriver_url = "http://127.0.0.1:9515"
-native_chrome_path = "@ZEROCLAW_CHROME@"
-allowed_domains = ["*"]
 
 [web_search]
 enabled = true
@@ -55,12 +46,13 @@ allowed_commands = [
   "ls", "cat", "grep", "find", "cp", "mv", "rm",
   "mkdir", "chmod", "chown", "curl", "wget", "jq", "pwd",
   "direnv", "sudo", "gog", "himalaya", "skills-sync", "cron-sync",
-  "kapso-whatsapp-cli", "form-filler"
+  "kapso-whatsapp-cli", "form-filler", "agent-browser"
 ]
 forbidden_paths = [
   "/root", "/usr", "/bin", "/sbin", "/lib", "/opt",
   "/boot", "/dev", "/proc", "/sys", "/var", "/tmp",
-  "~/.ssh", "~/.gnupg", "~/.aws"
+  "~/.ssh", "~/.gnupg", "~/.aws",
+  "/run/user/1000/agent-browser"
 ]
 non_cli_excluded_tools = [
   "memory_forget",
@@ -87,6 +79,14 @@ runtime_trace_max_entries = 200
 [agent]
 max_tool_iterations = 40
 max_history_messages = 100
+denied_tools = ["image_info"]
+loop_detection_no_progress_threshold = 5
+loop_detection_ping_pong_cycles = 4
+loop_detection_failure_streak = 5
+
+[browser]
+enabled = true
+allowed_domains = ["*"]
 
 [agents_ipc]
 enabled = true

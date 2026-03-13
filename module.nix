@@ -15,14 +15,8 @@ let
     version = "0.1.8";
     src = inputs.zeroclaw;
     cargoLock.lockFile = "${inputs.zeroclaw}/Cargo.lock";
-    buildFeatures = [ "browser-native" ];
     doCheck = false;
     meta.mainProgram = "zeroclaw";
-    patches = [
-      ./patches/fix-screenshot-multimodal.patch
-      ./patches/fix-browser-xpath-refs.patch
-      ./patches/fix-browser-dedup-per-turn.patch
-    ];
   };
 
   # cron-sync: reconciles zeroclaw/cron/jobs/*.yaml → ZeroClaw SQLite via CLI.
@@ -255,34 +249,6 @@ let
           fi
         fi
         installed=$((installed + 1))
-
-        # Auto-whitelist cli_command from SKILL.toml into allowed_commands
-        toml="$skill_dir/SKILL.toml"
-        if [[ -f "$toml" ]]; then
-          cli_cmd=$(grep -m1 '^cli_command' "$toml" | sed 's/.*=[[:space:]]*"\(.*\)"/\1/')
-          if [[ -n "$cli_cmd" ]]; then
-            config="$HOME/.zeroclaw/config.toml"
-            if [[ -f "$config" ]] && ! grep -q "\"$cli_cmd\"" "$config"; then
-              if $DRY_RUN; then
-                echo "  → would add \"$cli_cmd\" to allowed_commands"
-              else
-                python3 - "$config" "$cli_cmd" <<'PYEOF'
-import sys, re
-path, cmd = sys.argv[1], sys.argv[2]
-text = open(path).read()
-# Insert cmd before the closing ] of the allowed_commands array
-text = re.sub(
-    r'(allowed_commands\s*=\s*\[.*?)(])',
-    lambda m: m.group(1).rstrip() + f',\n  "{cmd}"\n]',
-    text, count=1, flags=re.DOTALL
-)
-open(path, 'w').write(text)
-PYEOF
-                echo "  → added \"$cli_cmd\" to allowed_commands"
-              fi
-            fi
-          fi
-        fi
       done
 
       if $REMOVE_MISSING; then
@@ -306,17 +272,6 @@ PYEOF
     '';
   };
 
-  # Chrome wrapper: sets window class for Hyprland targeting, forces XWayland (wayland+Vulkan crashes renderer)
-  zeroclawChrome = pkgs.writeShellApplication {
-    name = "zeroclaw-chrome";
-    text = ''
-      exec ${pkgs.google-chrome}/bin/google-chrome-stable \
-        --class=zeroclaw-browser \
-        --ozone-platform=x11 \
-        "$@"
-    '';
-  };
-
   kapsoPackages = inputs.kapso-whatsapp-plugin.packages.${pkgs.stdenv.hostPlatform.system};
 
 in
@@ -325,7 +280,7 @@ in
     inputs.kapso-whatsapp-plugin.homeManagerModules.default
   ];
 
-  home.packages = [ zeroclawWrapper cronSync skillsSync zeroclawChrome ];
+  home.packages = [ zeroclawWrapper cronSync skillsSync ];
 
   # Config file — source is zeroclaw/config.toml (version-controlled), secrets injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -333,7 +288,6 @@ in
     $DRY_RUN_CMD sed \
       -e "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
       -e "s|@ZAI_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/zai-api-key".path})|g" \
-      -e "s|@ZEROCLAW_CHROME@|${zeroclawChrome}/bin/zeroclaw-chrome|g" \
       /etc/nixos/zeroclaw/config.toml > "$HOME/.zeroclaw/config.toml"
   '';
 
@@ -465,8 +419,8 @@ in
   systemd.user.services.zeroclaw-gateway = {
     Unit = {
       Description = "ZeroClaw Gateway";
-      After = [ "network-online.target" "chromedriver.service" "zai-proxy.service" ];
-      Wants = [ "kapso-whatsapp-bridge.service" "chromedriver.service" "zai-proxy.service" ];
+      After = [ "network-online.target" "zai-proxy.service" ];
+      Wants = [ "kapso-whatsapp-bridge.service" "zai-proxy.service" ];
     };
     Service = {
       Type = "simple";
@@ -475,7 +429,8 @@ in
       RestartSec = 5;
       EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ];
       Environment = [
-        "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.bun}/bin:/run/current-system/sw/bin:/home/hybridz/.local/bin"
+        "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.bun}/bin:/run/current-system/sw/bin:/home/hybridz/.local/bin:/home/hybridz/.npm-global/bin"
+        "AGENT_BROWSER_EXECUTABLE_PATH=${pkgs.google-chrome}/bin/google-chrome-stable"
       ];
     };
     Install = {
@@ -508,18 +463,4 @@ in
     };
   };
 
-  # ChromeDriver for browser automation (rust_native backend, visible via XWayland)
-  systemd.user.services.chromedriver = {
-    Unit = {
-      Description = "ChromeDriver WebDriver server";
-      PartOf = [ "zeroclaw-gateway.service" ];
-    };
-    Service = {
-      Type = "simple";
-      ExecStart = "${pkgs.chromedriver}/bin/chromedriver --port=9515";
-      Environment = [ "DISPLAY=:0" ];
-      Restart = "on-failure";
-      RestartSec = 3;
-    };
-  };
 }
