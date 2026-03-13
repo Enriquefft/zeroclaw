@@ -228,39 +228,23 @@ async function login(url: string) {
     }
   }
 
-  // Save to agent-browser auth vault (password via stdin)
-  const saveProc = Bun.spawn([
-    "agent-browser", "auth", "save", slug,
-    "--url", url,
-    "--username", username,
-    "--password-stdin"
-  ], {
-    stdin: "pipe",
-    stdout: "pipe",
-    stderr: "pipe"
-  });
-
-  saveProc.stdin.write(password);
-  saveProc.stdin.end();
-  const saveExit = await saveProc.exited;
-  const saveStderr = await new Response(saveProc.stderr).text();
-
-  if (saveExit !== 0) {
-    err(`Failed to save credentials to auth vault: ${saveStderr.trim()}`);
-  }
-
   console.log(JSON.stringify({
     ok: true,
     slug,
     username,
+    password,
     has_totp: hasTotp,
     ...(totp ? { totp } : {}),
     bw_item: item.name,
     instructions: [
-      `1. Run: agent-browser auth login ${slug}`,
-      "2. Take snapshot to verify login succeeded",
-      "3. If TOTP required, enter the code shown above",
-      "4. Proceed with form extraction"
+      "1. browser navigate to login URL",
+      "2. browser snapshot -i (find username and password fields)",
+      `3. browser fill @username "${username}"`,
+      "4. browser fill @password with the password above",
+      "5. browser snapshot -c (find submit button)",
+      "6. browser click @submit",
+      "7. browser snapshot -i (verify login succeeded)",
+      "8. Proceed with form extraction"
     ]
   }));
 }

@@ -9,11 +9,24 @@ Automatiza la extracción de preguntas de forms de postulación y prepara respue
 
 ## Flujo de Trabajo
 
-1. **Login** (si hay página de login): `form-filler login <url>` → `agent-browser auth login <slug>`
-2. **Extract**: Abre el form en browser, extrae TODAS las preguntas (usa respuestas temporales si es necesario para navegar entre páginas)
+1. **Login** (si hay página de login): `form-filler login <url>` → usa credenciales con browser fill
+2. **Extract**: Navega cada sección, usa `browser get_text` para labels + `browser snapshot -i` para refs
 3. **Store**: Guarda preguntas en `~/.zeroclaw/workspace/postulaciones/<slug>.md`
 4. **Prepare**: Lanza agente para generar respuestas basadas en perfil
 5. **Report**: Muestra respuestas a Enrique - NUNCA ENVÍA
+
+### Eficiencia en extracción
+- Para cada sección: **1 click + 1 wait + 1 get_text + 1 snapshot -i** = 4 iteraciones máximo
+- Si el snapshot muestra solo "Añadir nuevo registro" → anotar como "sección dinámica (agregar registros)" y pasar a la siguiente
+- NO hacer click en "Añadir nuevo registro" durante la extracción — solo documentar que existe
+
+### Extracción eficiente de formularios
+- Para ver labels + campos: usar `browser get_text "section.the-content"` (~12KB) en vez de `browser snapshot` (~28KB)
+- Si no existe un selector específico, usar `browser get_text "form"` o `browser get_text "main"`
+- Para obtener refs interactivos: usar `browser snapshot -i` después del get_text
+- NO anotar opciones de dropdowns verbatim — solo anotar que es un dropdown y el número de opciones
+- Combinar: get_text para labels → snapshot -i para refs → fill/click con los refs
+- **Flujo por sección:** click menú → wait networkidle → get_text "selector" → snapshot -i → anotar → siguiente
 
 ## CLI Reference
 
@@ -90,11 +103,17 @@ form-filler cookies clear
 Para sitios con formulario de login estándar (email + contraseña):
 
 1. El agente detecta que la URL requiere login (ve un formulario de login o redirect a login)
-2. Ejecuta `form-filler login <url>` — busca credenciales en Bitwarden, las guarda en auth vault
-3. Ejecuta `agent-browser auth login <slug>` — rellena y envía el formulario de login
-4. Toma snapshot para verificar que el login fue exitoso
-5. Si hay TOTP, el código aparece en el output del paso 2 — ingresarlo manualmente con `browser fill`
-6. Procede con la extracción del formulario
+2. Ejecuta `form-filler login <url>` — busca credenciales en Bitwarden (output incluye username + password)
+3. Navega al URL de login con `browser navigate`
+4. Toma `browser snapshot -i` para identificar los campos de usuario/email y contraseña
+5. Usa `browser fill @eN "username"` y `browser fill @eM "password"` con los valores del paso 2
+6. Busca el botón/link de submit en el snapshot del paso 4 y usa `browser click @eSubmit`
+7. `browser wait --load networkidle` — esperar a que la página navegue después del submit
+8. Toma `browser snapshot -i` para verificar que el login fue exitoso (la URL debería cambiar)
+9. Si hay TOTP, el código aparece en el output del paso 2 — ingresarlo con `browser fill`
+10. Procede con la extracción del formulario
+
+**IMPORTANTE**: Los campos de login varían entre sitios (textbox, input[type=email], links como submit, etc.). Siempre usar snapshot para identificar los campos correctos — no asumir la estructura.
 
 ### Google OAuth (cookie bridge)
 Para sitios que usan "Sign in with Google" u otro OAuth externo:
@@ -119,27 +138,30 @@ Si `form-filler login` devuelve error de vault bloqueado:
 El browser usa **agent-browser** (Playwright accessibility tree). Los refs vienen de `browser snapshot` como `@eN`.
 
 ### Comandos Clave
-- `browser snapshot -i` — captura SOLO elementos interactivos (SIEMPRE usar `-i` para ahorrar tokens)
+- `browser snapshot` — captura completa (labels + interactivos, ~28KB). Usar SOLO si get_text no muestra labels.
+- `browser snapshot -i` — SOLO elementos interactivos (~5KB). Usar para navegación y para obtener refs después de get_text.
+- `browser snapshot -c` — modo compacto (sin nodos vacíos). Usar como variante para evitar dedup.
 - `browser click @eN` — click en elemento
-- `browser type @eN "texto"` — escribe texto (append)
 - `browser fill @eN "texto"` — limpia campo + escribe (preferir para inputs de form)
 - `browser navigate "url"` — navegar a URL
+- `browser wait --load networkidle` — esperar a que la página termine de cargar (preferido después de navegación)
+- `browser wait 2000` — esperar milisegundos (alternativa si networkidle no aplica)
+- `browser wait --load load` / `browser wait --load domcontentloaded` — variantes para evitar dedup
+- `browser get_text "selector"` — extraer texto visible de un selector CSS (ej: `"body"`, `"section.the-content"`)
 
 ### Reglas del Browser
 - **NUNCA usar `browser screenshot`** — las imágenes explotan el context window. Usar SOLO snapshots
-- **Siempre usar `-i` (interactive)** — reduce drásticamente el tamaño del snapshot
-- **Siempre tomar snapshot antes de interactuar** — los refs `@eN` son del snapshot actual
-- **Después de click que navega** — tomar nuevo snapshot (los refs anteriores ya no sirven)
-- **Para forms multi-página** — usar respuestas temporales para avanzar, extraer preguntas de cada página
+- **Para extraer preguntas**: usar `browser get_text "selector"` para labels + `browser snapshot -i` para refs
+- **Para navegar/hacer clicks**: usar `browser snapshot -i` — más rápido y pequeño
+- **Después de click que navega** — `browser wait --load networkidle` y luego tomar nuevo snapshot
+- **Si necesitas un segundo wait en el mismo turno** — variar la forma: `wait 2000` → `wait --load load` → `wait --load domcontentloaded`
+- **Para forms multi-página** — usar get_text + snapshot -i por sección (NO snapshot completo)
 - **Si un click falla** — tomar nuevo snapshot, buscar el elemento actualizado
 
 ### Evitar "duplicate tool call"
-El runtime bloquea llamadas idénticas en el mismo turno. **Siempre variar los parámetros** entre snapshots consecutivos:
-- Primer snapshot: `browser snapshot -i`
-- Segundo snapshot: `browser snapshot -c` (compact)
-- Tercer snapshot: `browser snapshot -i -d 10` (con depth)
-- Cuarto snapshot: `browser snapshot -c -d 8`
-- Alternar entre `-i`, `-c`, `-i -d N`, `-c -d N` para cada snapshot nuevo
+El runtime bloquea llamadas idénticas en el mismo turno. **Variar los parámetros:**
+- Snapshots: `browser snapshot` → `browser snapshot -c` → `browser snapshot -i` → `browser snapshot -i -d 10`
+- Waits: `browser wait --load networkidle` → `browser wait 2000` → `browser wait --load load` → `browser wait --load domcontentloaded`
 
 ## Reglas Críticas
 

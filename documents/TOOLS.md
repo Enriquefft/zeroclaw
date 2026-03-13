@@ -29,20 +29,26 @@
 
 ### Commands
 - `browser navigate "url"` — open URL
-- `browser snapshot -i` — interactive elements only (**always use `-i`**)
-- `browser snapshot -c` — compact mode (use to vary params and avoid dedup)
+- `browser snapshot -i` — interactive elements only (~5KB). Preferred for navigation and getting refs.
+- `browser snapshot -c` — compact mode (no empty nodes). Use as dedup variant.
+- `browser snapshot` — full capture (labels + interactivos, ~28KB). Only when get_text doesn't show labels.
 - `browser click @eN` — click element by ref
 - `browser fill @eN "text"` — clear + fill input (preferred for forms)
 - `browser type @eN "text"` — type text (append)
 - `browser press "Enter"` — press key
-- `browser get_text "body"` — get all visible text (use when snapshot doesn't show labels)
+- `browser wait --load networkidle` — wait for page to finish loading (preferred after navigation)
+- `browser wait 2000` — wait milliseconds (alternative)
+- `browser wait --load load` / `browser wait --load domcontentloaded` — wait variants for dedup avoidance
+- `browser get_text "selector"` — extract visible text from CSS selector (e.g. `"body"`, `"form"`, `"main"`)
 
 ### Rules
 - **NEVER screenshot** — use `browser snapshot` exclusively
-- **Always use `-i` or `-c` flag** on snapshots to reduce size
+- **Prefer `-i` flag** on snapshots to reduce context size; use full snapshot only when get_text doesn't show labels
 - **Take snapshot before every interaction** — refs `@eN` are tied to current page state
-- **After navigation/click** — take a new snapshot (old refs are stale)
-- **Vary snapshot params** to avoid duplicate tool call detection: alternate `-i`, `-c`, `-i -d 10`, `-c -d 8`
+- **After navigation/click** — `browser wait --load networkidle` then take a new snapshot (old refs are stale)
+- **Vary params to avoid duplicate tool call detection:**
+  - Snapshots: `-i` → `-c` → `-i -d 10` → `-c -d 8`
+  - Waits: `wait --load networkidle` → `wait 2000` → `wait --load load` → `wait --load domcontentloaded`
 
 ## Code & Development
 

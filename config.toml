@@ -46,7 +46,7 @@ allowed_commands = [
   "ls", "cat", "grep", "find", "cp", "mv", "rm",
   "mkdir", "chmod", "chown", "curl", "wget", "jq", "pwd",
   "direnv", "sudo", "gog", "himalaya", "skills-sync", "cron-sync",
-  "kapso-whatsapp-cli", "form-filler", "agent-browser"
+  "kapso-whatsapp-cli", "form-filler", "agent-browser", "bw"
 ]
 forbidden_paths = [
   "/root", "/usr", "/bin", "/sbin", "/lib", "/opt",
@@ -77,7 +77,7 @@ runtime_trace_mode = "rolling"
 runtime_trace_max_entries = 200
 
 [agent]
-max_tool_iterations = 40
+max_tool_iterations = 60
 max_history_messages = 100
 denied_tools = ["image_info"]
 loop_detection_no_progress_threshold = 5
