@@ -26,7 +26,7 @@ skills/my-skill/
 └── cli.ts        # required — the CLI wrapper
 ```
 
-No SKILL.toml. The agent discovers CLI capabilities via SKILL.md content and `--help`.
+The agent discovers CLI capabilities via SKILL.md content and `--help`.
 
 ## SKILL.md Format
 

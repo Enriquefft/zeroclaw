@@ -137,16 +137,41 @@ Content builds audience -> audience creates inbound job opportunities -> job hun
 
 ## Target Companies
 
-(Kiro builds and maintains this via weekly company-refresh cron. Start empty, populate through research.)
+(Kiro builds and maintains this via weekly company-refresh cron. Last refreshed: 2026-03-11.)
 
 ### Remote-Global
-- TBD
+<!-- Companies that hire LATAM engineers at $100K+ USD, no visa needed -->
+
+- **Automattic** (WordPress.com, WooCommerce, Tumblr) — 2,000+ employees in 90+ countries, 100% distributed. Hires across LATAM, listed on curated remote-latam GitHub repo. Paid trial project as part of hiring process. Signal: actively hiring engineers globally as of early 2026.
+- **GitLab** — 100% remote, no HQ, 65+ countries. Transparent comp regardless of location, equity grants. Listed on remote-latam curated list. Signal: ongoing open engineering roles, transparent job board at about.gitlab.com/jobs.
+- **Doist** (Todoist, Twist) — Remote-first since 2010, async-first culture, 40 days PTO, education budget. Listed on remote-latam curated list. Signal: "hire slow" philosophy, but continuous openings in engineering.
+- **Supabase** — Open-source Firebase alternative, team across 25+ countries, no geography restrictions. Hiring Rust, Go, TypeScript, infrastructure, and DB support engineers. Signal: 22+ active remote openings as of March 2026.
+- **Cloudflare** — Connectivity cloud (NYSE: NET), 189 remote opportunities, hires globally. Full-time remote SW engineering roles in infra, product, and security. Signal: active remote job listings as of early 2026.
+- **1Password** — $400M ARR, Forbes Cloud 100 for 4 years, fully remote globally. Engineering salaries up to $250K+. Signal: actively hiring across engineering, customer success, and security.
+- **ElevenLabs** — AI voice/audio, $3.3B valuation. LATAM explicitly listed as a hiring region. Remote across 45+ countries. Signal: $180M Series C closed Jan 2025; open Full-Stack, Research Engineer, Forward Deployed Engineer roles.
+- **Fly.io** — Platform infra, no central office. Pays **same US comp schedule globally** — strongest LATAM parity signal in category. Stack: Rust, Go, Elixir, Ruby. Signal: active engineering roles (API, infra, security); hiring via fast work-sample process.
 
 ### US Sponsors (H-1B / O-1)
-- TBD
+<!-- Note: $100K processing fee added Sep 2025; H-1B lottery ~14% odds. O-1 lottery-free, viable given incubator + research + SABF. -->
+
+- **Stripe** — Fintech, SF. 219 H-1B LCA applications in 2025, 100% approval rate. Strong signal for international engineers. Signal: actively hiring SWE roles, consistently top-tier H-1B sponsor.
+- **Databricks** — AI/data analytics, 9,000+ employees. 300+ H-1B approvals in 2025 (up from 200 in 2024). Signal: rapid growth, hiring SWE and solutions architects.
+- **Chime** — Fintech neobank. 65 H-1B sponsors in 2024. Engineering, PM, and data roles. Signal: growth-stage company, consistent sponsorship track record.
+- **Amazon** — 15,524 H-1B LCAs in FY2025, avg salary $157K. SDE, ML, and data roles at scale. Signal: largest H-1B sponsor in tech, always hiring.
+- **OpenAI** — AI research and products, SF. Known to sponsor H-1B and O-1 for extraordinary ability. Signal: aggressive hiring expansion in 2025-2026; research background strengthens O-1 case.
+- **Anthropic** — AI safety research, SF. H-1B filings on record; highest base salary on record ($690K LCA filing). Opening Bengaluru office early 2026 — global expansion signal. O-1 viable: incubator founder + peer-review paper + open-source traction.
+- **Scale AI** — AI data platform. 83 LCAs filed FY2025, 97% approval. Top sponsored roles: SWE (23 filings), ML Research Engineer (16). Signal: actively hiring engineers and ML researchers.
 
 ### Relocation-Friendly
-- TBD (Netherlands is strong given existing Keepers experience)
+<!-- Netherlands is strong: Keepers experience, 30% tax ruling, HSM visa within 4-6 weeks -->
+
+- **Adyen** — Amsterdam, NL. Global payments platform. Actively hiring Java SWE (Platform Engineering, Payments), Graduate SWE. Offers relocation support and global exchange program. Signal: open roles on relocate.me as of early 2026, careers.adyen.com.
+- **Picnic** — Amsterdam, NL. Grocery delivery tech, 20+ Java backend teams. Full relocation package: flights (+ family), hotel for first month, bonus for agent/deposit, step-by-step IND guidance. Signal: featured by relocateme.eu, actively hiring internationally.
+- **Mollie** — Amsterdam, NL. Payments API, developer-first, ~30% of staff are engineers. Open Senior SWE and Engineering Manager roles on relocate.me. Signal: active listings as of late 2025.
+- **N26** — Berlin, DE. Mobile neobank, 40% revenue growth in 2024 (€440M), 30-40% growth projected 2025. Actively hiring engineers, EU Blue Card path. Signal: n26.com/careers live, known relocation sponsor.
+- **Booking.com** — Amsterdam, NL. IND-recognized sponsor (HSM visa, 4-6 weeks). Remote start allowed while visa is processed. Signal: consistently among largest tech employers in NL, ongoing SWE openings.
+- **ASML** — Veldhoven, NL. Semiconductor lithography (near-monopoly). "Full relocation assistance and visa sponsorship guaranteed" stated explicitly. Signal: Program for Young Software Professionals (C++/Python) active on relocate.me; 297 NL roles on LinkedIn.
+- **Optiver** — Amsterdam, NL. HFT/trading tech. Competitive relocation + visa package for expats. Signal: Graduate Software Engineer open; strong algo/systems focus (C++, Python, Java); max 3 yrs exp for grad track.
 
 ## Application Tracker
 

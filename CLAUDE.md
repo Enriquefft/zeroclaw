@@ -26,7 +26,7 @@ Git is source of truth. `nixos-rebuild` auto-installs via `zeroclawSkillsSync`. 
 
 ```bash
 mkdir -p /etc/nixos/zeroclaw/skills/my-skill
-# Write SKILL.md (required), SKILL.toml + CLI if skill does I/O work
+# Write SKILL.md (required) + cli.ts if skill does I/O work
 zeroclaw skills audit ./skills/my-skill
 zeroclaw skills install /etc/nixos/zeroclaw/skills/my-skill
 zeroclaw skills list
