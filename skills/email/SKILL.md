@@ -24,18 +24,18 @@ All commands output JSON. Pass `--account <email>` to target a specific account,
 ### Manage accounts
 ```
 email_cli accounts                          # list all configured accounts
-email_cli accounts add user@gmail.com       # add Gmail (starts OAuth, returns auth URL)
+email_cli accounts add user@gmail.com       # add new Gmail account (opens browser for OAuth)
 email_cli accounts add user@gmail.com --label "Work"
 email_cli accounts add user@x.com --provider spacemail --label "X" --himalaya-account x
-email_cli accounts auth-complete user@gmail.com --auth-url <redirect_url>
+email_cli accounts reauth user@gmail.com    # re-authorize existing Gmail (OAuth expired)
 email_cli accounts remove user@gmail.com
 ```
 
-**Gmail add flow (2 steps):**
-1. `email_cli accounts add user@gmail.com` — returns JSON with `auth_url`
-2. Send the `auth_url` to the user (via WhatsApp). They open it, sign in, click Allow.
-3. User sends back the redirect URL they land on.
-4. `email_cli accounts auth-complete user@gmail.com --auth-url <redirect_url>` — completes auth.
+**Gmail OAuth expiry — use `reauth`, never `add`:**
+- If any email command returns `{"error":"auth_required",...}`, OAuth has expired.
+- Run `email_cli accounts reauth <email>` — this opens a browser on Enrique's machine automatically.
+- The command blocks until Enrique logs in and clicks Allow (up to 3 minutes).
+- No copy-pasting URLs required — auth completes automatically.
 
 ### List recent emails
 ```

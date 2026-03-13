@@ -148,17 +148,23 @@ async function accountsAdd(
   }
 
   if (provider === "gmail") {
-    // Run gog auth add — outputs an OAuth URL for the user to visit
     const result =
       await $`gog auth add ${email} --services gmail --remote --step 1`.quiet();
     if (result.exitCode !== 0) {
-      err(
-        `Failed to start Gmail auth for ${email}: ${result.stderr.toString()}`,
-      );
+      err(`Failed to start Gmail auth for ${email}: ${result.stderr.toString()}`);
     }
-    const output = result.stdout.toString().trim();
 
-    // Save the account as pending
+    const authUrl = result.stdout
+      .toString()
+      .split("\n")
+      .find((l) => l.startsWith("auth_url\t"))
+      ?.split("\t")[1]
+      ?.trim();
+
+    if (!authUrl) {
+      err(`Could not parse auth URL from gog output: ${result.stdout.toString()}`);
+    }
+
     const newAcc: Account = { email, provider, label };
     ACCOUNTS.push(newAcc);
     saveAccounts(ACCOUNTS);
@@ -169,9 +175,9 @@ async function accountsAdd(
       email,
       provider,
       label,
-      auth_url: output,
+      auth_url: authUrl,
       next_step:
-        "Send this auth_url to the user. After they authorize, run: email_cli accounts auth-complete <email> --auth-url <redirect_url>",
+        "Visit the auth_url in a browser. After Google redirects, copy the full redirect URL and run: bun cli.ts accounts auth-complete <email> --auth-url <redirect_url>",
     };
   }
 
@@ -192,6 +198,28 @@ async function accountsAdd(
     provider,
     label,
     note: "SpaceMail account registered. Ensure himalaya is configured for this account.",
+  };
+}
+
+async function accountsReauth(email: string): Promise<object> {
+  const acc = getAccount(email); // errors if not found
+  if (acc.provider !== "gmail") {
+    err("reauth is only for Gmail accounts");
+  }
+
+  // gog starts a local listener, opens browser, captures callback automatically.
+  // This blocks until auth completes (or times out after 3m).
+  const result =
+    await $`gog auth add ${email} --services gmail --listen-addr 127.0.0.1 --timeout 3m`.quiet();
+  if (result.exitCode !== 0) {
+    err(`Gmail reauth failed for ${email}: ${result.stderr.toString()}`);
+  }
+
+  return {
+    ok: true,
+    action: "reauth_complete",
+    email,
+    message: `Gmail account ${email} successfully re-authorized.`,
   };
 }
 
@@ -237,11 +265,19 @@ async function accountsRemove(email: string): Promise<object> {
 
 // ─── Gmail Implementations ──────────────────────────────────────────────────
 
+function isAuthError(stderr: string): boolean {
+  return /token|oauth|unauthorized|unauthenticated|401|403|expired/i.test(stderr);
+}
+
 async function gmailList(acc: Account, since: number): Promise<object[]> {
   const hours = Math.ceil(since / 60);
   const result =
     await $`gog gmail search -a ${acc.email} -j --results-only "newer_than:${hours}h in:inbox"`.quiet();
-  if (result.exitCode !== 0) return [];
+  if (result.exitCode !== 0) {
+    if (isAuthError(result.stderr.toString()))
+      err(`auth_required: Gmail OAuth expired for ${acc.email}. Run: email_cli accounts reauth ${acc.email}`);
+    return [];
+  }
   try {
     const data = JSON.parse(result.stdout.toString());
     const threads = Array.isArray(data) ? data : (data.threads ?? []);
@@ -262,7 +298,11 @@ async function gmailList(acc: Account, since: number): Promise<object[]> {
 async function gmailSearch(acc: Account, query: string): Promise<object[]> {
   const result =
     await $`gog gmail search -a ${acc.email} -j --results-only ${query}`.quiet();
-  if (result.exitCode !== 0) return [];
+  if (result.exitCode !== 0) {
+    if (isAuthError(result.stderr.toString()))
+      err(`auth_required: Gmail OAuth expired for ${acc.email}. Run: email_cli accounts reauth ${acc.email}`);
+    return [];
+  }
   try {
     const data = JSON.parse(result.stdout.toString());
     const threads = Array.isArray(data) ? data : (data.threads ?? []);
@@ -638,6 +678,11 @@ switch (cmd) {
       if (!email) err("accounts remove requires an email address");
       const result = await accountsRemove(email);
       console.log(JSON.stringify(result, null, 2));
+    } else if (sub === "reauth") {
+      const email = positional[2];
+      if (!email) err("accounts reauth requires an email address");
+      const result = await accountsReauth(email);
+      console.log(JSON.stringify(result, null, 2));
     } else if (sub === "auth-complete") {
       const email = positional[2];
       if (!email) err("accounts auth-complete requires an email address");
@@ -647,7 +692,7 @@ switch (cmd) {
       console.log(JSON.stringify(result, null, 2));
     } else {
       err(
-        `Unknown accounts subcommand: ${sub}. Use: list, add, remove, auth-complete`,
+        `Unknown accounts subcommand: ${sub}. Use: list, add, reauth, remove, auth-complete`,
       );
     }
     break;
