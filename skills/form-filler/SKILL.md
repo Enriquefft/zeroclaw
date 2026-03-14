@@ -5,7 +5,9 @@ description: Extrae preguntas de forms web y prepara respuestas para postulacion
 
 # Form Filler
 
-Automatiza la extracción de preguntas de forms de postulación y prepara respuestas. Nunca envía - solo prepara.
+Extracción de preguntas y preparación de respuestas para postulaciones via el tool `form_filler`. Nunca envía - solo prepara.
+
+**IMPORTANTE: Usar SOLO el tool `form_filler` con argumento `args`. NUNCA ejecutar shell, bun run, ni CLI manuales.**
 
 ## Flujo de Trabajo
 
