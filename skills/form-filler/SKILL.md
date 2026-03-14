@@ -140,13 +140,12 @@ El browser usa **agent-browser** (Playwright accessibility tree). Los refs viene
 ### Comandos Clave
 - `browser snapshot` — captura completa (labels + interactivos, ~28KB). Usar SOLO si get_text no muestra labels.
 - `browser snapshot -i` — SOLO elementos interactivos (~5KB). Usar para navegación y para obtener refs después de get_text.
-- `browser snapshot -c` — modo compacto (sin nodos vacíos). Usar como variante para evitar dedup.
+- `browser snapshot -c` — modo compacto (sin nodos vacíos)
 - `browser click @eN` — click en elemento
 - `browser fill @eN "texto"` — limpia campo + escribe (preferir para inputs de form)
 - `browser navigate "url"` — navegar a URL
 - `browser wait --load networkidle` — esperar a que la página termine de cargar (preferido después de navegación)
 - `browser wait 2000` — esperar milisegundos (alternativa si networkidle no aplica)
-- `browser wait --load load` / `browser wait --load domcontentloaded` — variantes para evitar dedup
 - `browser get_text "selector"` — extraer texto visible de un selector CSS (ej: `"body"`, `"section.the-content"`)
 
 ### Reglas del Browser
@@ -154,14 +153,8 @@ El browser usa **agent-browser** (Playwright accessibility tree). Los refs viene
 - **Para extraer preguntas**: usar `browser get_text "selector"` para labels + `browser snapshot -i` para refs
 - **Para navegar/hacer clicks**: usar `browser snapshot -i` — más rápido y pequeño
 - **Después de click que navega** — `browser wait --load networkidle` y luego tomar nuevo snapshot
-- **Si necesitas un segundo wait en el mismo turno** — variar la forma: `wait 2000` → `wait --load load` → `wait --load domcontentloaded`
 - **Para forms multi-página** — usar get_text + snapshot -i por sección (NO snapshot completo)
 - **Si un click falla** — tomar nuevo snapshot, buscar el elemento actualizado
-
-### Evitar "duplicate tool call"
-El runtime bloquea llamadas idénticas en el mismo turno. **Variar los parámetros:**
-- Snapshots: `browser snapshot` → `browser snapshot -c` → `browser snapshot -i` → `browser snapshot -i -d 10`
-- Waits: `browser wait --load networkidle` → `browser wait 2000` → `browser wait --load load` → `browser wait --load domcontentloaded`
 
 ## Reglas Críticas
 
