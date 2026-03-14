@@ -9,7 +9,7 @@ Automatiza la extracción de preguntas de forms de postulación y prepara respue
 
 ## Flujo de Trabajo
 
-1. **Detect auth**: Al llegar al sitio, si ves Login y Signup/Register juntos → **siempre intentar login primero**. Ejecutar `form-filler login <url>` para buscar credenciales en Bitwarden. Si no hay credenciales → reportar a Enrique y esperar instrucciones (NO crear cuenta sin permiso).
+1. **Detect auth**: Al llegar al sitio, si ves Login y Signup/Register juntos → **siempre intentar login primero**. Ejecutar `form_filler` con args `login <url>` para buscar credenciales en Bitwarden. Si no hay credenciales → reportar a Enrique y esperar instrucciones (NO crear cuenta sin permiso).
 2. **Login**: Si hay credenciales, hacer login con browser fill. Verificar con snapshot que el login fue exitoso.
 3. **Extract**: Navega cada sección, usa `browser get_text` para labels + `browser snapshot -i` para refs
 4. **Store**: Guarda preguntas en `~/.zeroclaw/workspace/postulaciones/<slug>.md`
@@ -34,74 +34,29 @@ Automatiza la extracción de preguntas de forms de postulación y prepara respue
 - Combinar: get_text para labels → snapshot -i para refs → fill/click con los refs
 - **Flujo por sección:** click menú → wait networkidle → get_text "selector" → snapshot -i → anotar → siguiente
 
-## CLI Reference
+## Tool: form_filler
 
-### form-filler extract <url>
-Abre el form en browser y extrae todas las preguntas. Guarda en MD.
+Usa el tool `form_filler` para todas las operaciones. El argumento `args` es el subcomando + argumentos.
 
-```bash
-form-filler extract "https://forms.gle/..."
-```
+### Subcomandos
 
-Output: JSON con preguntas extraídas y path al archivo MD.
+| Subcomando | Ejemplo de args | Descripción |
+|-----------|----------------|-------------|
+| `extract <url>` | `extract "https://forms.gle/..."` | Crea archivo MD para la postulación |
+| `list` | `list` | Lista todas las postulaciones |
+| `show <slug>` | `show google-swe-2024` | Muestra preguntas de una postulación |
+| `prepare <slug>` | `prepare google-swe-2024` | Prepara respuestas (lanza agente) |
+| `login <url>` | `login "https://becas.example.com"` | Busca credenciales en Bitwarden |
+| `cookies bridge` | `cookies bridge --domain google.com` | Importa cookies de kiro-browser |
+| `cookies clear` | `cookies clear` | Limpia cookies del agent-browser |
 
-### form-filler list
-Lista todas las postulaciones procesadas.
+### login
+Requiere `BW_SESSION` en env o en `~/.zeroclaw/workspace/.bw-session`. Si el vault está bloqueado, reportar a Enrique.
 
-```bash
-form-filler list
-```
+Output: JSON con `{ok, slug, username, password, has_totp, totp?}`.
 
-### form-filler show <slug>
-Muestra las preguntas de una postulación específica.
-
-```bash
-form-filler show google-swe-2024
-```
-
-### form-filler prepare <slug>
-Prepara respuestas para las preguntas (no las envía).
-
-```bash
-form-filler prepare google-swe-2024
-```
-
-### form-filler login <url>
-Busca credenciales en Bitwarden para el URL y las guarda en el auth vault de agent-browser.
-
-```bash
-form-filler login "https://becas.example.com/login"
-```
-
-Requiere `BW_SESSION` en env o en `~/.zeroclaw/workspace/.bw-session`. Si el vault está bloqueado:
-```bash
-bw unlock --raw > ~/.zeroclaw/workspace/.bw-session
-```
-
-Output: JSON con `{ok, slug, username, has_totp, totp?, instructions}`. La contraseña NO aparece en el output — ya está guardada en el auth vault.
-
-Después de login, el agente ejecuta:
-```bash
-agent-browser auth login <slug>
-```
-
-### form-filler cookies bridge [--domain <domain>]
-Importa cookies de kiro-browser al agent-browser (para Google OAuth u otros sitios con login externo).
-
-```bash
-form-filler cookies bridge --domain google.com
-```
-
-**Requisito:** kiro-browser debe estar cerrado. El usuario debe haber hecho login manualmente en kiro-browser antes.
-
-Output: JSON con `{ok, imported_count, domains}`.
-
-### form-filler cookies clear
-Limpia todas las cookies del agent-browser.
-
-```bash
-form-filler cookies clear
-```
+### cookies bridge
+**Requisito:** kiro-browser debe estar cerrado. El usuario debe haber hecho login manualmente antes.
 
 ## Autenticación
 
@@ -109,7 +64,7 @@ form-filler cookies clear
 Para sitios con formulario de login estándar (email + contraseña):
 
 1. El agente detecta que la URL requiere login (ve un formulario de login o redirect a login)
-2. Ejecuta `form-filler login <url>` — busca credenciales en Bitwarden (output incluye username + password)
+2. Ejecuta `form_filler` con args `login <url>` — busca credenciales en Bitwarden (output incluye username + password)
 3. Navega al URL de login con `browser navigate`
 4. Toma `browser snapshot -i` para identificar los campos de usuario/email y contraseña
 5. Usa `browser fill @eN "username"` y `browser fill @eM "password"` con los valores del paso 2
@@ -127,15 +82,15 @@ Para sitios que usan "Sign in with Google" u otro OAuth externo:
 1. El agente detecta que el sitio requiere Google OAuth
 2. Indica a Enrique: "Este sitio usa Google OAuth. Abre kiro-browser, haz login, y cierra kiro-browser"
 3. Enrique abre kiro-browser, hace login en el sitio manualmente, cierra kiro-browser
-4. El agente ejecuta `form-filler cookies bridge --domain <dominio-del-sitio>`
+4. El agente ejecuta `form_filler` con args `cookies bridge --domain <dominio-del-sitio>`
 5. Navega al sitio — las cookies de sesión permiten acceso sin re-login
 6. Procede con la extracción del formulario
 
 ### Vault bloqueado
-Si `form-filler login` devuelve error de vault bloqueado:
+Si `form_filler login` devuelve error de vault bloqueado:
 1. Reportar a Enrique: "Tu vault de Bitwarden está bloqueado"
 2. Enrique ejecuta: `bw unlock --raw > ~/.zeroclaw/workspace/.bw-session`
-3. Reintentar `form-filler login`
+3. Reintentar `form_filler` con args `login <url>`
 
 **REGLA DE SEGURIDAD: NUNCA registrar contraseñas, tokens, o cookies en archivos MD ni en logs.**
 
