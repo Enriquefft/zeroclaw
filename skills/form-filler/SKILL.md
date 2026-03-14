@@ -9,11 +9,17 @@ Automatiza la extracción de preguntas de forms de postulación y prepara respue
 
 ## Flujo de Trabajo
 
-1. **Login** (si hay página de login): `form-filler login <url>` → usa credenciales con browser fill
-2. **Extract**: Navega cada sección, usa `browser get_text` para labels + `browser snapshot -i` para refs
-3. **Store**: Guarda preguntas en `~/.zeroclaw/workspace/postulaciones/<slug>.md`
-4. **Prepare**: Lanza agente para generar respuestas basadas en perfil
-5. **Report**: Muestra respuestas a Enrique - NUNCA ENVÍA
+1. **Detect auth**: Al llegar al sitio, si ves Login y Signup/Register juntos → **siempre intentar login primero**. Ejecutar `form-filler login <url>` para buscar credenciales en Bitwarden. Si no hay credenciales → reportar a Enrique y esperar instrucciones (NO crear cuenta sin permiso).
+2. **Login**: Si hay credenciales, hacer login con browser fill. Verificar con snapshot que el login fue exitoso.
+3. **Extract**: Navega cada sección, usa `browser get_text` para labels + `browser snapshot -i` para refs
+4. **Store**: Guarda preguntas en `~/.zeroclaw/workspace/postulaciones/<slug>.md`
+5. **Prepare**: Lanza agente para generar respuestas basadas en perfil
+6. **Report**: Muestra respuestas a Enrique - NUNCA ENVÍA
+
+### Distinguir signup vs formulario real
+- Si los campos extraídos son solo nombre, email, password → es un formulario de **registro/signup**, NO la postulación real
+- La postulación real tiene preguntas sobre experiencia, motivación, ensayos, etc.
+- **NUNCA reportar un signup form como la postulación** — el formulario real está detrás del login
 
 ### Eficiencia en extracción
 - Para cada sección: **1 click + 1 wait + 1 get_text + 1 snapshot -i** = 4 iteraciones máximo
