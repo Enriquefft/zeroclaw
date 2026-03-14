@@ -11,12 +11,12 @@ Extracción de preguntas y preparación de respuestas para postulaciones via el 
 
 ## Flujo de Trabajo
 
-1. **Detect auth**: Al llegar al sitio, si ves Login y Signup/Register juntos → **siempre intentar login primero**. Ejecutar `form_filler` con args `login <url>` para buscar credenciales en Bitwarden. Si no hay credenciales → reportar a Enrique y esperar instrucciones (NO crear cuenta sin permiso).
-2. **Login**: Si hay credenciales, hacer login con browser fill. Verificar con snapshot que el login fue exitoso.
-3. **Extract**: Navega cada sección, usa `browser get_text` para labels + `browser snapshot -i` para refs
-4. **Store**: Guarda preguntas en `~/.zeroclaw/workspace/postulaciones/<slug>.md`
-5. **Prepare**: Lanza agente para generar respuestas basadas en perfil
-6. **Report**: Muestra respuestas a Enrique - NUNCA ENVÍA
+1. **Init**: Llamar tool `form_filler` con args `extract "<url>"` — crea archivo MD de trabajo
+2. **Detect auth**: Llamar tool `form_filler` con args `login "<url>"` — busca credenciales en Bitwarden. Si no hay → reportar a Enrique (NO crear cuenta sin permiso)
+3. **Login**: Si hay credenciales, usar `browser` para fill login form. Verificar con snapshot
+4. **Extract**: Navega cada sección con `browser`, usa `get_text` para labels + `snapshot -i` para refs
+5. **Prepare**: Llamar tool `form_filler` con args `prepare "<slug>"` — genera respuestas
+6. **Report**: Muestra respuestas a Enrique — NUNCA ENVÍA
 
 ### Distinguir signup vs formulario real
 - Si los campos extraídos son solo nombre, email, password → es un formulario de **registro/signup**, NO la postulación real
