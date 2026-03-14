@@ -1,0 +1,14 @@
+[skill]
+name = "orchestrate"
+description = "Run multi-step tasks via claude -p. Supports inline goals, YAML job files, and status tracking."
+version = "0.1.0"
+tags = ["orchestration", "tasks", "automation"]
+
+[[tools]]
+name = "orchestrate_cli"
+description = "Task orchestration CLI. Run multi-step tasks from YAML job files or inline goals."
+kind = "shell"
+command = "bun run /etc/nixos/zeroclaw/bin/orchestrate.ts {args}"
+
+[tools.args]
+args = "YAML job file path or inline goal"

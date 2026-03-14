@@ -1,0 +1,14 @@
+[skill]
+name = "calendar"
+description = "Full Google Calendar control across all accounts. View agenda, create events, update, delete, check availability, find conflicts, and manage RSVPs."
+version = "0.1.0"
+tags = ["calendar", "google", "events"]
+
+[[tools]]
+name = "calendar_cli"
+description = "Google Calendar CLI. Subcommands: accounts, agenda [account] [--days N], create <account> --title <t> --start <s> --end <e>, update <id> [--title t] [--start s] [--end e], delete <id>, availability <account> --date <d>, conflicts <account>"
+kind = "shell"
+command = "bun run /etc/nixos/zeroclaw/skills/calendar/cli.ts {args}"
+
+[tools.args]
+args = "Subcommand and arguments (e.g. 'agenda', 'create account@gmail.com --title Meeting --start 2026-03-15T10:00 --end 2026-03-15T11:00')"

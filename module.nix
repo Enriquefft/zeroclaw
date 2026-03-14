@@ -275,15 +275,6 @@ let
     '';
   };
 
-  # Skill CLI wrappers — put skill CLIs on PATH so zeroclaw shell tool can find them
-  formFiller = pkgs.writeShellApplication {
-    name = "form-filler";
-    runtimeInputs = [ pkgs.bun ];
-    text = ''
-      exec bun run /etc/nixos/zeroclaw/skills/form-filler/cli.ts "$@"
-    '';
-  };
-
   kapsoPackages = inputs.kapso-whatsapp-plugin.packages.${pkgs.stdenv.hostPlatform.system};
 
 in
@@ -292,7 +283,7 @@ in
     inputs.kapso-whatsapp-plugin.homeManagerModules.default
   ];
 
-  home.packages = [ zeroclawWrapper cronSync skillsSync formFiller ];
+  home.packages = [ zeroclawWrapper cronSync skillsSync ];
 
   # Config file — source is zeroclaw/config.toml (version-controlled), secrets injected at activation
   home.activation.zeroclawConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

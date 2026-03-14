@@ -1,0 +1,14 @@
+[skill]
+name = "form-filler"
+description = "Extrae preguntas de forms web y prepara respuestas para postulaciones"
+version = "0.1.0"
+tags = ["browser", "forms", "postulaciones"]
+
+[[tools]]
+name = "form_filler"
+description = "Manage postulaciones: extract form questions, list, show, prepare answers, login via Bitwarden, and bridge cookies. Subcommands: extract <url>, list, show <slug>, prepare <slug>, login <url>, cookies bridge --domain <domain>, cookies clear"
+kind = "shell"
+command = "bun run /etc/nixos/zeroclaw/skills/form-filler/cli.ts {args}"
+
+[tools.args]
+args = "Subcommand and arguments (e.g. 'extract https://example.com', 'list', 'show my-slug', 'login https://example.com', 'cookies bridge --domain google.com')"
