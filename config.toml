@@ -80,6 +80,7 @@ runtime_trace_max_entries = 200
 max_tool_iterations = 60
 max_history_messages = 100
 denied_tools = ["image_info"]
+dedup_exempt_tools = ["browser"]
 loop_detection_no_progress_threshold = 5
 loop_detection_ping_pong_cycles = 4
 loop_detection_failure_streak = 5

@@ -15,6 +15,9 @@ let
     version = "0.1.8";
     src = inputs.zeroclaw;
     cargoLock.lockFile = "${inputs.zeroclaw}/Cargo.lock";
+    patches = [
+      ./patches/dedup-exempt-tools.patch
+    ];
     doCheck = false;
     meta.mainProgram = "zeroclaw";
   };
