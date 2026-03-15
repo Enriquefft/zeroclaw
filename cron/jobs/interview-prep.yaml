@@ -1,0 +1,13 @@
+name: "Interview Prep"
+schedule: "0 8 * * *"
+tz: "America/Lima"
+type: agent
+goal: "Check state.db for applications with status 'interview', run a company deep-dive for each, generate a prep document, and send it to Enrique via WhatsApp"
+hints:
+  - "Query state.db job_applications WHERE status = 'interview' AND notes NOT LIKE '%prep_sent%'"
+  - "For each interview company: research via web search -- Glassdoor reviews, LinkedIn company page, recent news (last 3 months), tech stack, team size, funding stage"
+  - "Generate a prep doc per company with sections: Company Overview, Tech Stack & Engineering Culture, Likely Interview Questions mapped to Enrique's experience (pull from full-profile.md and reusable-responses.md), Questions Enrique Should Ask, Recent News Talking Points"
+  - "Map questions to specific Enrique stories: Genera metrics for product roles, agent/MCP work for AI roles, 404TF for leadership, MVP speed for founding roles. Use LORE.md Target Roles for emphasis guidance"
+  - "Send each prep doc via WhatsApp. Mark the application notes with 'prep_sent:YYYY-MM-DD' in state.db to avoid re-sending"
+  - "Output SILENT if no applications have status 'interview' or all have already been prepped"
+notify: "+51926689401"

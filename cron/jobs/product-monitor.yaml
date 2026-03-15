@@ -1,0 +1,13 @@
+name: "Product Monitor"
+schedule: "0 10 * * *"
+tz: "America/Lima"
+type: agent
+goal: "Check GitHub repos for Enrique's active products, detect notable activity or breakage, and alert via WhatsApp if anything needs attention"
+hints:
+  - "Check these GitHub repos: Enriquefft/zq, Enriquefft/post-shit-now, Enriquefft/Mere, Enriquefft/yap"
+  - "For each repo check: new releases or tags (last 7 days), open issues (new or with recent activity), failing CI workflows, stale PRs (open > 7 days with no review), README or dependency changes"
+  - "Use GitHub API via gh CLI or browser. Check each repo's actions page, issues page, and releases page"
+  - "Alert categories: BREAK (failing CI, critical issues), NOTABLE (new release, significant PR, new contributor), STALE (PRs or issues with no activity > 7 days)"
+  - "Only send WhatsApp if there is a BREAK or NOTABLE event. Include repo name, category, and one-line summary per item"
+  - "Output SILENT if all repos are quiet with no failing CI, no new issues, no stale PRs"
+notify: "+51926689401"

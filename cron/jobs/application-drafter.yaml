@@ -1,0 +1,14 @@
+name: "Application Drafter"
+schedule: "0 11 * * *"
+tz: "America/Lima"
+type: agent
+goal: "Check state.db for leads Enrique has approved for application, draft tailored cover letters and application answers, and send drafts via WhatsApp for review"
+hints:
+  - "Query state.db job_applications WHERE status = 'new' AND match_score >= 80 AND notes LIKE '%apply_approved%'"
+  - "For each approved lead: pull company info from state.db notes and supplement with web search (product, tech stack, recent funding, team size, engineering blog)"
+  - "Read full-profile.md for relevant experience metrics and stories. Read reusable-responses.md for polished answer templates"
+  - "Draft a cover letter per LORE.md Application Approach: reference something specific about the company, lead with the most relevant positioning (LORE.md Positioning section), keep it concise per SOUL.md voice rules"
+  - "If the role has specific application questions (noted in state.db notes), draft answers. Every answer references a concrete metric or story from full-profile.md"
+  - "Send each draft to Enrique via WhatsApp. Do NOT submit any application directly"
+  - "Output SILENT if no leads are marked apply_approved"
+notify: "+51926689401"
