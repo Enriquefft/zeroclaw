@@ -292,16 +292,22 @@ in
       -e "s|@BRAVE_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/brave-api-key".path})|g" \
       -e "s|@ZAI_API_KEY@|$(cat ${osConfig.sops.secrets."zeroclaw/zai-api-key".path})|g" \
       /etc/nixos/zeroclaw/config.toml > "$HOME/.zeroclaw/config.toml"
+    $DRY_RUN_CMD chmod 600 "$HOME/.zeroclaw/config.toml"
   '';
 
   # Identity documents — direct symlinks via activation (avoids nix store hop blocking zeroclaw)
   home.activation.zeroclawDocuments = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.zeroclaw/documents"
-    for doc in IDENTITY SOUL AGENTS TOOLS USER LORE; do
+    for doc in IDENTITY SOUL AGENTS TOOLS USER LORE SENTINEL SKILL-CREATOR TASK-ROUTING; do
       ln -sf "/etc/nixos/zeroclaw/documents/$doc.md" "$HOME/.zeroclaw/documents/$doc.md"
     done
     ln -sf "/etc/nixos/zeroclaw/documents/SOUL.md" "$HOME/.zeroclaw/workspace/SOUL.md"
     ln -sf "/etc/nixos/zeroclaw/documents/AGENTS.md" "$HOME/.zeroclaw/workspace/AGENTS.md"
+  '';
+
+  # State DB — idempotent init + migrations on every rebuild
+  home.activation.zeroclawStateDb = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD ${pkgs.bun}/bin/bun run /etc/nixos/zeroclaw/bin/init-state-db.ts
   '';
 
   # Cron sync — reconciles SQLite to YAML files on every rebuild (source of truth = git)
@@ -430,6 +436,7 @@ in
       ExecStart = "${zeroclawPkg}/bin/zeroclaw daemon";
       Restart = "on-failure";
       RestartSec = 5;
+      MemoryMax = "16G";
       EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ];
       Environment = [
         "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.bun}/bin:/run/current-system/sw/bin:/home/hybridz/.local/bin:/home/hybridz/.npm-global/bin"
