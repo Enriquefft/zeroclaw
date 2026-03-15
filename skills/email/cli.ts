@@ -283,19 +283,17 @@ async function gmailList(acc: Account, since: number): Promise<object[]> {
     const threads = Array.isArray(data) ? data : (data.threads ?? []);
     return threads.map((t: Record<string, unknown>) => ({
       account: acc.email,
-      provider: "gmail",
       id: t.id,
       date: t.date,
       from: t.from,
       subject: t.subject,
-      labels: t.labels,
     }));
   } catch {
     return [];
   }
 }
 
-async function gmailSearch(acc: Account, query: string): Promise<object[]> {
+async function gmailSearch(acc: Account, query: string, full = false): Promise<object[]> {
   const result =
     await $`gog gmail search -a ${acc.email} -j --results-only ${query}`.quiet();
   if (result.exitCode !== 0) {
@@ -306,9 +304,19 @@ async function gmailSearch(acc: Account, query: string): Promise<object[]> {
   try {
     const data = JSON.parse(result.stdout.toString());
     const threads = Array.isArray(data) ? data : (data.threads ?? []);
+    if (full) {
+      return threads.map((t: Record<string, unknown>) => ({
+        account: acc.email,
+        id: t.id,
+        date: t.date,
+        from: t.from,
+        subject: t.subject,
+        snippet: t.snippet,
+        body: t.body,
+      }));
+    }
     return threads.map((t: Record<string, unknown>) => ({
       account: acc.email,
-      provider: "gmail",
       id: t.id,
       date: t.date,
       from: t.from,
@@ -330,9 +338,11 @@ async function gmailSend(
   to: string,
   subject: string,
   body: string,
+  attachments?: string[],
 ): Promise<object> {
-  const mime = `To: ${to}\nSubject: ${subject}\n\n${body}`;
-  const result = await $`gog gmail send -a ${acc.email}`.stdin(mime).quiet();
+  const attachFlags = (attachments ?? []).flatMap((f) => ["--attach", f]);
+  const result =
+    await $`gog gmail send -a ${acc.email} --to ${to} --subject ${subject} --body ${body} ${attachFlags}`.quiet();
   if (result.exitCode !== 0) err("Failed to send via Gmail");
   return { ok: true, account: acc.email, to, subject };
 }
@@ -478,12 +488,10 @@ async function spacemailList(acc: Account, since: number): Promise<object[]> {
       })
       .map((e: Record<string, unknown>) => ({
         account: acc.email,
-        provider: "spacemail",
         id: e.id,
         date: e.date,
         from: e.from,
         subject: e.subject,
-        flags: e.flags,
       }));
   } catch {
     return [];
@@ -493,22 +501,36 @@ async function spacemailList(acc: Account, since: number): Promise<object[]> {
 async function spacemailSearch(
   acc: Account,
   query: string,
+  full = false,
 ): Promise<object[]> {
   const result =
-    await $`himalaya envelope search -a ${him(acc)} --output json ${query}`.quiet();
+    await $`himalaya envelope list -a ${him(acc)} --output json ${query}`.quiet();
   if (result.exitCode !== 0) return [];
   try {
     const data = JSON.parse(result.stdout.toString());
-    return (Array.isArray(data) ? data : []).map(
+    const envelopes = (Array.isArray(data) ? data : []).map(
       (e: Record<string, unknown>) => ({
         account: acc.email,
-        provider: "spacemail",
         id: e.id,
         date: e.date,
         from: e.from,
         subject: e.subject,
       }),
     );
+    if (full) {
+      const withBodies = await Promise.all(
+        envelopes.map(async (e) => {
+          try {
+            const msg = await spacemailGet(acc, String(e.id));
+            return { ...e, body: (msg as Record<string, unknown>).body ?? (msg as Record<string, unknown>).text ?? "" };
+          } catch {
+            return { ...e, body: "" };
+          }
+        }),
+      );
+      return withBodies;
+    }
+    return envelopes;
   } catch {
     return [];
   }
@@ -651,10 +673,46 @@ const argv = process.argv.slice(2);
 const { args, positional } = parseArgs(argv);
 const cmd = positional[0];
 
-if (!cmd)
-  err(
-    "No command. Use: accounts, list, search, get, send, reply, forward, thread, labels, label, delete, archive, trash, mark, attachments",
-  );
+if (!cmd || args.help === true) {
+  const help = `email_cli — unified email CLI
+
+Usage: email_cli <command> [options]
+
+Commands:
+  send      Send an email
+            --account <email> --to <addr> --subject <text> --body <text> [--attachment <path>]
+  search    Search emails (compact output by default)
+            <query> [--account <email>] [--full]
+  get       Read a message (compact output by default)
+            <id> --account <email> [--full]
+  thread    View full thread
+            <threadId> --account <email>
+  reply     Reply to a message
+            <id> --account <email> --body <text>
+  forward   Forward a message
+            <id> --account <email> --to <addr>
+  list      List recent emails
+            [--account <email>] [--since <minutes>]
+  labels    List/create/delete labels or folders
+            [list|create|delete] [--account <email>]
+  delete    Delete messages
+            <id> --account <email>
+  archive   Archive a message
+            <id> --account <email>
+  mark      Mark read/unread/starred
+            <flag> <id> --account <email>
+  accounts  Manage accounts
+            [list|add|remove|reauth]
+
+Accounts: ${ACCOUNTS.map((a) => a.email).join(", ")}
+
+Options:
+  --account <email>   Target specific account (omit for all)
+  --full              Raw provider output (search/get)
+  --help              Show this help`;
+  console.log(help);
+  process.exit(0);
+}
 
 const account = args.account as string | undefined;
 
@@ -715,10 +773,11 @@ switch (cmd) {
   case "search": {
     const query = positional[1];
     if (!query) err("search requires a query");
+    const full = args.full === true;
     const targets = targetAccounts(account);
     const results = await Promise.all(
       targets.map((a) =>
-        isGmail(a) ? gmailSearch(a, query) : spacemailSearch(a, query),
+        isGmail(a) ? gmailSearch(a, query, full) : spacemailSearch(a, query, full),
       ),
     );
     console.log(JSON.stringify(results.flat(), null, 2));
@@ -734,7 +793,23 @@ switch (cmd) {
     const msg = isGmail(acc)
       ? await gmailGet(acc, id)
       : await spacemailGet(acc, id);
-    console.log(JSON.stringify(msg, null, 2));
+    const full = args.full === true;
+    if (full) {
+      console.log(JSON.stringify(msg, null, 2));
+    } else {
+      const m = msg as Record<string, unknown>;
+      const headers = (m.headers ?? {}) as Record<string, unknown>;
+      const message = (m.message ?? {}) as Record<string, unknown>;
+      console.log(JSON.stringify({
+        id: m.id ?? message.id,
+        threadId: m.threadId ?? message.threadId,
+        date: m.date ?? headers.date,
+        from: m.from ?? headers.from,
+        to: m.to ?? headers.to,
+        subject: m.subject ?? headers.subject,
+        body: m.body ?? m.text ?? m.snippet ?? "",
+      }, null, 2));
+    }
     break;
   }
 
@@ -744,12 +819,16 @@ switch (cmd) {
     const to = args.to as string;
     const subject = args.subject as string;
     const body = args.body as string;
+    const attachment = args.attachment as string | undefined;
+    const attachments = attachment ? attachment.split(",") : [];
     if (!to) err("send requires --to");
     if (!subject) err("send requires --subject");
     if (!body) err("send requires --body");
     const acc = getAccount(account);
+    if (attachments.length && !isGmail(acc))
+      err("Attachments not supported for SpaceMail accounts");
     const result = isGmail(acc)
-      ? await gmailSend(acc, to, subject, body)
+      ? await gmailSend(acc, to, subject, body, attachments)
       : await spacemailSend(acc, to, subject, body);
     console.log(JSON.stringify(result, null, 2));
     break;

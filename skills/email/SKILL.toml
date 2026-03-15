@@ -1,12 +1,12 @@
 [skill]
 name = "email"
-description = "Full email control across all accounts (Gmail, SpaceMail). Read, search, send, reply, forward, label, archive, delete, and manage attachments."
+description = "Full email control across all accounts (Gmail, SpaceMail). Read, search, send, reply, forward, thread, label, mark, archive, trash, delete, attachments, and account management."
 version = "0.1.0"
 tags = ["email", "gmail", "spacemail"]
 
 [[tools]]
 name = "email_cli"
-description = "Email management CLI. Subcommands: accounts, inbox [account], read <id>, send <to> --subject <s> --body <b>, reply <id> --body <b>, forward <id> <to>, search <query>, label <id> <label>, archive <id>, delete <id>, attachments <id>, reauth <account>"
+description = "Email management CLI. Subcommands: list, search, get, send, reply, forward, thread, labels, label, mark, archive, trash, delete, attachments, accounts"
 kind = "shell"
 command = "bun run /etc/nixos/zeroclaw/skills/email/cli.ts {args}"
 

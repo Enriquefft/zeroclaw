@@ -244,6 +244,18 @@ if (import.meta.main) {
       deployed: `${HOME}/.zeroclaw/documents/LORE.md`,
     },
     {
+      source: "/etc/nixos/zeroclaw/documents/SENTINEL.md",
+      deployed: `${HOME}/.zeroclaw/documents/SENTINEL.md`,
+    },
+    {
+      source: "/etc/nixos/zeroclaw/documents/SKILL-CREATOR.md",
+      deployed: `${HOME}/.zeroclaw/documents/SKILL-CREATOR.md`,
+    },
+    {
+      source: "/etc/nixos/zeroclaw/documents/TASK-ROUTING.md",
+      deployed: `${HOME}/.zeroclaw/documents/TASK-ROUTING.md`,
+    },
+    {
       source: "/etc/nixos/zeroclaw/documents/SOUL.md",
       deployed: `${HOME}/.zeroclaw/workspace/SOUL.md`,
     },
