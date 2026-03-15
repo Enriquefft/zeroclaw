@@ -9,4 +9,4 @@ hints:
   - "Filter against 5 content pillars: build-in-public, AI/agent engineering, job hunt, startup/founder, research"
   - "Output SILENT if nothing relevant after filtering"
   - "Compact WhatsApp digest under 1500 chars, pillar headers with 2-3 bullet links"
-  - "Capture relevant items into PSN idea bank via psn_cli if available"
+  - "For relevant items that pass filtering, capture in PSN idea bank via psn_cli capture '<title> #pillar:<topic> #platform:x'. Can delegate captures to fast_run"
