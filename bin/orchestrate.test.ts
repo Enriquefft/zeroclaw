@@ -1,17 +1,10 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { Database } from "bun:sqlite";
 import { initStateDb } from "./init-state-db.ts";
-
-// Import the orchestrate module functions for testing
-import {
-  parseYaml,
-  type OrchestrateYaml,
-  orchestrate,
-  type OrchestrateResult,
-} from "./orchestrate.ts";
+import { orchestrate, type OrchestrateResult } from "./orchestrate.ts";
 
 let tempDir: string;
 let tempDb: string;
@@ -21,7 +14,6 @@ beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "orchestrate-test-"));
   tempDbDir = mkdtempSync(join(tmpdir(), "orchestrate-db-"));
   tempDb = join(tempDbDir, "state.db");
-  // Pre-initialize the DB
   const db = initStateDb(tempDb);
   db.close();
 });
@@ -39,764 +31,360 @@ function writeYaml(content: string): string {
   return path;
 }
 
-function mockRunner(outputs: string[]): (prompt: string) => Promise<string> {
-  let idx = 0;
-  return async (_prompt: string) => {
-    if (idx >= outputs.length) return "default mock output";
-    return outputs[idx++];
+function mockRunner(output: string): (sys: string, user: string) => Promise<string> {
+  return async (_sys: string, _user: string) => output;
+}
+
+function failingRunner(msg = "mock failure"): (sys: string, user: string) => Promise<string> {
+  return async () => { throw new Error(msg); };
+}
+
+function trackingRunner(output: string): {
+  runner: (sys: string, user: string) => Promise<string>;
+  calls: { systemPrompt: string; userPrompt: string }[];
+} {
+  const calls: { systemPrompt: string; userPrompt: string }[] = [];
+  return {
+    runner: async (sys: string, user: string) => { calls.push({ systemPrompt: sys, userPrompt: user }); return output; },
+    calls,
   };
 }
 
-function failingRunner(
-  errorMsg = "mock failure"
-): (prompt: string) => Promise<string> {
-  return async (_prompt: string) => {
-    throw new Error(errorMsg);
-  };
-}
+// ---- YAML parsing (via orchestrate function) ----
 
-// ---- parseYaml tests ----
-
-describe("parseYaml", () => {
-  test("extracts goal from YAML string", () => {
-    const yaml = `
-name: daily-report
-goal: Write a daily summary report
-notify: "+15550001234"
-`;
-    const result = parseYaml(yaml);
-    expect(result.goal).toBe("Write a daily summary report");
+describe("orchestrate — YAML parsing", () => {
+  test("parses goal from YAML file", async () => {
+    const yamlPath = writeYaml(`
+name: test-job
+goal: "Write a daily summary"
+hints:
+  - "Check email"
+`);
+    const { runner, calls } = trackingRunner("done");
+    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    expect(calls[0].userPrompt).toContain("Write a daily summary");
   });
 
-  test("extracts steps array from YAML", () => {
-    const yaml = `
-name: multi-step
-goal: Do multiple things
+  test("parses hints and includes them in prompt", async () => {
+    const yamlPath = writeYaml(`
+name: hints-test
+goal: "Do the thing"
+hints:
+  - "Hint one"
+  - "Hint two"
+`);
+    const { runner, calls } = trackingRunner("done");
+    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    expect(calls[0].userPrompt).toContain("Hint one");
+    expect(calls[0].userPrompt).toContain("Hint two");
+  });
+
+  test("accepts steps as alias for hints (backward compat)", async () => {
+    const yamlPath = writeYaml(`
+name: compat-test
+goal: "Backward compat"
 steps:
-  - "Step one: gather data"
-  - "Step two: analyze data"
-  - "Step three: write report"
-`;
-    const result = parseYaml(yaml);
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(3);
-    expect(result.steps?.[0]).toBe("Step one: gather data");
-    expect(result.steps?.[1]).toBe("Step two: analyze data");
-    expect(result.steps?.[2]).toBe("Step three: write report");
+  - "Old step one"
+  - "Old step two"
+`);
+    const { runner, calls } = trackingRunner("done");
+    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    expect(calls[0].userPrompt).toContain("Old step one");
+    expect(calls[0].userPrompt).toContain("Old step two");
   });
 
-  test("returns null steps when steps field is absent", () => {
-    const yaml = `
-name: no-steps
-goal: Just a goal with no steps
-`;
-    const result = parseYaml(yaml);
-    expect(result.steps).toBeNull();
-  });
-
-  test("extracts notify field", () => {
-    const yaml = `
-goal: Test goal
-notify: "+15550001234"
-`;
-    const result = parseYaml(yaml);
-    expect(result.notify).toBe("+15550001234");
-  });
-
-  test("returns null notify when absent", () => {
-    const yaml = `
-goal: Test goal without notify
-`;
-    const result = parseYaml(yaml);
-    expect(result.notify).toBeNull();
-  });
-
-  test("extracts name field", () => {
-    const yaml = `
-name: my-job-name
-goal: Test goal
-`;
-    const result = parseYaml(yaml);
-    expect(result.name).toBe("my-job-name");
-  });
-
-  test("returns null name when absent", () => {
-    const yaml = `
-goal: Test goal
-`;
-    const result = parseYaml(yaml);
-    expect(result.name).toBeNull();
-  });
-
-  test("handles steps without quotes", () => {
-    const yaml = `
-goal: Test
-steps:
-  - Gather data from API
-  - Process and transform data
-`;
-    const result = parseYaml(yaml);
-    expect(result.steps?.length).toBe(2);
-    expect(result.steps?.[0]).toBe("Gather data from API");
-    expect(result.steps?.[1]).toBe("Process and transform data");
+  test("works without hints", async () => {
+    const yamlPath = writeYaml(`
+name: no-hints
+goal: "Just a goal"
+`);
+    const { runner, calls } = trackingRunner("done");
+    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    expect(calls[0].userPrompt).toContain("Just a goal");
+    expect(calls[0].userPrompt).not.toContain("Hints");
   });
 });
 
-// ---- orchestrate() function tests ----
+// ---- Inline goal (non-YAML) ----
 
-describe("orchestrate — basic execution", () => {
-  test("executes all steps sequentially and returns success", async () => {
-    const yamlPath = writeYaml(`
-name: test-job
-goal: Complete a test task
-steps:
-  - "Step 1: initialize"
-  - "Step 2: process"
-  - "Step 3: finalize"
-`);
-
-    const runner = mockRunner(["init output", "process output", "done output"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
+describe("orchestrate — inline goals", () => {
+  test("accepts an inline goal string", async () => {
+    const { runner, calls } = trackingRunner("inline result");
+    const result = await orchestrate("Summarize my emails", { dbPath: tempDb, runner });
     expect(result.success).toBe(true);
-    expect(result.steps_run).toBe(3);
-    expect(typeof result.parent_id).toBe("string");
-    expect(result.parent_id.length).toBeGreaterThan(0);
+    expect(calls[0].userPrompt).toContain("Summarize my emails");
+  });
+});
+
+// ---- Core execution ----
+
+describe("orchestrate — execution", () => {
+  test("calls runner with system prompt and user prompt", async () => {
+    const yamlPath = writeYaml(`
+name: prompt-test
+goal: "Test prompts"
+hints:
+  - "A hint"
+`);
+    const { runner, calls } = trackingRunner("output");
+    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+
+    expect(calls.length).toBe(1);
+    expect(calls[0].systemPrompt).toContain("orchestration engine");
+    expect(calls[0].userPrompt).toContain("Test prompts");
+    expect(calls[0].userPrompt).toContain("A hint");
   });
 
-  test("creates parent row in orchestration_tasks with status completed", async () => {
+  test("returns success with parent_id on successful run", async () => {
     const yamlPath = writeYaml(`
-name: parent-row-test
-goal: Test parent row creation
-steps:
-  - "Do the thing"
+name: success-test
+goal: "Test success"
+hints:
+  - "Do it"
 `);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("done") });
 
-    const runner = mockRunner(["step output"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    expect(result.success).toBe(true);
+    expect(typeof result.parent_id).toBe("string");
+    expect(result.parent_id.length).toBeGreaterThan(0);
+    expect(result.error).toBeUndefined();
+  });
+
+  test("returns failure with error on runner exception", async () => {
+    const yamlPath = writeYaml(`
+name: fail-test
+goal: "Test failure"
+hints:
+  - "Will fail"
+`);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: failingRunner("kaboom") });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("kaboom");
+  });
+});
+
+// ---- Database state ----
+
+describe("orchestrate — database", () => {
+  test("creates parent row in orchestration_tasks", async () => {
+    const yamlPath = writeYaml(`
+name: db-test
+goal: "Test DB row"
+hints:
+  - "Do it"
+`);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("output") });
 
     const db = new Database(tempDb);
-    const parent = db
-      .query(
-        "SELECT * FROM orchestration_tasks WHERE id = ? AND parent_id IS NULL"
-      )
-      .get(result.parent_id) as {
-      id: string;
-      status: string;
-      parent_goal: string;
-      yaml_source: string;
-    } | null;
+    const parent = db.query(
+      "SELECT * FROM orchestration_tasks WHERE id = ? AND parent_id IS NULL"
+    ).get(result.parent_id) as any;
     db.close();
 
     expect(parent).not.toBeNull();
-    expect(parent?.status).toBe("completed");
-    expect(parent?.parent_goal).toBe("Test parent row creation");
-    expect(parent?.yaml_source).toBe(yamlPath);
+    expect(parent.status).toBe("completed");
+    expect(parent.parent_goal).toBe("Test DB row");
+    expect(parent.yaml_source).toBe(yamlPath);
   });
 
-  test("creates subtask rows with correct step_index for each step", async () => {
+  test("marks parent as failed on runner error", async () => {
     const yamlPath = writeYaml(`
-name: subtask-test
-goal: Test subtask creation
-steps:
-  - "First step"
-  - "Second step"
-  - "Third step"
+name: fail-db-test
+goal: "Fail DB test"
+hints:
+  - "Will fail"
 `);
-
-    const runner = mockRunner(["out1", "out2", "out3"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: failingRunner() });
 
     const db = new Database(tempDb);
-    const subtasks = db
-      .query(
-        "SELECT * FROM orchestration_tasks WHERE parent_id = ? ORDER BY step_index"
-      )
-      .all(result.parent_id) as {
-      description: string;
-      status: string;
-      step_index: number;
-      step_output: string;
-    }[];
+    const parent = db.query(
+      "SELECT status FROM orchestration_tasks WHERE id = ? AND parent_id IS NULL"
+    ).get(result.parent_id) as any;
     db.close();
 
-    expect(subtasks.length).toBe(3);
-    expect(subtasks[0].step_index).toBe(0);
-    expect(subtasks[1].step_index).toBe(1);
-    expect(subtasks[2].step_index).toBe(2);
-    expect(subtasks[0].status).toBe("completed");
-    expect(subtasks[1].status).toBe("completed");
-    expect(subtasks[2].status).toBe("completed");
+    expect(parent.status).toBe("failed");
   });
 
-  test("subtask row is inserted BEFORE runner is called (checkpoint before execution)", async () => {
-    const yamlPath = writeYaml(`
-name: checkpoint-test
-goal: Test checkpointing
-steps:
-  - "Only step"
-`);
-
-    let rowExistedBeforeReturn = false;
-    const checkpointRunner = async (_prompt: string): Promise<string> => {
-      // Check if the subtask row was inserted before this call
-      const db = new Database(tempDb);
-      const rows = db
-        .query(
-          "SELECT * FROM orchestration_tasks WHERE parent_id IS NOT NULL AND step_index = 0"
-        )
-        .all() as any[];
-      db.close();
-      rowExistedBeforeReturn = rows.length > 0;
-      return "output";
-    };
-
-    await orchestrate(yamlPath, { dbPath: tempDb, runner: checkpointRunner });
-    expect(rowExistedBeforeReturn).toBe(true);
-  });
-
-  test("step_output is stored in subtask row after completion", async () => {
+  test("stores output in step_output column (truncated to 8KB)", async () => {
     const yamlPath = writeYaml(`
 name: output-test
-goal: Test output storage
-steps:
+goal: "Test output storage"
+hints:
   - "Generate output"
 `);
-
-    const runner = mockRunner(["this is the step output"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    const db = new Database(tempDb);
-    const subtask = db
-      .query(
-        "SELECT step_output FROM orchestration_tasks WHERE parent_id = ? AND step_index = 0"
-      )
-      .get(result.parent_id) as { step_output: string } | null;
-    db.close();
-
-    expect(subtask?.step_output).toBe("this is the step output");
-  });
-
-  test("step_output is truncated to 8KB", async () => {
-    const yamlPath = writeYaml(`
-name: truncation-test
-goal: Test output truncation
-steps:
-  - "Generate large output"
-`);
-
-    const largeOutput = "x".repeat(10000); // 10KB
-    const runner = mockRunner([largeOutput]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    const largeOutput = "x".repeat(10000);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner(largeOutput) });
 
     const db = new Database(tempDb);
-    const subtask = db
-      .query(
-        "SELECT step_output FROM orchestration_tasks WHERE parent_id = ? AND step_index = 0"
-      )
-      .get(result.parent_id) as { step_output: string } | null;
+    const row = db.query(
+      "SELECT step_output FROM orchestration_tasks WHERE id = ?"
+    ).get(result.parent_id) as any;
     db.close();
 
-    expect(subtask?.step_output?.length).toBeLessThanOrEqual(8192);
+    expect(row.step_output.length).toBeLessThanOrEqual(8192);
   });
 
-  test("previous steps output is passed as context to subsequent steps", async () => {
-    const yamlPath = writeYaml(`
-name: context-chain-test
-goal: Test context chaining
-steps:
-  - "Step A"
-  - "Step B uses A output"
-`);
-
-    const prompts: string[] = [];
-    const trackingRunner = async (prompt: string): Promise<string> => {
-      prompts.push(prompt);
-      return `output for: ${prompt.slice(0, 20)}`;
-    };
-
-    await orchestrate(yamlPath, { dbPath: tempDb, runner: trackingRunner });
-
-    // Second step prompt should contain output from step 1
-    expect(prompts.length).toBe(2);
-    expect(prompts[1]).toContain("output for:");
-  });
-});
-
-// ---- Retry logic tests ----
-
-describe("orchestrate — retry on failure", () => {
-  test("retries a failed step once before stopping", async () => {
-    const yamlPath = writeYaml(`
-name: retry-test
-goal: Test retry logic
-steps:
-  - "Step that will fail"
-  - "Step that won't run"
-`);
-
-    let callCount = 0;
-    const alwaysFailRunner = async (_prompt: string): Promise<string> => {
-      callCount++;
-      throw new Error("always fails");
-    };
-
-    const result = await orchestrate(yamlPath, {
-      dbPath: tempDb,
-      runner: alwaysFailRunner,
-    });
-
-    expect(result.success).toBe(false);
-    // Called once + one retry = 2 calls total for the first step
-    expect(callCount).toBe(2);
-  });
-
-  test("marks subtask as failed after retry exhausted", async () => {
-    const yamlPath = writeYaml(`
-name: failed-subtask-test
-goal: Test failure marking
-steps:
-  - "Failing step"
-`);
-
-    const runner = failingRunner("test failure");
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    const db = new Database(tempDb);
-    const subtask = db
-      .query(
-        "SELECT status FROM orchestration_tasks WHERE parent_id = ? AND step_index = 0"
-      )
-      .get(result.parent_id) as { status: string } | null;
-    db.close();
-
-    expect(subtask?.status).toBe("failed");
-  });
-
-  test("stops execution after first step fails — subsequent steps not run", async () => {
-    const yamlPath = writeYaml(`
-name: stop-on-failure-test
-goal: Test stop on failure
-steps:
-  - "Step 1 fails"
-  - "Step 2 should not run"
-`);
-
-    let callCount = 0;
-    const runner = async (_prompt: string): Promise<string> => {
-      callCount++;
-      throw new Error("fail");
-    };
-
-    await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    // Only step 1 + its retry = 2 calls; step 2 never runs
-    expect(callCount).toBe(2);
-  });
-
-  test("marks parent as failed when a step fails permanently", async () => {
-    const yamlPath = writeYaml(`
-name: parent-fail-test
-goal: Test parent failure
-steps:
-  - "Failing step"
-`);
-
-    const runner = failingRunner();
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    const db = new Database(tempDb);
-    const parent = db
-      .query(
-        "SELECT status FROM orchestration_tasks WHERE id = ? AND parent_id IS NULL"
-      )
-      .get(result.parent_id) as { status: string } | null;
-    db.close();
-
-    expect(parent?.status).toBe("failed");
-    expect(result.success).toBe(false);
-  });
-
-  test("succeeds when step fails first attempt but succeeds on retry", async () => {
-    const yamlPath = writeYaml(`
-name: retry-success-test
-goal: Test retry success
-steps:
-  - "Step that fails then succeeds"
-`);
-
-    let callCount = 0;
-    const flakeyRunner = async (_prompt: string): Promise<string> => {
-      callCount++;
-      if (callCount === 1) throw new Error("first attempt fails");
-      return "success on retry";
-    };
-
-    const result = await orchestrate(yamlPath, {
-      dbPath: tempDb,
-      runner: flakeyRunner,
-    });
-
-    expect(result.success).toBe(true);
-    expect(callCount).toBe(2);
-  });
-});
-
-// ---- Dual logging tests ----
-
-describe("orchestrate — cron_log dual logging", () => {
-  test("inserts one row into cron_log after successful run", async () => {
+  test("inserts cron_log row on success", async () => {
     const yamlPath = writeYaml(`
 name: log-test-job
-goal: Test logging
-steps:
-  - "Log step"
+goal: "Test logging"
+hints:
+  - "Do it"
 `);
-
-    const runner = mockRunner(["output"]);
-    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("done") });
 
     const db = new Database(tempDb);
-    const rows = db
-      .query("SELECT * FROM cron_log WHERE job_name = 'log-test-job'")
-      .all() as any[];
+    const rows = db.query("SELECT * FROM cron_log WHERE job_name = 'log-test-job'").all() as any[];
     db.close();
 
     expect(rows.length).toBe(1);
     expect(rows[0].success).toBe(1);
-    expect(rows[0].started_at).toBeGreaterThan(0);
     expect(rows[0].duration_ms).toBeGreaterThanOrEqual(0);
   });
 
-  test("inserts one row into cron_log after failed run with success=0", async () => {
+  test("inserts cron_log row on failure with success=0", async () => {
     const yamlPath = writeYaml(`
-name: fail-log-test-job
-goal: Test failure logging
-steps:
-  - "Failing step"
+name: fail-log-job
+goal: "Fail logging"
+hints:
+  - "Will fail"
 `);
-
-    const runner = failingRunner();
-    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    await orchestrate(yamlPath, { dbPath: tempDb, runner: failingRunner() });
 
     const db = new Database(tempDb);
-    const rows = db
-      .query("SELECT * FROM cron_log WHERE job_name = 'fail-log-test-job'")
-      .all() as any[];
+    const rows = db.query("SELECT * FROM cron_log WHERE job_name = 'fail-log-job'").all() as any[];
     db.close();
 
     expect(rows.length).toBe(1);
     expect(rows[0].success).toBe(0);
   });
 
-  test("uses filename as job_name when name field absent from YAML", async () => {
+  test("uses filename as job_name when name absent", async () => {
     const yamlPath = join(tempDir, "my-custom-job.yaml");
-    writeFileSync(
-      yamlPath,
-      `
-goal: Test with filename
-steps:
-  - "Do something"
-`
-    );
+    writeFileSync(yamlPath, `goal: "Test filename"\nhints:\n  - "Do it"\n`);
 
-    const runner = mockRunner(["output"]);
-    await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("done") });
 
     const db = new Database(tempDb);
-    const rows = db
-      .query("SELECT * FROM cron_log WHERE job_name = 'my-custom-job'")
-      .all() as any[];
+    const rows = db.query("SELECT * FROM cron_log WHERE job_name = 'my-custom-job'").all() as any[];
     db.close();
 
     expect(rows.length).toBe(1);
   });
 });
 
-// ---- Resume logic tests ----
+// ---- SILENT handling ----
 
-describe("orchestrate — resume logic", () => {
-  test("resumes from failed step within 4h window — skips completed steps", async () => {
+describe("orchestrate — SILENT output", () => {
+  test("detects SILENT output", async () => {
     const yamlPath = writeYaml(`
-name: resume-test
-goal: Test resume logic
-steps:
-  - "Step 1 (already done)"
-  - "Step 2 (failed last time)"
-  - "Step 3 (not yet run)"
+name: silent-test
+goal: "Nothing to do"
+notify: "+15550001234"
+hints:
+  - "Check if anything"
 `);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("SILENT") });
 
-    const now = Date.now();
-    const withinWindow = now - 2 * 60 * 60 * 1000; // 2 hours ago
-
-    // Pre-seed state: parent row running + step 0 completed + step 1 failed
-    const db = new Database(tempDb);
-    const parentId = "resume-parent-id";
-    db.prepare(
-      "INSERT INTO orchestration_tasks (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(
-      parentId,
-      "Test resume logic",
-      "running",
-      withinWindow,
-      withinWindow,
-      null,
-      0,
-      "Test resume logic",
-      yamlPath
-    );
-    db.prepare(
-      "INSERT INTO orchestration_tasks (id, description, status, created_at, updated_at, parent_id, step_index, step_output) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(
-      "step-0-id",
-      "Step 1 (already done)",
-      "completed",
-      withinWindow,
-      withinWindow,
-      parentId,
-      0,
-      "step 0 output"
-    );
-    db.prepare(
-      "INSERT INTO orchestration_tasks (id, description, status, created_at, updated_at, parent_id, step_index) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    ).run(
-      "step-1-id",
-      "Step 2 (failed last time)",
-      "failed",
-      withinWindow,
-      withinWindow,
-      parentId,
-      1
-    );
-    db.close();
-
-    const runnerPrompts: string[] = [];
-    const runner = async (prompt: string): Promise<string> => {
-      runnerPrompts.push(prompt);
-      return "resumed output";
-    };
-
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    // Should only run steps 1 and 2 (step 0 was completed)
     expect(result.success).toBe(true);
-    expect(result.steps_run).toBe(2); // steps 1 and 2 re-run
-    expect(result.parent_id).toBe(parentId); // reuses existing parent
+    expect(result.output).toBe("SILENT");
   });
 
-  test("starts fresh when previous run is beyond 4h resume window", async () => {
+  test("detects SILENT with trailing content", async () => {
     const yamlPath = writeYaml(`
-name: fresh-start-test
-goal: Test fresh start beyond window
-steps:
-  - "Step 1"
-  - "Step 2"
+name: silent-newline
+goal: "Nothing"
+hints:
+  - "Check"
 `);
-
-    const now = Date.now();
-    const beyondWindow = now - 5 * 60 * 60 * 1000; // 5 hours ago
-
-    // Pre-seed state from old run (beyond window)
-    const db = new Database(tempDb);
-    const oldParentId = "old-parent-id";
-    db.prepare(
-      "INSERT INTO orchestration_tasks (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(
-      oldParentId,
-      "Test fresh start beyond window",
-      "running",
-      beyondWindow,
-      beyondWindow,
-      null,
-      0,
-      "Test fresh start beyond window",
-      yamlPath
-    );
-    db.close();
-
-    const runner = mockRunner(["out1", "out2"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    // Should create a NEW parent row (fresh start)
-    expect(result.success).toBe(true);
-    expect(result.parent_id).not.toBe(oldParentId);
-    expect(result.steps_run).toBe(2);
-  });
-
-  test("starts fresh when no prior run exists", async () => {
-    const yamlPath = writeYaml(`
-name: first-run-test
-goal: First ever run
-steps:
-  - "Step A"
-  - "Step B"
-`);
-
-    const runner = mockRunner(["output A", "output B"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("SILENT\nNo items found") });
 
     expect(result.success).toBe(true);
-    expect(result.steps_run).toBe(2);
+    expect(result.output).toBe("SILENT");
   });
 });
 
-// ---- Output contract tests ----
+// ---- Error handling ----
 
-describe("orchestrate — output contract", () => {
-  test("returns OrchestrateResult with success, steps_run, parent_id on success", async () => {
-    const yamlPath = writeYaml(`
-goal: Test output contract
-steps:
-  - "Single step"
-`);
-
-    const runner = mockRunner(["output"]);
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    expect(typeof result.success).toBe("boolean");
-    expect(typeof result.steps_run).toBe("number");
-    expect(typeof result.parent_id).toBe("string");
-    expect(result.error).toBeUndefined();
-  });
-
-  test("returns error field on failure", async () => {
-    const yamlPath = writeYaml(`
-goal: Test failure output
-steps:
-  - "Failing step"
-`);
-
-    const runner = failingRunner("specific error message");
-    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBeDefined();
-  });
-});
-
-// ---- YAML file reading edge cases ----
-
-describe("orchestrate — YAML file handling", () => {
-  test("returns error result when YAML file not found", async () => {
+describe("orchestrate — error cases", () => {
+  test("returns error for nonexistent YAML file", async () => {
     const result = await orchestrate("/nonexistent/path.yaml", {
       dbPath: tempDb,
-      runner: mockRunner([]),
+      runner: mockRunner(""),
     });
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
   });
+
+  test("returns error for YAML without goal", async () => {
+    const yamlPath = writeYaml(`name: no-goal\nhints:\n  - "Something"\n`);
+    const result = await orchestrate(yamlPath, { dbPath: tempDb, runner: mockRunner("") });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("goal");
+  });
 });
 
-// ---- parseYaml — daily automation YAMLs ----
+// ---- Real YAML file parsing ----
 
-import { readFileSync } from "fs";
-
-describe("parseYaml — daily automation YAMLs", () => {
-  test("steps with colons parse correctly", () => {
-    const yaml = `
-name: colon-test
-goal: Test colon handling in steps
-steps:
-  - Step 1: gather data from source
-  - Step 2: analyze and filter results
-  - Step 3: send report via WhatsApp
-`;
-    const result = parseYaml(yaml);
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(3);
-    expect(result.steps?.[0]).toBe("Step 1: gather data from source");
-    expect(result.steps?.[1]).toBe("Step 2: analyze and filter results");
-    expect(result.steps?.[2]).toBe("Step 3: send report via WhatsApp");
-  });
-
-  test("morning-briefing.yaml parses correctly", () => {
-    const content = readFileSync(
+describe("orchestrate — real YAML files parse correctly", () => {
+  test("morning-briefing.yaml has correct fields", async () => {
+    const { runner, calls } = trackingRunner("briefing done");
+    const result = await orchestrate(
       "/etc/nixos/zeroclaw/cron/jobs/morning-briefing.yaml",
-      "utf8"
+      { dbPath: tempDb, runner }
     );
-    const result = parseYaml(content);
-    expect(result.name).toBe("Morning Briefing");
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(4);
-    expect(result.notify).toBe("+51926689401");
-    expect(result.goal).toBeTruthy();
-    expect(result.goal.toLowerCase()).toContain("morning briefing");
+
+    expect(result.success).toBe(true);
+    expect(calls[0].userPrompt).toContain("morning briefing");
+    expect(calls[0].userPrompt).toContain("calendar");
   });
 
-  test("eod-summary.yaml parses correctly", () => {
-    const content = readFileSync(
+  test("eod-summary.yaml has correct fields", async () => {
+    const { runner, calls } = trackingRunner("eod done");
+    const result = await orchestrate(
       "/etc/nixos/zeroclaw/cron/jobs/eod-summary.yaml",
-      "utf8"
+      { dbPath: tempDb, runner }
     );
-    const result = parseYaml(content);
-    expect(result.name).toBe("EOD Summary");
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(5);
-    expect(result.notify).toBe("+51926689401");
-    expect(result.goal).toBeTruthy();
-  });
 
-  test("follow-up-enforcer.yaml parses correctly", () => {
-    const content = readFileSync(
-      "/etc/nixos/zeroclaw/cron/jobs/follow-up-enforcer.yaml",
-      "utf8"
-    );
-    const result = parseYaml(content);
-    expect(result.name).toBe("Follow-up Enforcer");
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(3);
-    expect(result.notify).toBeNull();
-    expect(result.goal).toBeTruthy();
-  });
-
-  test("content-scout.yaml parses correctly", () => {
-    const content = readFileSync(
-      "/etc/nixos/zeroclaw/cron/jobs/content-scout.yaml",
-      "utf8"
-    );
-    const result = parseYaml(content);
-    expect(result.name).toBe("Content Scout");
-    expect(result.steps).not.toBeNull();
-    expect(result.steps?.length).toBe(4);
-    expect(result.notify).toBeNull();
-    expect(result.goal).toBeTruthy();
+    expect(result.success).toBe(true);
+    expect(calls[0].userPrompt).toContain("Git commits");
   });
 });
 
-// ---- Module structure tests ----
+// ---- Module exports ----
 
-describe("orchestrate — module exports", () => {
-  test("exports parseYaml function", () => {
-    expect(typeof parseYaml).toBe("function");
-  });
-
+describe("orchestrate — module structure", () => {
   test("exports orchestrate as AsyncFunction", () => {
     expect(typeof orchestrate).toBe("function");
     expect(orchestrate.constructor.name).toBe("AsyncFunction");
   });
 
-  test("orchestrate.ts source imports initStateDb", async () => {
-    const file = Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts");
-    const content = await file.text();
+  test("source imports initStateDb", async () => {
+    const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("initStateDb");
   });
 
-  test("orchestrate.ts source imports notify", async () => {
-    const file = Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts");
-    const content = await file.text();
+  test("source imports notify", async () => {
+    const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("notify");
   });
 
-  test("orchestrate.ts source references orchestration_tasks", async () => {
-    const file = Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts");
-    const content = await file.text();
+  test("source references orchestration_tasks", async () => {
+    const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("orchestration_tasks");
   });
 
-  test("orchestrate.ts source references cron_log", async () => {
-    const file = Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts");
-    const content = await file.text();
+  test("source references cron_log", async () => {
+    const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("cron_log");
+  });
+
+  test("source uses YAML.parse (not regex)", async () => {
+    const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
+    expect(content).toContain("YAML.parse");
+    expect(content).not.toContain("RegExp");
   });
 });

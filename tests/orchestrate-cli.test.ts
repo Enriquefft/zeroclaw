@@ -77,13 +77,12 @@ describe("orchestrate status", () => {
     expect(Array.isArray(parsed) || typeof parsed === "object").toBe(true);
   });
 
-  test("status with fake ID exits 0 and returns JSON with empty steps array", async () => {
+  test("status with fake ID exits 0 and returns JSON with null parent", async () => {
     const { exitCode, stdout } = await runCli(["status", "nonexistent-id-12345"]);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
-    expect(parsed).toHaveProperty("steps");
-    expect(Array.isArray(parsed.steps)).toBe(true);
-    expect(parsed.steps.length).toBe(0);
+    expect(parsed).toHaveProperty("parent");
+    expect(parsed.parent).toBeNull();
   });
 });
 

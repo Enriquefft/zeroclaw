@@ -169,8 +169,12 @@ export async function orchestrate(
   const startedAt = Date.now();
 
   // Determine if input is a YAML file or inline goal
-  const isFile =
-    (input.endsWith(".yaml") || input.endsWith(".yml")) && existsSync(input);
+  const looksLikeYaml = input.endsWith(".yaml") || input.endsWith(".yml");
+  const isFile = looksLikeYaml && existsSync(input);
+
+  if (looksLikeYaml && !isFile) {
+    return { success: false, parent_id: "", error: `YAML file not found: ${input}` };
+  }
 
   let goal: string;
   let hints: string[] | null = null;
