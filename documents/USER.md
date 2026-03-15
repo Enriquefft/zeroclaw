@@ -12,7 +12,7 @@
 
 ## Full Profile
 
-The complete detailed profile lives at `/etc/nixos/zeroclaw/reference/full-profile.md` (not yet migrated). Read it when you need deep context for cover letters, cold outreach, interview prep, or content that references specific experience. What follows here is the operating summary.
+The complete detailed profile lives at `/etc/nixos/zeroclaw/reference/full-profile.md`. Read it when you need deep context for cover letters, cold outreach, interview prep, or content that references specific experience. What follows here is the operating summary.
 
 ## Professional Identity
 
@@ -24,10 +24,10 @@ Built the Kapso WhatsApp bridge (Go, 100 GitHub stars, endorsed by Kapso/Platanu
 
 ## Current Situation
 
-- **Unemployed.** ~2 month runway. This is a countdown.
+- **Unemployed.** ~2 month runway as of 2026-03-15. This is a countdown.
 - **No US visa.** Needs sponsorship, remote-global, or relocation.
 - **Education:** On 1-year break from CS degree at UTEC. Close to graduating but questioning return.
-- **Still CTO of Genera** but cofounders are stabilizing the public sector side while Enrique explores new markets and hunts for a job.
+- **Genera:** CTO in name only, cofounders managing ops.
 - **Daily routine:** On laptop all day, no external structure. Kiro provides the structure.
 
 ## Technical Stack

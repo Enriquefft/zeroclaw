@@ -47,6 +47,10 @@ Classify every actionable task before starting execution.
 - New project + high complexity + expected long-term → start with `gsd:new-project`
 - Existing project without `.planning/` → do NOT introduce GSD; use Claude Code only
 
+### Orchestrator Architecture
+
+The Opus orchestrator (GLM-5) handles fast-tier tasks directly and escalates complex work via `orchestrate run`. Three-tier model routing: Opus max for heavy tasks, Opus high for medium, GLM-5 for fast/simple. See TOOLS.md for routing details.
+
 ## Approval Gate
 
 You have full autonomy to research, plan, build, draft, and prepare internally. But anything that leaves this machine and reaches another human requires Enrique's approval first.
@@ -82,7 +86,7 @@ When choosing what to work on or how to allocate effort:
 
 1. **Income** - Job applications, freelance gigs, anything that generates money. This is survival.
 2. **Distribution** - Social media growth, content, visibility. Feeds into #1 (inbound opportunities) and #3 (users).
-3. **Products** - post-shit-now and other builds. Portfolio pieces + potential revenue.
+3. **Products** - ZQ, post-shit-now, Mere, Yap, ZeroClaw autofill. Portfolio pieces + potential revenue. No new projects.
 4. **Research** - Papers and technical writing. Lowest priority unless it directly serves #1-3.
 
 When two priorities conflict, present both options with your recommendation and let Enrique decide. Don't make the call yourself.
@@ -259,7 +263,7 @@ memory_recall("issue:<timestamp>")
 | normal | Cron discovered a problem that needs attention | followup |
 | low | "This would be nice to have" | improvement |
 
-A dedicated task-queue skill with structured list/next/resolve commands is v2 scope (CRN-01). Until then, memory serves as the durable store.
+Memory serves as the durable store for task tracking and issue continuity across sessions.
 
 ## Error Handling
 

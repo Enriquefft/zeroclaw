@@ -56,9 +56,9 @@ In order of fit:
 ### Resume/CV Notes
 
 - Enrique is working on his portfolio and LinkedIn in parallel
-- When drafting cover letters, pull from `/etc/nixos/zeroclaw/reference/full-profile.md` (not yet migrated) for specific metrics and stories
+- When drafting cover letters, pull from `/etc/nixos/zeroclaw/reference/full-profile.md` for specific metrics and stories
 - Tailor the emphasis per role: founding roles get the MVP speed story, AI roles get the research + agent library, product roles get the Genera metrics
-- For polished, ready-to-adapt responses by question type, read `/etc/nixos/zeroclaw/reference/reusable-responses.md` (not yet migrated)
+- For polished, ready-to-adapt responses by question type, read `/etc/nixos/zeroclaw/reference/reusable-responses.md`
 
 ### Sensitive Topics
 
@@ -68,35 +68,32 @@ In order of fit:
 
 ## Products
 
+### ZQ
+- **Repo:** github.com/Enriquefft/zq
+- CLI tool for fast project scaffolding
+
 ### post-shit-now
-- **What:** Claude commands framework for social media automation
-- **Pipeline:** Research -> Ideate -> Generate -> Schedule -> Post
-- **Status:** Early development, actively building
-- **Location:** ~/Projects/post-shit-now
-- **Goal:** Solve Enrique's own distribution problem, then productize
-- **Why it matters:** Distribution is his self-identified weakness. This is him building the tool he needs.
+- **Repo:** github.com/Enriquefft/post-shit-now
+- Claude commands framework for social media automation
+- Pipeline: Research -> Ideate -> Generate -> Schedule -> Post
+- Solves Enrique's own distribution problem, then productize
 
-### Genera
-- AI-powered SaaS for teachers in Peru
-- Still active (CTO role), cofounders managing operations
-- Building second product: Tiza (MCP integration for Google Classroom)
-- 500+ teachers, 15K+ students, $15K revenue, <5% churn
+### Mere
+- **Repo:** github.com/Enriquefft/Mere
 
-### ZeroClaw + Nix Automation (Kiro)
-- Personal project, fulltime focus
-- Super-automation of personal workflow
-- This system (Kiro) is the product
+### Yap
+- **Repo:** github.com/Enriquefft/yap
 
-### Agent Orchestration System
-- Automating PRD -> functional app in <24 hours
-- Built over Claude Code
-- Systematizing freelance MVP expertise into tooling
+### ZeroClaw Autofill
+- Waitlist stage
+- Browser form-filling automation powered by ZeroClaw
 
-### Kapso WhatsApp Bridge
-- Open-source Go daemon
-- 100 GitHub stars
-- Endorsed by Kapso/Platanus founder
-- This is running Kiro's WhatsApp connection right now
+**Rule:** No new projects. Ship these five.
+
+### Background
+
+- **Genera** — AI edtech SaaS for teachers in Peru. CTO in name only, cofounders managing ops. 500+ teachers, 15K+ students, $15K revenue, <5% churn.
+- **Kapso WhatsApp Bridge** — Open-source Go daemon, 100 GitHub stars, endorsed by Kapso/Platanus founder. Infrastructure powering Kiro's WhatsApp connection.
 
 ## Distribution Strategy
 
@@ -121,12 +118,12 @@ Content builds audience -> audience creates inbound job opportunities -> job hun
 
 ## Research
 
-### Active (Primary Focus)
+### Active
 1. **"Who Gets Missed?"** - Algorithmic fairness audit of Peru's dropout prediction system. Under peer review. 5 model families, 150K records, SHAP analysis.
-2. **LLM AIR for Climate Events** - RAG + reasoning over historical ENSO data. Approved proposal. Co-authoring.
+2. **ENSO AIR** - RAG + reasoning over historical ENSO data. Co-authoring. 3-4 week timeline, targets arXiv -> NeurIPS Climate+AI -> ERL.
 
-### Active (Secondary)
-3. **LLM Gladiators** - Adversarial game environment for LLM agent evaluation. POC stage. Hytale-based.
+### Paused
+3. **LLM Gladiators** - Adversarial game environment for LLM agent evaluation. POC stage. Hytale-based. Paused.
 
 ### Research Interests
 - Multi-agent systems in adversarial environments
@@ -139,8 +136,9 @@ Content builds audience -> audience creates inbound job opportunities -> job hun
 
 (Kiro builds and maintains this via weekly company-refresh cron. Last refreshed: 2026-03-11.)
 
+**Scoring note:** SF-based companies and O-1 visa sponsors get a scoring bonus in match rankings. No company size filter -- startups and large orgs both qualify.
+
 ### Remote-Global
-<!-- Companies that hire LATAM engineers at $100K+ USD, no visa needed -->
 
 - **Automattic** (WordPress.com, WooCommerce, Tumblr) — 2,000+ employees in 90+ countries, 100% distributed. Hires across LATAM, listed on curated remote-latam GitHub repo. Paid trial project as part of hiring process. Signal: actively hiring engineers globally as of early 2026.
 - **GitLab** — 100% remote, no HQ, 65+ countries. Transparent comp regardless of location, equity grants. Listed on remote-latam curated list. Signal: ongoing open engineering roles, transparent job board at about.gitlab.com/jobs.
@@ -187,7 +185,7 @@ Same schema as job_applications. For Upwork/Toptal/Contra gigs that extend runwa
 
 ## Lessons Learned
 
-(Kiro updates this as patterns emerge)
+(Kiro updates this as patterns emerge. Cron jobs should append findings here.)
 
 - What types of applications get responses
 - What content performs well on which platform
@@ -198,7 +196,7 @@ Same schema as job_applications. For Upwork/Toptal/Contra gigs that extend runwa
 
 ## Key Stories for Content & Outreach
 
-Reference `/etc/nixos/zeroclaw/reference/full-profile.md` (not yet migrated) for full versions. Quick index:
+Reference `/etc/nixos/zeroclaw/reference/full-profile.md` for full versions. Quick index:
 
 - **Origin story:** Automated boss's workflow at 17 without being asked
 - **Genera sacrifice:** Refused to eat to protect startup runway

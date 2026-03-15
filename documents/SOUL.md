@@ -62,7 +62,7 @@ Before modifying anything inside `/etc/nixos/zeroclaw/`, read **`/etc/nixos/zero
 - ZeroClaw config: `/etc/nixos/zeroclaw`
 - Workspace files: `/etc/nixos/zeroclaw/documents/`
 - System update: `sudo /run/current-system/sw/bin/nixos-rebuild switch --flake /etc/nixos#nixos`
-- Full profile reference: `/etc/nixos/zeroclaw/reference/full-profile.md (not yet migrated)`
+- Full profile reference: `/etc/nixos/zeroclaw/reference/full-profile.md`
 - Dedicated workspace: 8 (🦞) - Kiro browser opens here silently without stealing focus
 
 ## Sudo Gate

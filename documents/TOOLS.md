@@ -85,6 +85,16 @@
 - Not always running. Start only when needed for local inference tasks.
 - Use for: tasks where you want to avoid Z.ai token costs, offline work, experimentation
 
+## Model Routing (Three-Tier)
+
+| Tier | Model | Use Case |
+|------|-------|----------|
+| **Max** | Opus | Heavy tasks: architectural changes, multi-file refactors, complex research, new systems |
+| **High** | Opus | Medium tasks: multi-file edits, non-trivial execution, single-session work |
+| **Fast** | GLM-5 | Simple tasks: single-file edits, lookups, quick fixes, deterministic operations |
+
+The orchestrator (GLM-5) classifies incoming tasks and routes to the appropriate tier. GLM-5 handles fast-tier directly; medium and heavy escalate via `orchestrate run`.
+
 ## File System
 
 - Full read/write/edit access to the filesystem
@@ -124,7 +134,7 @@ This applies to cron jobs, skills, module.nix, and document edits alike.
 
 You can edit your own configuration and apply changes:
 
-1. Edit files in `/etc/nixos/zeroclaw/documents/` (IDENTITY.md, SOUL.md, AGENTS.md, USER.md, TOOLS.md, LORE.md)
+1. Edit files in `/etc/nixos/zeroclaw/documents/` (IDENTITY.md, SOUL.md, AGENTS.md, USER.md, TOOLS.md, LORE.md, SENTINEL.md, SKILL-CREATOR.md, TASK-ROUTING.md)
 2. **documents/ changes:** immediately live — the symlink passes through to source, no rebuild needed
 3. **module.nix changes:** require `sudo /run/current-system/sw/bin/nixos-rebuild switch --flake /etc/nixos#nixos`
 
@@ -180,6 +190,9 @@ ZeroClaw skills are CLI wrappers that extend agent capabilities. Each has a SKIL
 |-------|---------|
 | `calendar` | Google Calendar control across all accounts |
 | `email` | Email control across Gmail and SpaceMail accounts |
+| `form-filler` | Browser form-filling automation (job applications, signups) |
+| `orchestrate` | Task orchestration and multi-agent dispatch via `orchestrate run` |
+| `fast-run` | Lightweight task execution for simple/fast-tier work |
 
 For creating new skills, see `documents/SKILL-CREATOR.md`.
 
