@@ -193,6 +193,7 @@ ZeroClaw skills are CLI wrappers that extend agent capabilities. Each has a SKIL
 | `form-filler` | Browser form-filling automation (job applications, signups) |
 | `orchestrate` | Task orchestration and multi-agent dispatch via `orchestrate run` |
 | `fast-run` | Lightweight task execution for simple/fast-tier work |
+| `psn` | Social media content lifecycle — draft, schedule, publish, analyze posts across X, LinkedIn, Instagram, TikTok |
 
 For creating new skills, see `documents/SKILL-CREATOR.md`.
 

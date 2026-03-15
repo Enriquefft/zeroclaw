@@ -1,0 +1,4 @@
+name: "PSN State Reconciliation"
+schedule: "*/15 * * * *"
+tz: "America/Lima"
+command: "bun run /etc/nixos/zeroclaw/bin/psn-reconcile.ts"

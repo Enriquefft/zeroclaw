@@ -1,0 +1,4 @@
+name: "PSN Voice Sync"
+schedule: "0 6 * * 1"
+tz: "America/Lima"
+command: "bun run /etc/nixos/zeroclaw/bin/psn-voice-sync.ts"

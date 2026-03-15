@@ -1,0 +1,11 @@
+name: "PSN Weekly Review"
+schedule: "0 18 * * 5"
+tz: "America/Lima"
+type: agent
+goal: "Review this week's social media performance, identify what's working, suggest 3 concrete strategy adjustments"
+hints:
+  - "Data collection (delegate to fast_run): psn_cli review weekly, psn_cli voice show, psn_cli voice calibrate"
+  - "Context: read LORE.md content strategy and GOALS.md section 2 (Content & Distribution)"
+  - "Analysis: reason deeply about performance vs goals. What's working, what's not, why. Top content patterns, underperforming areas, exactly 3 actionable adjustments"
+  - "Delivery: send compact summary to +51926689401. Be direct per SOUL.md communication style"
+notify: "+51926689401"

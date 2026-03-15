@@ -1,0 +1,14 @@
+[skill]
+name = "psn"
+description = "Social media content lifecycle — draft, schedule, publish, and analyze posts across X, LinkedIn, Instagram, TikTok with voice matching."
+version = "0.1.0"
+tags = ["social-media", "content", "psn", "post-shit-now"]
+
+[[tools]]
+name = "psn_cli"
+description = "PSN bridge CLI. Subcommands: post, plan, capture, engage, voice, series, content, analytics, review, drafts, setup"
+kind = "shell"
+command = "bun run /etc/nixos/zeroclaw/skills/psn/cli.ts {args}"
+
+[tools.args]
+args = "Command and arguments (e.g. 'post list', 'capture \"idea text\"', 'content build-context --platform x')"

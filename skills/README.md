@@ -93,6 +93,7 @@ All CLIs in this system follow the same contract:
 |-------|---------|
 | `calendar` | Google Calendar control across all accounts |
 | `email` | Email control across Gmail and SpaceMail accounts |
+| `psn` | Social media content lifecycle via Post Shit Now (draft, schedule, publish, analyze) |
 
 ---
 

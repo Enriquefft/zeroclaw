@@ -1,0 +1,4 @@
+name: "PSN Analytics Collection"
+schedule: "0 22 * * *"
+tz: "America/Lima"
+command: "bun run /etc/nixos/zeroclaw/skills/psn/cli.ts analytics collect"
