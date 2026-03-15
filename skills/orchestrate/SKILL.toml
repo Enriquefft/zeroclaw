@@ -1,14 +1,14 @@
 [skill]
 name = "orchestrate"
-description = "Run multi-step tasks via claude -p. Supports inline goals, YAML job files, and status tracking."
-version = "0.1.0"
-tags = ["orchestration", "tasks", "automation"]
+description = "Escalate complex tasks to Opus. Launch orchestrated multi-tool workflows, check status, manage running tasks."
+version = "0.2.0"
+tags = ["orchestration", "tasks", "automation", "opus"]
 
 [[tools]]
 name = "orchestrate_cli"
-description = "Task orchestration CLI. Run multi-step tasks from YAML job files or inline goals."
+description = "Opus orchestration CLI. Subcommands: run <goal-or-yaml>, status [id], list, cancel <id>, checkpoint <id> <note>, complete <id>, fail <id> <error>"
 kind = "shell"
-command = "bun run /etc/nixos/zeroclaw/bin/orchestrate.ts {args}"
+command = "bun run /etc/nixos/zeroclaw/skills/orchestrate/cli.ts {args}"
 
 [tools.args]
-args = "YAML job file path or inline goal"
+args = "Subcommand and arguments"

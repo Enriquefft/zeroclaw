@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
-// bin/orchestrate.ts — Orchestration engine
-// Reads YAML job definitions, decomposes goals into sequential subtasks,
-// executes each via claude -p (or injected runner for testing), and
-// checkpoints progress to state.db.
+// bin/orchestrate.ts — Thin orchestration launcher
+// Accepts a YAML job file or inline goal string, constructs an orchestrator
+// prompt, and hands the entire task to Opus via `claude -p --model opus`.
 // Output: JSON to stdout. Errors to stderr, exit 1.
 
 import { $ } from "bun";
 import { readFileSync, existsSync } from "fs";
 import { basename, extname } from "path";
+import YAML from "yaml";
 import { initStateDb } from "./init-state-db.ts";
 import { notify } from "./notify.ts";
 
@@ -15,94 +15,140 @@ import { notify } from "./notify.ts";
 
 export interface OrchestrateYaml {
   goal: string;
-  steps: string[] | null;
+  hints: string[] | null;
   notify: string | null;
   name: string | null;
 }
 
 export interface OrchestrateResult {
   success: boolean;
-  steps_run: number;
   parent_id: string;
+  output?: string;
   error?: string;
 }
 
 export interface OrchestrateOptions {
   dbPath?: string;
-  runner?: (prompt: string) => Promise<string>;
+  runner?: (systemPrompt: string, userPrompt: string) => Promise<string>;
 }
 
 // ---- Constants ----
 
 const DEFAULT_DB_PATH = `${Bun.env.HOME}/.zeroclaw/workspace/state.db`;
-const RESUME_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours
-const MAX_STEP_OUTPUT_BYTES = 8192; // 8KB truncation limit
+const CLAUDE_BIN = `${Bun.env.HOME}/.local/bin/claude`;
+
+const ORCHESTRATOR_SYSTEM_PROMPT = `You are the orchestration engine for Kiro, Enrique's chief of staff. You are running as Claude Opus at max effort. Your job is to fully accomplish the goal given to you -- not to explain how, but to DO it.
+
+## Identity
+
+You ARE Kiro. Read IDENTITY.md and SOUL.md if you need voice or personality guidance. When drafting content or messages as Enrique, use his voice from SOUL.md -- never sound AI-generated.
+
+## Execution Model
+
+You receive a GOAL and optional HINTS. You must:
+1. Decompose the goal into concrete sub-tasks
+2. Execute each sub-task using the tools available to you
+3. Review your own output for quality and completeness
+4. Iterate if results are insufficient
+5. Produce a final deliverable (not a plan, not an explanation)
+
+Hints are guidance, not instructions. You decide order, parallelism, whether to skip a hint, and when to stop. If a hint is irrelevant to the current state, ignore it.
+
+## Delegation via fast_run
+
+You have a tool called fast_run_cli. Use it to delegate simple, tool-heavy sub-tasks to a faster model (GLM-5). fast_run is ideal for:
+- Fetching and extracting data from web pages
+- Reading files and extracting structured information
+- Running database queries and returning results
+- Collecting RSS feeds or search results
+- Any task that is primarily I/O with minimal reasoning
+
+Do NOT delegate to fast_run:
+- Scoring or ranking that requires judgment
+- Creative writing (drafts, content, outreach)
+- Strategic decisions or analysis
+- Review of sub-task output quality
+- Anything requiring SOUL.md voice
+
+When delegating, be specific. Give fast_run a complete, self-contained task description with all context it needs.
+
+## Tools Available
+
+You have full access to:
+- **browser**: navigate, snapshot, click, fill, get_text, wait (use snapshot -i, NEVER screenshot)
+- **email_cli**: list, read, send, search, thread, label, mark, trash across all accounts
+- **calendar_cli**: events, create, update, delete, search, freebusy, conflicts, batch
+- **form_filler**: extract, list, show, prepare, login, cookies bridge/clear
+- **fast_run_cli**: delegate simple sub-tasks to GLM-5
+- **Shell/Bash**: run commands, query SQLite, git operations, file I/O
+- **Web search**: search the web for current information
+- **kapso-whatsapp-cli**: send --to +NUMBER --text "message" (WhatsApp notifications)
+- **SQLite**: state.db at ~/.zeroclaw/workspace/state.db (job_applications, freelance_leads, daily_state, content_log, orchestration_tasks, cron_log, notify_log, kv_store)
+
+## Key Paths
+
+- Documents: ~/.zeroclaw/documents/ (IDENTITY, SOUL, AGENTS, TOOLS, USER, LORE, SENTINEL, SKILL-CREATOR, TASK-ROUTING)
+- Reference: ~/.zeroclaw/reference/ (full-profile.md, reusable-responses.md)
+- State DB: ~/.zeroclaw/workspace/state.db
+- Workspace: ~/.zeroclaw/workspace/
+
+## Quality Standards
+
+- NEVER send messages to third parties without Enrique's explicit prior approval
+- Only send WhatsApp messages to Enrique at +51926689401
+- When writing as Enrique: casual, direct, concise. No em dashes. No AI-speak. See SOUL.md Kill List.
+- When producing job search deliverables: score against LORE.md rubric, deduplicate against state.db
+- When producing content: check content_log for recent topics to avoid repetition
+- Output SILENT (literally the word, alone on a line) if the task has no actionable results
+
+## Failure Handling
+
+- If a tool fails, retry once. If it fails again, note the failure and continue with remaining sub-tasks.
+- If a critical sub-task fails (one that blocks all downstream work), stop and report what failed and why.
+- Never silently swallow errors. Always surface what went wrong.
+- If fast_run returns garbage or incomplete results, redo the sub-task yourself rather than delegating again.
+
+## Completion
+
+When finished, output a structured summary:
+- What was accomplished (concrete deliverables)
+- Counts: items found, filtered, scored, messages sent
+- Any failures or skipped sub-tasks with reasons
+
+Do NOT output a plan. Do NOT ask for permission. Execute the goal fully.`;
 
 // ---- YAML parsing ----
 
-/**
- * Parse a YAML string and extract orchestration fields.
- * Uses simple regex/line matching — avoids yq dependency.
- */
-export function parseYaml(yaml: string): OrchestrateYaml {
-  const lines = yaml.split("\n");
-
-  // Extract single-line scalar fields
-  function extractScalar(key: string): string | null {
-    const re = new RegExp(`^${key}:\\s*(.+)$`);
-    for (const line of lines) {
-      const m = line.match(re);
-      if (m) return m[1].trim().replace(/^["']|["']$/g, ""); // strip surrounding quotes
-    }
-    return null;
-  }
-
-  // Extract steps array — lines indented under `steps:` key starting with `- `
-  function extractSteps(): string[] | null {
-    let inSteps = false;
-    const steps: string[] = [];
-
-    for (const line of lines) {
-      // Detect `steps:` key (with optional trailing whitespace)
-      if (/^steps:\s*$/.test(line.trim()) || line.trim() === "steps:") {
-        inSteps = true;
-        continue;
-      }
-
-      if (inSteps) {
-        // Stop when we hit another top-level key (non-indented, non-empty, not a list item)
-        if (/^\w/.test(line) && !line.startsWith(" ") && !line.startsWith("\t")) {
-          break;
-        }
-
-        // Match list items: `  - "text"` or `  - text`
-        const itemMatch = line.match(/^\s+-\s+"?(.+?)"?\s*$/);
-        if (itemMatch) {
-          steps.push(itemMatch[1]);
-        }
-      }
-    }
-
-    return steps.length > 0 ? steps : null;
-  }
+function parseYamlFile(filePath: string): OrchestrateYaml {
+  const content = readFileSync(filePath, "utf-8");
+  const doc = YAML.parse(content);
 
   return {
-    goal: extractScalar("goal") ?? "",
-    steps: extractSteps(),
-    notify: extractScalar("notify"),
-    name: extractScalar("name"),
+    goal: doc.goal ?? "",
+    hints: doc.hints ?? doc.steps ?? null,
+    notify: doc.notify ?? null,
+    name: doc.name ?? null,
   };
 }
 
-// ---- Claude -p runner ----
+// ---- Prompt construction ----
 
-/**
- * Default production runner: calls `claude -p` with the given prompt.
- * Strips CLAUDECODE env var so claude doesn't refuse to run.
- */
-async function defaultRunner(prompt: string): Promise<string> {
+function buildUserPrompt(goal: string, hints?: string[] | null): string {
+  let prompt = `## Goal\n\n${goal}`;
+  if (hints && hints.length > 0) {
+    prompt += `\n\n## Hints\n\n${hints.map((h) => `- ${h}`).join("\n")}`;
+  }
+  return prompt;
+}
+
+// ---- Claude runner ----
+
+async function defaultRunner(
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
   const result =
-    await $`env -u CLAUDECODE $HOME/.local/bin/claude -p --dangerously-skip-permissions --output-format text ${prompt}`.text();
+    await $`env -u CLAUDECODE ${CLAUDE_BIN} -p --model opus --effort max --dangerously-skip-permissions --output-format text --system-prompt ${systemPrompt} ${userPrompt}`.text();
   return result.trim();
 }
 
@@ -114,295 +160,94 @@ function newId(): string {
 
 // ---- Core orchestration ----
 
-/**
- * Run a single subtask step with one retry on failure.
- * Returns { output, success, error }.
- */
-async function runWithRetry(
-  prompt: string,
-  runner: (p: string) => Promise<string>
-): Promise<{ output: string; success: boolean; error?: string }> {
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const output = await runner(prompt);
-      return { output, success: true };
-    } catch (e) {
-      if (attempt === 2) {
-        return { output: "", success: false, error: String(e) };
-      }
-      // First attempt failed — retry once
-    }
-  }
-  return { output: "", success: false, error: "unexpected" };
-}
-
-/**
- * Truncate string to at most maxBytes UTF-8 bytes.
- */
-function truncate(s: string, maxBytes: number): string {
-  if (s.length <= maxBytes) return s;
-  return s.slice(0, maxBytes);
-}
-
-/**
- * Main orchestration function.
- *
- * @param yamlPath - Absolute path to YAML job definition file
- * @param opts     - Optional overrides: dbPath, runner (for testing)
- * @returns OrchestrateResult with success, steps_run, parent_id, and optional error
- */
 export async function orchestrate(
-  yamlPath: string,
+  input: string,
   opts: OrchestrateOptions = {}
 ): Promise<OrchestrateResult> {
   const dbPath = opts.dbPath ?? DEFAULT_DB_PATH;
   const runner = opts.runner ?? defaultRunner;
-
   const startedAt = Date.now();
 
-  // ---- Read YAML ----
-  if (!existsSync(yamlPath)) {
-    return {
-      success: false,
-      steps_run: 0,
-      parent_id: "",
-      error: `YAML file not found: ${yamlPath}`,
-    };
+  // Determine if input is a YAML file or inline goal
+  const isFile =
+    (input.endsWith(".yaml") || input.endsWith(".yml")) && existsSync(input);
+
+  let goal: string;
+  let hints: string[] | null = null;
+  let notifyRecipient: string | null = null;
+  let jobName: string;
+
+  if (isFile) {
+    const parsed = parseYamlFile(input);
+    if (!parsed.goal) {
+      return { success: false, parent_id: "", error: "YAML missing required 'goal' field" };
+    }
+    goal = parsed.goal;
+    hints = parsed.hints;
+    notifyRecipient = parsed.notify;
+    jobName = parsed.name ?? basename(input, extname(input));
+  } else {
+    goal = input;
+    jobName = "inline-goal";
   }
 
-  let parsed: OrchestrateYaml;
-  try {
-    const content = readFileSync(yamlPath, "utf-8");
-    parsed = parseYaml(content);
-  } catch (e) {
-    return {
-      success: false,
-      steps_run: 0,
-      parent_id: "",
-      error: `Failed to read YAML: ${String(e)}`,
-    };
-  }
-
-  if (!parsed.goal) {
-    return {
-      success: false,
-      steps_run: 0,
-      parent_id: "",
-      error: "YAML missing required 'goal' field",
-    };
-  }
-
-  const jobName =
-    parsed.name ?? basename(yamlPath, extname(yamlPath));
-  const steps = parsed.steps;
-
-  if (!steps || steps.length === 0) {
-    // No explicit steps — would call claude -p to decompose. For now, error.
-    // (Auto-decomposition is a future enhancement; plan requires explicit steps for cron use.)
-    return {
-      success: false,
-      steps_run: 0,
-      parent_id: "",
-      error: "YAML missing 'steps' field — auto-decomposition not yet implemented",
-    };
-  }
-
-  // ---- Init DB ----
+  // Init DB and create parent row
   const db = initStateDb(dbPath);
+  const parentId = newId();
 
   try {
-    // ---- Resume check ----
-    const resumeWindowStart = Date.now() - RESUME_WINDOW_MS;
-    const existingParent = db
-      .query(
-        `SELECT id, created_at FROM orchestration_tasks
-         WHERE yaml_source = ? AND status = 'running' AND parent_id IS NULL
-           AND created_at >= ?
-         ORDER BY created_at DESC LIMIT 1`
-      )
-      .get(yamlPath, resumeWindowStart) as {
-      id: string;
-      created_at: number;
-    } | null;
-
-    let parentId: string;
-    let resuming = false;
-    let completedStepOutputs: string[] = [];
-
-    if (existingParent) {
-      // Resume: reuse existing parent
-      parentId = existingParent.id;
-      resuming = true;
-
-      // Collect outputs from completed steps (for context chaining)
-      const completedSubtasks = db
-        .query(
-          `SELECT step_index, step_output FROM orchestration_tasks
-           WHERE parent_id = ? AND status = 'completed'
-           ORDER BY step_index`
-        )
-        .all(parentId) as { step_index: number; step_output: string | null }[];
-
-      for (const sub of completedSubtasks) {
-        completedStepOutputs[sub.step_index] = sub.step_output ?? "";
-      }
-    } else {
-      // Fresh start
-      parentId = newId();
-      db.prepare(
-        `INSERT INTO orchestration_tasks
-           (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        parentId,
-        parsed.goal,
-        "running",
-        Date.now(),
-        Date.now(),
-        null,
-        0,
-        parsed.goal,
-        yamlPath
-      );
-    }
-
-    // ---- Determine start step ----
-    let startStep = 0;
-    if (resuming) {
-      // Find the first step that is NOT completed
-      const completedIndices = new Set(
-        (
-          db
-            .query(
-              `SELECT step_index FROM orchestration_tasks
-               WHERE parent_id = ? AND status = 'completed'`
-            )
-            .all(parentId) as { step_index: number }[]
-        ).map((r) => r.step_index)
-      );
-      while (startStep < steps.length && completedIndices.has(startStep)) {
-        startStep++;
-      }
-    }
-
-    // ---- Execution loop ----
-    let stepsRun = 0;
-    let finalSuccess = true;
-    let failureError: string | undefined;
-    let failedStepDescription: string | undefined;
-    let failedStepIndex: number | undefined;
-
-    // Accumulated context from all steps (including resumed completed ones)
-    let contextText = completedStepOutputs.filter(Boolean).join("\n\n");
-
-    for (let i = startStep; i < steps.length; i++) {
-      const step = steps[i];
-
-      // Build prompt: step description + context from previous steps
-      const prompt =
-        contextText.length > 0
-          ? `${step}\n\nContext from previous steps:\n${contextText}`
-          : step;
-
-      // ---- Checkpoint: insert subtask row BEFORE calling runner ----
-      const subtaskId = newId();
-      const existingSubtask = db
-        .query(
-          `SELECT id FROM orchestration_tasks WHERE parent_id = ? AND step_index = ?`
-        )
-        .get(parentId, i) as { id: string } | null;
-
-      let activeSubtaskId: string;
-
-      if (existingSubtask) {
-        // Resuming a previously failed step — update its status to running
-        activeSubtaskId = existingSubtask.id;
-        db.prepare(
-          `UPDATE orchestration_tasks SET status = 'running', updated_at = ? WHERE id = ?`
-        ).run(Date.now(), activeSubtaskId);
-      } else {
-        activeSubtaskId = subtaskId;
-        db.prepare(
-          `INSERT INTO orchestration_tasks
-             (id, description, status, created_at, updated_at, parent_id, step_index)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          activeSubtaskId,
-          step,
-          "pending",
-          Date.now(),
-          Date.now(),
-          parentId,
-          i
-        );
-      }
-
-      // ---- Run subtask with retry ----
-      const { output, success, error } = await runWithRetry(prompt, runner);
-      stepsRun++;
-
-      if (success) {
-        const truncatedOutput = truncate(output, MAX_STEP_OUTPUT_BYTES);
-        db.prepare(
-          `UPDATE orchestration_tasks
-           SET status = 'completed', step_output = ?, updated_at = ? WHERE id = ?`
-        ).run(truncatedOutput, Date.now(), activeSubtaskId);
-
-        // Accumulate context for next step
-        contextText =
-          contextText.length > 0
-            ? `${contextText}\n\n${truncatedOutput}`
-            : truncatedOutput;
-      } else {
-        db.prepare(
-          `UPDATE orchestration_tasks SET status = 'failed', updated_at = ? WHERE id = ?`
-        ).run(Date.now(), activeSubtaskId);
-        finalSuccess = false;
-        failureError = error;
-        failedStepDescription = step;
-        failedStepIndex = i;
-        break; // Stop after first permanent failure
-      }
-    }
-
-    // ---- Update parent status ----
     db.prepare(
-      `UPDATE orchestration_tasks SET status = ?, updated_at = ? WHERE id = ?`
-    ).run(
-      finalSuccess ? "completed" : "failed",
-      Date.now(),
-      parentId
-    );
+      `INSERT INTO orchestration_tasks
+         (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(parentId, goal, "running", startedAt, startedAt, null, 0, goal, isFile ? input : null);
 
-    // ---- Dual logging: insert into cron_log ----
+    // Build prompts and run
+    const userPrompt = buildUserPrompt(goal, hints);
+    let output: string;
+
+    try {
+      output = await runner(ORCHESTRATOR_SYSTEM_PROMPT, userPrompt);
+    } catch (e) {
+      db.prepare(
+        `UPDATE orchestration_tasks SET status = 'failed', updated_at = ? WHERE id = ?`
+      ).run(Date.now(), parentId);
+
+      const durationMs = Date.now() - startedAt;
+      db.prepare(
+        `INSERT INTO cron_log (job_name, started_at, duration_ms, success) VALUES (?, ?, ?, ?)`
+      ).run(jobName, startedAt, durationMs, 0);
+
+      const error = String(e);
+      if (notifyRecipient) {
+        notify(`Orchestration failed: ${goal}\n${error.slice(0, 500)}`, notifyRecipient).catch(() => {});
+      }
+      return { success: false, parent_id: parentId, error };
+    }
+
+    // Update parent status
+    const isSilent = output.trim() === "SILENT" || output.trim().startsWith("SILENT\n");
+    db.prepare(
+      `UPDATE orchestration_tasks SET status = 'completed', step_output = ?, updated_at = ? WHERE id = ?`
+    ).run(output.slice(0, 8192), Date.now(), parentId);
+
+    // Log to cron_log
     const durationMs = Date.now() - startedAt;
     db.prepare(
-      `INSERT INTO cron_log (job_name, started_at, duration_ms, success)
-       VALUES (?, ?, ?, ?)`
-    ).run(jobName, startedAt, durationMs, finalSuccess ? 1 : 0);
+      `INSERT INTO cron_log (job_name, started_at, duration_ms, success) VALUES (?, ?, ?, ?)`
+    ).run(jobName, startedAt, durationMs, 1);
 
-    // ---- Notification ----
-    if (parsed.notify) {
-      const notifyMsg = finalSuccess
-        ? `Orchestration complete: ${parsed.goal} (${stepsRun} steps)`
-        : `Orchestration failed at step ${(failedStepIndex ?? 0) + 1}: ${failedStepDescription ?? "unknown step"}`;
-
-      // Fire-and-forget — don't let notification failure affect result
-      notify(notifyMsg, parsed.notify).catch((e) => {
+    // Notify (skip if SILENT)
+    if (notifyRecipient && !isSilent) {
+      const notifyMsg = output.length > 1500
+        ? output.slice(0, 1497) + "..."
+        : output;
+      notify(notifyMsg, notifyRecipient).catch((e) => {
         console.error("orchestrate: notify failed:", e);
       });
     }
 
-    if (finalSuccess) {
-      return { success: true, steps_run: stepsRun, parent_id: parentId };
-    } else {
-      return {
-        success: false,
-        steps_run: stepsRun,
-        parent_id: parentId,
-        error: failureError ?? "step failed",
-      };
-    }
+    return { success: true, parent_id: parentId, output: isSilent ? "SILENT" : undefined };
   } finally {
     db.close();
   }
@@ -413,21 +258,19 @@ export async function orchestrate(
 if (import.meta.main) {
   const args = process.argv.slice(2);
 
-  // Parse --db-path <path> (for test isolation, same pattern as notify.ts)
   const dbPathIdx = args.indexOf("--db-path");
-  const dbPath =
-    dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
-  const yamlPath = args.find((a) => !a.startsWith("--") && a !== dbPath);
+  const dbPath = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
+  const input = args.find(
+    (a, i) => !a.startsWith("--") && !(i === dbPathIdx + 1 && dbPathIdx !== -1)
+  );
 
-  if (!yamlPath) {
-    console.error(
-      "Usage: orchestrate.ts <yaml-path> [--db-path <db-path>]"
-    );
+  if (!input) {
+    console.error("Usage: orchestrate.ts <yaml-path-or-goal-string> [--db-path <path>]");
     process.exit(1);
   }
 
   try {
-    const result = await orchestrate(yamlPath, { dbPath });
+    const result = await orchestrate(input, { dbPath });
     console.log(JSON.stringify(result));
     process.exit(result.success ? 0 : 1);
   } catch (e) {

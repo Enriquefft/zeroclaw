@@ -3,9 +3,10 @@ schedule: "30 7 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Compile a compact morning briefing from calendar, email, and follow-up data and send it to Enrique via WhatsApp"
-steps:
-  - Fetch today's calendar events using calendar_cli events --from today --to today. Output the event list with times and titles.
-  - Fetch unread emails from the last 720 minutes using email_cli list --since 720 across all accounts (enriquefft2001@gmail.com, enrique.flores@utec.edu.pe, enriquefft@404tf.com). Count totals, flag any marked urgent or with a deadline today.
-  - Query state.db at ~/.zeroclaw/workspace/state.db using SQLite. Count job_applications with status='applied' and applied_date older than 5 days (follow-up due). Count new leads from last 24h. Check daily_state for today using date('now', '-5 hours') -- if briefing_sent=1, output SKIP and stop.
-  - Compose a headline-only WhatsApp message in 5 lines max with format -- row 1 is events today and unread count and urgent count, row 2 is follow-ups due and new leads, rows 3-5 are top action items. Send to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text and then run SQL INSERT OR REPLACE INTO daily_state (date, briefing_sent, updated_at) VALUES (date('now', '-5 hours'), 1, unixepoch()).
+hints:
+  - "Calendar events today via calendar_cli, unread emails via email_cli across all accounts"
+  - "Check state.db: follow-ups due (applied > 5 days), new leads from last 24h"
+  - "Check daily_state for today (date('now', '-5 hours')). Skip if briefing_sent=1"
+  - "5-line headline format: events+unread+urgent, follow-ups+leads, top 3 actions"
+  - "Mark daily_state briefing_sent=1 after sending"
 notify: "+51926689401"

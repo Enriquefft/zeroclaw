@@ -3,9 +3,11 @@ schedule: "0 10 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Find threads on X, Reddit, and HackerNews where Enrique can add genuine value, draft replies in his voice, and deliver qualifying threads via WhatsApp"
-steps:
-  - Search the web for recent threads mentioning AI agents, build-in-public developer, LLM engineering, and orchestration systems. Focus on X, Reddit (r/MachineLearning, r/LocalLLaMA, r/programming), and HackerNews. Collect top 3 to 5 threads with title, URL, and brief context for each.
-  - Read /etc/nixos/zeroclaw/documents/LORE.md platform strategy and voice guide sections. Filter the collected threads -- keep only those where a technical reply from an AI engineer adds genuine value. Discard promotional threads or those with nothing unique to contribute. If none qualify, output SILENT and stop.
-  - For each qualifying thread, draft a reply in Enrique's voice per LORE.md -- genuine technical depth, not promotional, references concrete experience. Keep replies under 280 chars for X and longer for Reddit or HackerNews threads. Label each with the platform name and thread title.
-  - Send qualifying threads and draft replies to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text with each thread URL on one line followed by the draft reply for that thread.
+hints:
+  - "Search X, Reddit (r/MachineLearning, r/LocalLLaMA, r/programming), HackerNews"
+  - "Topics: AI agents, build-in-public, LLM engineering, orchestration systems"
+  - "Filter: only keep threads where a technical reply adds genuine value per LORE.md"
+  - "Draft replies in Enrique's voice per SOUL.md. X under 280 chars, longer for Reddit/HN"
+  - "Output SILENT if no qualifying threads"
+  - "Use psn_cli engage for scored opportunities and draft registration if available"
 notify: "+51926689401"

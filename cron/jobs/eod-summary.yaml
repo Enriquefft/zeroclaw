@@ -3,10 +3,11 @@ schedule: "0 20 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Compile an end-of-day recap of what moved today and send a compact summary via WhatsApp"
-steps:
-  - Run git log --since='today midnight' --oneline in /etc/nixos/zeroclaw to count commits today. Also query state.db orchestration_tasks for parent tasks completed today (status='completed' and updated_at >= start of today in epoch ms). Output commit count and completed task count.
-  - Query state.db job_applications with last_updated >= today midnight for status changes. Query freelance_leads with last_updated >= today midnight. Use email_cli list --since 720 to estimate emails received today.
-  - Fetch tomorrow's calendar events using calendar_cli events --from tomorrow --to tomorrow. List event times and titles.
-  - Query state.db job_applications for entries with status='applied' and applied_date older than 5 days -- these are follow-up priorities for tomorrow.
-  - Check daily_state for today using date('now', '-5 hours') -- if eod_sent=1, output SKIP and stop. Otherwise compose a 5-line headline WhatsApp message with format -- row 1 is commits and tasks done and emails, row 2 is jobs updated and new leads, row 3 is tomorrow events count, rows 4-5 are priority follow-up or top action item. Send to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text and then INSERT OR REPLACE INTO daily_state (date, eod_sent, updated_at) VALUES (date('now', '-5 hours'), 1, unixepoch()).
+hints:
+  - "Git commits today in /etc/nixos/zeroclaw, completed orchestration_tasks"
+  - "Job and freelance lead status changes today from state.db"
+  - "Tomorrow's calendar events via calendar_cli"
+  - "Follow-up priorities: applications with status='applied' older than 5 days"
+  - "Check daily_state eod_sent=1 to avoid duplicates"
+  - "5-line headline format: commits+tasks+emails, jobs+leads, tomorrow events, priorities"
 notify: "+51926689401"

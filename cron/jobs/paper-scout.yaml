@@ -3,9 +3,10 @@ schedule: "0 9 * * 1"
 tz: "America/Lima"
 type: agent
 goal: "Fetch arXiv RSS feeds across 5 CS categories, filter against research interests from LORE.md, and deliver a top-5 weekly digest via WhatsApp"
-steps:
-  - Fetch arXiv RSS feeds from these five URLs -- cs.AI at https://arxiv.org/rss/cs.AI, cs.LG at https://arxiv.org/rss/cs.LG, cs.CL at https://arxiv.org/rss/cs.CL, cs.MA at https://arxiv.org/rss/cs.MA, cs.SE at https://arxiv.org/rss/cs.SE. Extract title, authors, abstract, and URL for each paper published in the last 7 days. Output a list of all collected papers with these four fields.
-  - Read /etc/nixos/zeroclaw/documents/LORE.md research interests section. Filter the collected papers against these interests -- multi-agent systems in adversarial environments, algorithmic fairness in public systems, LLM reasoning over structured data, compilers and LLMs, spec-driven development. Rank by relevance and select the top 5. If none qualify, output SILENT and stop.
-  - For each of the top 5 papers, write a 2 to 3 sentence summary covering the main contribution, key result, and relevance to the research interests. Format each entry as title -- authors -- summary -- URL.
-  - Send the digest to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text with a WEEKLY PAPER DIGEST header followed by the 5 formatted paper entries.
+hints:
+  - "arXiv RSS: cs.AI, cs.LG, cs.CL, cs.MA, cs.SE. Papers from last 7 days"
+  - "Filter against LORE.md research interests: multi-agent adversarial, algorithmic fairness, LLM reasoning, compilers+LLMs, spec-driven dev"
+  - "Rank by relevance, select top 5"
+  - "2-3 sentence summary per paper: contribution, key result, relevance"
+  - "Output SILENT if nothing qualifies"
 notify: "+51926689401"

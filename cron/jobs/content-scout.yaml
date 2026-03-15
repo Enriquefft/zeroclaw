@@ -3,8 +3,10 @@ schedule: "0 8 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Fetch RSS feeds and trending web content, filter against content pillars, and deliver a categorized digest via WhatsApp"
-steps:
-  - Fetch the following RSS feeds and extract the top 5 items from each (title + URL + one-line summary). Feeds: Hacker News (https://news.ycombinator.com/rss), arXiv cs.AI (https://arxiv.org/rss/cs.AI), arXiv cs.LG (https://arxiv.org/rss/cs.LG), arXiv cs.CL (https://arxiv.org/rss/cs.CL), Simon Willison (https://simonwillison.net/atom/everything/), Pragmatic Engineer (https://newsletter.pragmaticengineer.com/feed), Latent Space (https://www.latent.space/feed), The Rundown AI (https://www.therundown.ai/rss). If a feed is unavailable, skip it and note which feeds were skipped. Also check if today is the 1st of the month -- if so, include a note to check HN Who Is Hiring thread.
-  - Search the web for trending topics using 2-3 queries: AI agents 2026, build-in-public developer, LLM engineering trends. Collect top 3-5 results per query with title and URL.
-  - Filter all collected items against these content pillars: (1) build-in-public, (2) AI/agent engineering, (3) job hunt/job market, (4) startup/founder, (5) research (ML papers). Discard items that do not match any pillar. Group remaining items by pillar.
-  - If no relevant items remain after filtering, exit silently without sending -- output SILENT. Otherwise compose a compact WhatsApp digest under 1500 characters. Format: each pillar as a header emoji + name with 2-3 bullet links underneath. Omit empty pillars. Send to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text '<message>'.
+hints:
+  - "RSS feeds: HN, arXiv cs.AI/cs.LG/cs.CL, Simon Willison, Pragmatic Engineer, Latent Space, Rundown AI"
+  - "Web search trending: AI agents, build-in-public developer, LLM engineering trends"
+  - "Filter against 5 content pillars: build-in-public, AI/agent engineering, job hunt, startup/founder, research"
+  - "Output SILENT if nothing relevant after filtering"
+  - "Compact WhatsApp digest under 1500 chars, pillar headers with 2-3 bullet links"
+  - "Capture relevant items into PSN idea bank via psn_cli if available"

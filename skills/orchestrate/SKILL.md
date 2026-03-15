@@ -1,32 +1,52 @@
 ---
 name: orchestrate
-description: Run multi-step tasks via claude -p. Supports inline goals, YAML job files, and status tracking.
+description: Escalate complex tasks to Opus. Use when a task needs deep reasoning, multi-step execution, scoring, creative drafting, or coordination across multiple tools.
 ---
 
 # Orchestrate
 
-Run, monitor, and manage multi-step orchestrated tasks. Each task is decomposed into sequential subtasks executed via claude -p with automatic checkpointing.
+Escalate complex tasks to the Opus orchestrator. This is the universal path to high-effort reasoning for any task that needs it -- scheduled (cron), interactive (chat), or on-demand (CLI).
 
 ## When to Use
 
-- Running a complex multi-step task that needs LLM reasoning at each step
-- Checking status of running or completed orchestration tasks
-- Canceling a stuck orchestration run
+Escalate via `orchestrate_cli run` when the task requires:
+- Multi-tool coordination (browser + email + database + notification)
+- Scoring or ranking with judgment (job leads, content quality)
+- Creative writing in Enrique's voice (outreach, content drafts)
+- Multi-step analysis (company research, interview prep)
+- Strategic decisions that need context from multiple sources
+
+## When NOT to Use
+
+Do NOT escalate for:
+- Simple factual lookups (use web search directly)
+- Single-tool operations (one email send, one calendar query)
+- File reading or data extraction (use fast_run_cli instead)
+- Quick status checks (use the status/list subcommands)
 
 ## CLI Reference
 
-### orchestrate run <target>
-Run an orchestration task. Target can be:
-- A YAML file path: `orchestrate run /etc/nixos/zeroclaw/cron/jobs/daily-briefing.yaml`
-- An inline goal string: `orchestrate run "Summarize today's emails and calendar"`
+### orchestrate_cli run <target>
+Launch the Opus orchestrator for a task. Target can be:
+- A YAML file path: `orchestrate_cli run /etc/nixos/zeroclaw/cron/jobs/job-scanner.yaml`
+- An inline goal string: `orchestrate_cli run "Prep me for interview at Anthropic"`
 
-For inline goals, a temporary YAML is created and passed to the engine.
+Opus receives the goal and optional hints, decomposes the task, executes sub-tasks using all available tools, and returns a structured summary.
 
-### orchestrate status [parent-id]
-Show status of orchestration tasks. Without ID, shows recent runs. With ID, shows subtask detail.
+### orchestrate_cli status [parent-id]
+Show status of orchestration tasks. Without ID, shows recent runs. With ID, shows detail.
 
-### orchestrate list
-List all orchestration runs with their status, step count, and timestamps.
+### orchestrate_cli list
+List all orchestration runs with status and timestamps.
 
-### orchestrate cancel <parent-id>
-Cancel a running orchestration by marking its pending steps as cancelled.
+### orchestrate_cli cancel <parent-id>
+Cancel a running orchestration by marking it as cancelled.
+
+### orchestrate_cli checkpoint <parent-id> <note>
+Save a progress marker for a running task.
+
+### orchestrate_cli complete <parent-id>
+Explicitly mark a task as completed.
+
+### orchestrate_cli fail <parent-id> <error>
+Explicitly mark a task as failed with an error message.

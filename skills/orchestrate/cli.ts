@@ -2,7 +2,7 @@
 /**
  * skills/orchestrate/cli.ts — Orchestrate skill CLI wrapper
  *
- * Subcommands: run, status, list, cancel
+ * Subcommands: run, status, list, cancel, checkpoint, complete, fail
  *
  * Output: JSON to stdout (success), JSON to stderr (error)
  * Exit: 0 on success, 1 on error
@@ -11,9 +11,6 @@
  */
 
 import { $ } from "bun";
-import { writeFileSync, mkdirSync, rmSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
 import { initStateDb } from "../../bin/init-state-db.ts";
 
 // ---- Constants ----
@@ -72,29 +69,26 @@ function cmdList(): void {
       updated_at: number;
     }[];
 
-    const result = rows.map((r) => ({
+    ok(rows.map((r) => ({
       id: r.id,
       description: r.description,
       status: r.status,
       created_at: new Date(r.created_at).toISOString(),
       updated_at: new Date(r.updated_at).toISOString(),
-    }));
-
-    ok(result);
+    })));
   } finally {
     db.close();
   }
 }
 
-/** status [parent-id] — show task status, optionally with subtask detail */
+/** status [parent-id] — show task status */
 function cmdStatus(parentId?: string): void {
   const db = initStateDb(dbPath);
   try {
     if (parentId) {
-      // Show parent + child rows for this ID
       const parent = db
         .query(
-          `SELECT id, description, status, created_at, updated_at, parent_goal, yaml_source
+          `SELECT id, description, status, created_at, updated_at, parent_goal, yaml_source, step_output
            FROM orchestration_tasks
            WHERE id = ? AND parent_id IS NULL`
         )
@@ -106,24 +100,8 @@ function cmdStatus(parentId?: string): void {
         updated_at: number;
         parent_goal: string | null;
         yaml_source: string | null;
-      } | null;
-
-      const steps = db
-        .query(
-          `SELECT id, description, status, step_index, step_output, created_at, updated_at
-           FROM orchestration_tasks
-           WHERE parent_id = ?
-           ORDER BY step_index`
-        )
-        .all(parentId) as {
-        id: string;
-        description: string | null;
-        status: string;
-        step_index: number;
         step_output: string | null;
-        created_at: number;
-        updated_at: number;
-      }[];
+      } | null;
 
       ok({
         parent: parent
@@ -133,14 +111,8 @@ function cmdStatus(parentId?: string): void {
               updated_at: new Date(parent.updated_at).toISOString(),
             }
           : null,
-        steps: steps.map((s) => ({
-          ...s,
-          created_at: new Date(s.created_at).toISOString(),
-          updated_at: new Date(s.updated_at).toISOString(),
-        })),
       });
     } else {
-      // No ID — same as list
       const rows = db
         .query(
           `SELECT id, description, status, created_at, updated_at
@@ -170,13 +142,12 @@ function cmdStatus(parentId?: string): void {
   }
 }
 
-/** cancel <parent-id> — mark pending/running steps + parent as cancelled */
+/** cancel <parent-id> — mark pending/running as cancelled */
 function cmdCancel(parentId: string): void {
   const db = initStateDb(dbPath);
   try {
     const now = Date.now();
 
-    // Cancel pending/running subtasks
     const subtaskResult = db
       .prepare(
         `UPDATE orchestration_tasks
@@ -185,7 +156,6 @@ function cmdCancel(parentId: string): void {
       )
       .run(now, parentId);
 
-    // Cancel parent if it exists
     const parentResult = db
       .prepare(
         `UPDATE orchestration_tasks
@@ -204,58 +174,65 @@ function cmdCancel(parentId: string): void {
   }
 }
 
-/** run <target> — invoke orchestrate.ts via subprocess */
-async function cmdRun(target: string): Promise<void> {
-  // Determine if target is a file path or inline goal
-  const isFilePath =
-    target.includes("/") || target.endsWith(".yaml") || target.endsWith(".yml");
-
-  let yamlPath: string;
-  let tempFile: string | null = null;
-
-  if (isFilePath) {
-    yamlPath = target;
-  } else {
-    // Inline goal — create a temp YAML file
-    const tempDir = join(tmpdir(), `orchestrate-run-${Date.now()}`);
-    mkdirSync(tempDir, { recursive: true });
-    tempFile = join(tempDir, "goal.yaml");
-
-    // Write a minimal YAML with just the goal (steps field is required by orchestrate.ts,
-    // but the caller must know that auto-decomposition is not yet implemented)
-    writeFileSync(
-      tempFile,
-      `goal: "${target.replace(/"/g, '\\"')}"\nname: "inline-goal"\n`
+/** checkpoint <parent-id> <note> — save progress marker */
+function cmdCheckpoint(parentId: string, note: string): void {
+  const db = initStateDb(dbPath);
+  try {
+    db.prepare(
+      `INSERT OR REPLACE INTO kv_store (key, value, updated_at)
+       VALUES (?, ?, ?)`
+    ).run(
+      `orch:checkpoint:${parentId}`,
+      JSON.stringify({ note, timestamp: new Date().toISOString() }),
+      Date.now()
     );
-    yamlPath = tempFile;
+    ok({ checkpointed: true, parent_id: parentId });
+  } finally {
+    db.close();
   }
+}
 
-  // Resolve bun path at runtime (never Nix-interpolate in TypeScript)
+/** complete <parent-id> — mark task completed */
+function cmdComplete(parentId: string): void {
+  const db = initStateDb(dbPath);
+  try {
+    db.prepare(
+      `UPDATE orchestration_tasks SET status = 'completed', updated_at = ? WHERE id = ? AND parent_id IS NULL`
+    ).run(Date.now(), parentId);
+    ok({ completed: true, parent_id: parentId });
+  } finally {
+    db.close();
+  }
+}
+
+/** fail <parent-id> <error> — mark task failed */
+function cmdFail(parentId: string, error: string): void {
+  const db = initStateDb(dbPath);
+  try {
+    db.prepare(
+      `UPDATE orchestration_tasks SET status = 'failed', step_output = ?, updated_at = ? WHERE id = ? AND parent_id IS NULL`
+    ).run(error, Date.now(), parentId);
+    ok({ failed: true, parent_id: parentId });
+  } finally {
+    db.close();
+  }
+}
+
+/** run <target> — invoke orchestrate.ts (accepts YAML path or inline goal) */
+async function cmdRun(target: string): Promise<void> {
   const bunPath = Bun.which("bun") ?? "/run/current-system/sw/bin/bun";
 
   try {
-    const args: string[] = [bunPath, "run", ORCHESTRATE_BIN, yamlPath];
+    const cmdArgs: string[] = [bunPath, "run", ORCHESTRATE_BIN, target];
     if (dbPath !== DEFAULT_DB_PATH) {
-      args.push("--db-path", dbPath);
+      cmdArgs.push("--db-path", dbPath);
     }
 
-    const result = await $`${args}`.text();
-    // Print raw result (already JSON from orchestrate.ts)
+    const result = await $`${cmdArgs}`.text();
     console.log(result.trim());
     process.exit(0);
   } catch (e) {
     fail(`orchestrate run failed: ${String(e)}`);
-  } finally {
-    if (tempFile) {
-      try {
-        rmSync(join(tmpdir(), `orchestrate-run-${Date.now() - 1}`), {
-          recursive: true,
-          force: true,
-        });
-      } catch {
-        // cleanup is best-effort
-      }
-    }
   }
 }
 
@@ -271,23 +248,34 @@ switch (subcommand) {
     break;
 
   case "cancel":
-    if (!args[1]) {
-      fail("cancel requires a parent-id argument");
-    }
+    if (!args[1]) fail("cancel requires a parent-id argument");
     cmdCancel(args[1]);
     break;
 
+  case "checkpoint":
+    if (!args[1] || !args[2]) fail("checkpoint requires <parent-id> <note>");
+    cmdCheckpoint(args[1], args.slice(2).join(" "));
+    break;
+
+  case "complete":
+    if (!args[1]) fail("complete requires a parent-id argument");
+    cmdComplete(args[1]);
+    break;
+
+  case "fail":
+    if (!args[1] || !args[2]) fail("fail requires <parent-id> <error>");
+    cmdFail(args[1], args.slice(2).join(" "));
+    break;
+
   case "run":
-    if (!args[1]) {
-      fail("run requires a target argument (file path or inline goal string)");
-    }
+    if (!args[1]) fail("run requires a target argument (file path or inline goal string)");
     await cmdRun(args[1]);
     break;
 
   default:
     fail(
       subcommand
-        ? `unknown subcommand: ${subcommand}. Use: run, status, list, cancel`
-        : "usage: orchestrate <run|status|list|cancel> [args...]"
+        ? `unknown subcommand: ${subcommand}. Use: run, status, list, cancel, checkpoint, complete, fail`
+        : "usage: orchestrate <run|status|list|cancel|checkpoint|complete|fail> [args...]"
     );
 }

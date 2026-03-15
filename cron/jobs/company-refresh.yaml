@@ -2,10 +2,12 @@ name: "Company Refresh"
 schedule: "0 10 * * 3"
 tz: "America/Lima"
 type: agent
-goal: "Mine state.db and the web for target companies, then update the Target Companies section of LORE.md with a curated list across three path categories"
-steps:
-  - Query state.db at ~/.zeroclaw/workspace/state.db for all known company names. Run sqlite3 ~/.zeroclaw/workspace/state.db with SELECT DISTINCT company FROM job_applications WHERE company IS NOT NULL UNION SELECT DISTINCT company FROM freelance_leads WHERE company IS NOT NULL. Output the deduplicated company list.
-  - Read /etc/nixos/zeroclaw/documents/LORE.md Target Companies section and Target Paths section. Identify which of the three categories have fewer than 5 companies -- Remote-Global, US Sponsors (H-1B/O-1), Relocation-Friendly. Search the web for companies in underrepresented categories matching these queries -- remote-first companies hiring engineers LATAM-friendly, known H-1B sponsors for software engineers, relocation-friendly companies hiring engineers. Collect name, category, and 1 to 2 recent hiring signals per company found.
-  - Merge state.db companies and web-researched companies into a consolidated list. For each company note its Target Path category and any recent news or hiring signals. Limit to 10 to 15 companies total across all three categories.
-  - Read the complete contents of /etc/nixos/zeroclaw/documents/LORE.md. Locate the section starting with ## Target Companies and ending at the next ## heading. Replace only that section with the updated company list from the previous step, formatted with three subsections -- Remote-Global, US Sponsors (H-1B / O-1), and Relocation-Friendly -- each containing bullet entries. Write the complete modified file back to /etc/nixos/zeroclaw/documents/LORE.md. Then send a summary of companies added per category to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text.
+goal: "Research target companies from state.db and the web, produce an updated Target Companies section, and send the draft to Enrique for approval"
+hints:
+  - "Query state.db for known company names from job_applications and freelance_leads"
+  - "Read LORE.md Target Companies and Target Paths sections for current state"
+  - "Research companies in underrepresented categories (Remote-Global, US Sponsors, Relocation-Friendly)"
+  - "Produce a draft of the updated Target Companies section (10-15 companies across 3 categories)"
+  - "Write draft to ~/.zeroclaw/workspace/state/company-refresh-draft.md"
+  - "Send a diff summary to Enrique via WhatsApp showing what would change. Do NOT modify LORE.md directly."
 notify: "+51926689401"

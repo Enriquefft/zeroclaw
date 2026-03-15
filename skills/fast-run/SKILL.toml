@@ -1,0 +1,14 @@
+[skill]
+name = "fast-run"
+description = "Delegate simple sub-tasks to GLM-5. Use for fetch, extract, query, and tool-heavy grunt work."
+version = "0.1.0"
+tags = ["delegation", "fast", "sub-task"]
+
+[[tools]]
+name = "fast_run_cli"
+description = "Run a simple task via GLM-5 with full tool access. Pass a complete, self-contained task description."
+kind = "shell"
+command = "zeroclaw run --prompt {args}"
+
+[tools.args]
+args = "Complete task description string"

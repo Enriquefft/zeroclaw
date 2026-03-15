@@ -1,11 +1,14 @@
 name: "Job Scanner"
-schedule: "0 9 * * *"
+schedule: "0 9,15 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Search job boards for new leads matching LORE.md criteria, score them, deduplicate via state.db, and send a WhatsApp digest for qualifying leads"
-steps:
-  - Read /etc/nixos/zeroclaw/documents/LORE.md and extract target roles, target paths (remote-global priority), job boards to monitor, and application approach hints. Output a compact JSON summary of search criteria with fields: roles (array of role names), boards (array of board names), remote_priority (boolean), salary_min (number or null), skills (array).
-  - Search the web for job listings matching the criteria from the previous step. Query 3 to 5 boards from the extracted list -- Wellfound, RemoteOK, WeWorkRemotely, HN Who Is Hiring (on the 1st of each month), YC Work at a Startup. For each result collect title, company, url, approximate salary if visible, and location or remote status. Output a list of objects where each object has fields title, company, url, salary (string or null), remote (boolean).
-  - Query state.db at ~/.zeroclaw/workspace/state.db to get known job URLs. Run: sqlite3 ~/.zeroclaw/workspace/state.db 'SELECT url FROM job_applications'. Discard any discovered leads whose URL is already in that list. For the remaining new leads, score each one 0 to 100 against the LORE.md scoring rubric -- role fit up to 50 points, remote status up to 20 points, salary match up to 20 points, company or path alignment up to 10 points. Output the list of new leads with scores, each as an object with title, company, url, salary, score, source_platform.
-  - Insert all new leads into state.db job_applications table. For each lead run sqlite3 ~/.zeroclaw/workspace/state.db with an INSERT OR IGNORE INTO job_applications (title, company, url, status, found_date, match_score, source_platform, last_updated) VALUES using the values from the previous step (status is 'new', found_date and last_updated are unixepoch()). After inserting, check if any leads scored 70 or above. If yes, compose a WhatsApp digest listing each qualifying lead as one line with title, company, score, and url -- leads scoring 90 or above get an extra note appended recommending cold outreach to the hiring manager per LORE.md application approach. Send the digest to +51926689401 via: kapso-whatsapp-cli send --to +51926689401 --text followed by the message text. If no leads scored 70 or above, exit silently without sending.
+hints:
+  - "Read LORE.md for target roles, paths, salary thresholds, and scoring rubric"
+  - "Check Wellfound, RemoteOK, WeWorkRemotely, HN Who Is Hiring (1st of month), YC Work at a Startup"
+  - "Deduplicate against state.db job_applications by URL"
+  - "Score 0-100 per LORE.md rubric: role fit 50, remote 20, salary 20, path alignment 10"
+  - "Only notify for leads scoring 70+. Flag 90+ for cold outreach per LORE.md application approach"
+  - "For leads scoring 90+, draft a cold DM to the hiring manager or CTO using SOUL.md voice and LORE.md positioning. Reference something specific about the company. Send draft to Enrique via WhatsApp for approval before any external contact"
+  - "Insert new leads into state.db job_applications table"
 notify: "+51926689401"

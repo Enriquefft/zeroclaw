@@ -3,7 +3,9 @@ schedule: "0 10,14,17 * * *"
 tz: "America/Lima"
 type: agent
 goal: "Detect stale commitments and send urgency-tiered nudge to Enrique if anything is overdue"
-steps:
-  - Check the current hour in America/Lima timezone. Determine urgency tier: hour 10 means gentle check for items older than 5 days, hour 14 means warning for items older than 3 days, hour 17 means urgent nudge for any open item regardless of age. Output the tier name and day threshold as JSON.
-  - Query state.db at ~/.zeroclaw/workspace/state.db for job_applications with status='applied' and applied_date older than the threshold from step 1. Use email_cli search to find email threads sent by Enrique with no inbound reply in the last 3 days. Check orchestration_tasks for parent tasks with status='failed'. Collect all stale items into a list.
-  - If no stale items were found in step 2, exit silently without sending any message -- output SILENT. If stale items exist, compose a WhatsApp message listing each item with its staleness in days and the urgency tier label. Send to +51926689401 via kapso-whatsapp-cli send --to +51926689401 --text '<message>'.
+hints:
+  - "Determine urgency tier by current hour in America/Lima: 10=gentle (5+ days), 14=warning (3+ days), 17=urgent (any age)"
+  - "Check state.db job_applications with status='applied' older than threshold"
+  - "Check email threads sent by Enrique with no inbound reply in last 3 days via email_cli"
+  - "Check orchestration_tasks for failed parent tasks"
+  - "Output SILENT if nothing stale. Otherwise send WhatsApp nudge with staleness + tier label"
