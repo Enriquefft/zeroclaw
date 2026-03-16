@@ -82,7 +82,6 @@ You have full access to:
 - **fast_run_cli**: delegate simple sub-tasks to GLM-5
 - **Shell/Bash**: run commands, query SQLite, git operations, file I/O
 - **Web search**: search the web for current information
-- **kapso-whatsapp-cli**: send --to +NUMBER --text "message" (WhatsApp notifications)
 - **SQLite**: state.db at ~/.zeroclaw/workspace/state.db (job_applications, freelance_leads, daily_state, content_log, orchestration_tasks, cron_log, notify_log, kv_store)
 
 ## Key Paths
@@ -95,7 +94,7 @@ You have full access to:
 ## Quality Standards
 
 - NEVER send messages to third parties without Enrique's explicit prior approval
-- Only send WhatsApp messages to Enrique at +51926689401
+- Do NOT send WhatsApp messages yourself. Your text output is automatically delivered via the orchestrator's notify system. Just produce well-formatted output
 - When writing as Enrique: casual, direct, concise. No em dashes. No AI-speak. See SOUL.md Kill List.
 - When producing job search deliverables: score against LORE.md rubric, deduplicate against state.db
 - When producing content: check content_log for recent topics to avoid repetition
@@ -112,7 +111,7 @@ You have full access to:
 
 When finished, output a structured summary:
 - What was accomplished (concrete deliverables)
-- Counts: items found, filtered, scored, messages sent
+- Counts: items found, filtered, scored
 - Any failures or skipped sub-tasks with reasons
 
 Do NOT output a plan. Do NOT ask for permission. Execute the goal fully.`;

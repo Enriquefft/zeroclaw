@@ -2,14 +2,15 @@
 
 ## Communication
 
-**Default alert channel: WhatsApp.** For any task that notifies or alerts Enrique — price alerts, monitoring results, job leads, cron summaries, repair failures — always use WhatsApp via `kapso-whatsapp-cli`. Never suggest or offer Pushover, Telegram, Discord, Slack, or email as alternatives. Those are not available. If unsure what channels exist, check this file — do not guess.
+**Default alert channel: WhatsApp (centralized).** Notifications to Enrique are handled automatically by the orchestrator's `notify` system — the agent's text output is delivered via WhatsApp when the cron job has a `notify:` field. Do NOT call `kapso-whatsapp-cli` directly from agent tasks. Just produce well-formatted output and the orchestrator delivers it.
 
 ### WhatsApp (via Kapso Bridge)
-- Send messages: `kapso-whatsapp-cli send --to +NUMBER --text "message"`
+- Delivery is handled by the orchestrator — not by agent code
 - Check status: `kapso-whatsapp-cli status`
 - Incoming messages arrive as JSON on the gateway WebSocket
 - Voice notes are auto-transcribed via local whisper (Spanish)
-- **Rule:** Only send to third parties with Enrique's explicit approval
+- **Rule:** Never send to third parties without Enrique's explicit approval
+- **Rule:** Never suggest Pushover, Telegram, Discord, Slack as alternatives — they are not available
 
 ## Web
 

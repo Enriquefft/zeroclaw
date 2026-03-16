@@ -1,4 +1,4 @@
-# Reusable Application Responses
+-# Reusable Application Responses
 
 Polished responses adaptable across different applications. Always tailor to the specific opportunity.
 
@@ -30,7 +30,7 @@ Now I'm CTO of Genera, AI tools for teaching workflows. 500+ teachers, 15,000+ s
 My pattern: I learn domains fast (synbio in a month, fintech in weeks), ship things that work, and move on to the next problem. I don't wait for permission or credentials.
 
 ### Technical-focused version (~400 chars)
-4+ years fullstack, building AI products. Currently CTO at Genera: Next.js, Python, PostgreSQL, AWSâ€”serving 500+ teachers with AI content generation and real-time analytics. Previously built fintech from ground up at Toke: 6 bank integrations, WebSockets, data pipelines. Built 10+ MVPs as freelancer. Also shipped production agent library (LangChain/LangGraph)â€”100x code reduction on some rebuilds. I learn stacks fast and ship faster.
+4+ years fullstack, building AI products at senior/lead level. Currently CTO at Genera: Next.js, Python, PostgreSQL, AWS, serving 500+ teachers with AI content generation and real-time analytics. Previously Senior Fullstack Engineer -> Tech Lead at Toke: 6 bank integrations, WebSockets, data pipelines. Built 10+ MVPs as lead engineer for startups. Also shipped production agent library (LangChain/LangGraph), 100x code reduction on some rebuilds. I learn stacks fast and ship faster.
 
 ---
 
@@ -104,13 +104,6 @@ Built and led Austrian esports team to world top 32 in Clash of Clans. Overcame 
 **Short (~150 chars):**
 Production-grade AI agent library (LangChain/LangGraph). 10+ agents deployed. Recreated startup products with 100x less code while improving robustness.
 
-### OpenClaw Kapso WhatsApp Bridge
-**Short (~200 chars):**
-Open-source Go daemon bridging WhatsApp to AI agents via official Meta API. 100 GitHub stars, endorsed by Kapso founder (also Platanus founder). Zero ban risk vs. reverse-engineered alternatives.
-
-**Technical version (~250 chars):**
-Go daemon + CLI bridging WhatsApp (Kapso Cloud API/official Meta API) to OpenClaw AI agents over WebSocket. Stateless, near-zero idle resources. 100 GitHub stars. Solves the fragility problem of reverse-engineered WhatsApp libraries (Baileys, whatsapp-web.js) with enterprise-grade reliability.
-
 ### 0â†’1 / MVP Freelancing
 **Short (~180 chars):**
 Built MVPs for 10+ startupsâ€”one of Peru's fastest 0â†’1 builders. Clients include $25K grant winner (Reganvi) and Top 50 Rockstart LATAM (Cobox).
@@ -144,7 +137,7 @@ I've built products across edtech, fintech, and biotech. I know how to ship. But
 [Company] offers [specific: scale/technical challenges/team quality]. I'm not looking for a place to learn the basicsâ€”I'm looking for an environment where I can operate at the edge of my abilities and grow faster.
 
 ### For AI/ML roles
-I've been building with AI since 2020: GPT chatbots before the hype, NL-to-SQL in 2021, now production agent systems and active research. At Genera, 500+ teachers use my AI tools daily. I also have a fairness audit paper under peer review and an adversarial LLM evaluation framework in progress. I ship open-source too: openclaw-kapso-whatsapp hit 100 GitHub stars.
+I've been building with AI since 2020â€”GPT chatbots before the hype, NL-to-SQL in 2021, now production agent systems. At Genera, I'm shipping AI tools that 500+ teachers use daily. I've seen what works and what doesn't when AI meets real users.
 
 [Company/Role] is working on [specific problem]. I want to go deeper on [specific technical area] with a team that's operating at the frontier.
 
@@ -159,9 +152,9 @@ I've built two organizations from scratch: Genera (AI edtech, $15K revenue, 500+
 I know how to find problems, validate them, build solutions, and ship. [Program/Company] offers [network/capital/market access]. I'm not looking for permission to startâ€”I'm looking to move faster.
 
 ### For Fellowships/Research
-I've been doing research without formal structures for years, but now it's formalized: a paper under peer review on algorithmic fairness in Peru's education system, an approved proposal on climate impact reasoning, and an open-source adversarial LLM evaluation framework in progress. Before that: synbio in a month for iGEM, agent systems from scratch, production AI tools used daily by 500+ teachers.
+I've spent years doing research unofficiallyâ€”building what I needed, learning domains from scratch, shipping without formal structures. Synbio in a month. Agent systems from scratch. I've hit the ceiling of my environment.
 
-[Program] isn't where I'd start doing serious work. It's where I'd get compute, mentorship, and network to accelerate what's already in motion.
+[Program] isn't where I'd start doing serious work. It's where I'd accelerate.
 
 ### For Grants/Scholarships
 I build infrastructure where none exists. In Peru, there was no support for research-stage startups, so I created 404 Tech Found. There were no AI tools for public education workflows, so I built Genera.
@@ -173,9 +166,11 @@ I build infrastructure where none exists. In Peru, there was no support for rese
 ## ORIGIN STORY (For interviews, not CV)
 
 ### The 17-year-old automation story
-My first job at 17 was assistant at an import/export company. I saw a computer, realized most tasks were boring and repetitive, and taught myself to program. Within months, I had automated my boss's entire workflowâ€”without asking.
+At 17, I got a job at an import/export company. Started as a secretary. They moved me to Excel work, and I realized most of what I was doing was repetitive. No one asked me to, but I taught myself to program and automated tasks for myself and a coworker. Got paid 2x minimum salary for it.
 
-That instinctâ€”see a problem, build a solutionâ€”has driven everything since. Genera, Toke, 404 Tech Found, the agent systems I'm building now. Same pattern, bigger problems.
+That instinct (see a problem, build a solution without asking) has driven everything since. Genera, Toke, 404 Tech Found, the agent systems I'm building now. Same pattern, bigger problems.
+
+*Note: No formal title ever existed (underage, informal). Use this story in interviews, essays, and "how did you start" questions. Keep off CV.*
 
 ### Why education
 My family had a school. I learned algebra while I was still learning multiplication. Started teaching math at 16.
@@ -208,7 +203,7 @@ Skalia was techno-economic analysis software for bioprocesses. Built for iGEM, w
 Learned: timing and team structure matter as much as the idea.
 
 ### Brute-force research (~200 chars)
-Tried running multi-agent simulations in Minecraft environments. Days of optimizations that went nowhere. Failed. But the lesson (map the landscape first, build infrastructure for systematic evaluation) directly shaped LLM Gladiators, my current adversarial LLM evaluation framework.
+Tried running multi-agent simulations in Minecraft environments. Days of optimizations that went nowhereâ€”pure brute force. Failed. But now I know what doesn't work. Next time I'll map the landscape first.
 
 ---
 
@@ -223,6 +218,11 @@ For VCL iGEM, I led an international team building software for bioprocesses. Kn
 ### Building teams (~200 chars)
 At 404 Tech Found, I've worked with 15 startup teamsâ€”mentoring founders, connecting them with investors, helping them navigate from research to product. Ecosystem building is team building at scale.
 
+
+### Mentorship & community (~250 chars)
+Mentor and judge across multiple programs: Hult Prize 2026, Wichay (deep-tech startups), ESS, UNASAM. Also helped organize events. Beyond 404TF, I keep showing up for the ecosystem. People keep asking me back because I give concrete, builder-level advice, not theory.
+
+
 ---
 
 ## TECHNICAL DEPTH (By domain)
@@ -234,8 +234,6 @@ At 404 Tech Found, I've worked with 15 startup teamsâ€”mentoring founders, 
 - RAG, embeddings, vector DBs
 - AI content generation at Genera (daily use by 500+ teachers)
 - Research: hyperrealistic persona generation (PainPoint)
-- Active research: adversarial LLM evaluation (LLM Gladiators), algorithmic fairness auditing (SHAP, XGBoost, LightGBM), RAG for climate impact reasoning
-- Open source: openclaw-kapso-whatsapp (Go, 100 GitHub stars), WhatsApp-to-AI bridge via official Meta API
 
 ### Fullstack
 - Frontend: React, Next.js, Vue.js, Tailwind
@@ -258,33 +256,28 @@ At 404 Tech Found, I've worked with 15 startup teamsâ€”mentoring founders, 
 
 ## RESEARCH INTERESTS (Adapt based on opportunity)
 
-### Active Research (Dec 2025 - Present)
-1. **Adversarial LLM Evaluation (LLM Gladiators):** Open-source framework dropping LLM agents into real-time adversarial game environments (Hytale) to benchmark emergent reasoning. Hierarchical latency-bridging architecture for RL/GRPO policy optimization. POC stage.
-2. **Algorithmic Fairness Audit ("Who Gets Missed?"):** 5 model families on 150K+ records, analyzing FNR disparities in Peru's dropout-risk prediction. SHAP feature attribution. Under peer review.
-3. **LLM Analog Impact Reasoning (AIR) for Climate Events:** RAG framework for historically analogous ENSO events + downstream socioeconomic reasoning. Approved proposal, co-authored.
-
-### Planned / Ongoing Interests
-1. **Multi-agent systems:** Agent interaction in constrained/adversarial environments (LLM Gladiators is the active instantiation)
+### AI/ML focused
+1. **Multi-agent systems:** Agent interaction in constrained environments
 2. **Compilers + LLMs:** LLM layers in production compilers
 3. **LLM efficiency:** When to use LLMs vs. efficient alternatives as systems scale
-4. **Spec-driven development:** Automating 0-to-1 with agents (PRD to functional app)
+4. **Spec-driven development:** Automating 0â†’1 with agents (PRD â†’ functional app)
 
 ### Broader technical
 - AI agents and orchestration systems
 - Developer tools and programming languages
 - Systems that scale in resource-constrained environments
-- Algorithmic fairness and bias in public ML systems
 
 ### Impact-focused framing
 - AI for education access (Genera)
-- Algorithmic fairness in education (fairness audit connects to Genera's mission)
-- Climate resilience reasoning (ENSO/LATAM focus)
 - Infrastructure for emerging tech ecosystems (404TF)
 - Tools that help small teams ship faster
 
 ---
 
 ## BY APPLICATION TYPE: Key Points to Emphasize
+
+**Title Strategy Note:** Use different title framing depending on application type. For engineering roles, lead with Senior Engineer/Tech Lead titles. For startup/EIR roles, lead with CTO/Founder titles. See Profile.md "CV Title Strategy" section for details.
+
 
 ### Developer Roles (Any)
 - Lead with technical: stack, systems built, scale
@@ -299,8 +292,6 @@ At 404 Tech Found, I've worked with 15 startup teamsâ€”mentoring founders, 
 - Agent library: 100x code reduction, 10+ deployed
 - PainPoint: hyperrealistic persona simulation
 - Full stack ownership: understand user, build, ship, measure
-- Open source: openclaw-kapso-whatsapp (Go, 100 GH stars, official Meta API)
-- Research credibility: fairness audit under peer review, adversarial LLM eval POC
 
 ### Entrepreneur in Residence
 - Lead with companies built
@@ -315,12 +306,12 @@ At 404 Tech Found, I've worked with 15 startup teamsâ€”mentoring founders, 
 - Genera: 15,000+ students reached
 - 404TF: building infrastructure for Latin America
 - Non-traditional path as evidence of self-direction
+- Mentorship across multiple programs (Hult Prize judge, Wichay, ESS, UNASAM) shows ecosystem commitment
+
 
 ### Fellowships / Research
-- Lead with learning velocity + active research
+- Lead with learning velocity + research interests
 - Synbio in 1 month
-- Active: LLM Gladiators (adversarial eval), fairness audit (under peer review), climate AIR (approved)
 - Agent systems, compilers + LLMs
-- Self-directed projects that ARE research, not just "like" research
-- Already publishing, need resources to accelerate
-- Open source traction: 100 GH stars on openclaw-kapso-whatsapp
+- Self-directed projects that look like informal research
+- Already doing the work, need resources to accelerate Open source traction: 100 GH stars on openclaw-kapso-whatsapp

@@ -2,7 +2,7 @@ name: "EOD Summary"
 schedule: "0 20 * * *"
 tz: "America/Lima"
 type: agent
-goal: "Compile an end-of-day recap of what moved today and send a compact summary via WhatsApp"
+goal: "Compile an end-of-day recap of what moved today"
 hints:
   - "Git commits today in /etc/nixos/zeroclaw, completed orchestration_tasks"
   - "Job and freelance lead status changes today from state.db"
@@ -10,4 +10,5 @@ hints:
   - "Follow-up priorities: applications with status='applied' older than 5 days"
   - "Check daily_state eod_sent=1 to avoid duplicates"
   - "5-line headline format: commits+tasks+emails, jobs+leads, tomorrow events, priorities"
+  - "Mark daily_state eod_sent=1 after completion"
 notify: "+51926689401"

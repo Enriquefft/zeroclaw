@@ -8,4 +8,5 @@ hints:
   - "Check state.db job_applications with status='applied' older than threshold"
   - "Check email threads sent by Enrique with no inbound reply in last 3 days via email_cli"
   - "Check orchestration_tasks for failed parent tasks"
-  - "Output SILENT if nothing stale. Otherwise send WhatsApp nudge with staleness + tier label"
+  - "Output SILENT if nothing stale. Otherwise output nudge with staleness + tier label"
+notify: "+51926689401"

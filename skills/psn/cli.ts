@@ -14,34 +14,7 @@
  */
 
 import { $ } from "bun";
-import { existsSync, readFileSync } from "fs";
-
-// ─── Secrets ─────────────────────────────────────────────────────────────────
-
-const envFile = "/run/secrets/rendered/zeroclaw.env";
-const psnEnv: Record<string, string> = {};
-
-if (existsSync(envFile)) {
-  const content = readFileSync(envFile, "utf-8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith("#")) {
-      const [key, ...valueParts] = trimmed.split("=");
-      if (key && valueParts.length > 0) {
-        psnEnv[key] = valueParts.join("=");
-      }
-    }
-  }
-}
-
-// Map ZeroClaw secret names to PSN env vars
-const secretEnv: Record<string, string> = {
-  ...process.env,
-  ...(psnEnv.PSN_DATABASE_URL && { DATABASE_URL: psnEnv.PSN_DATABASE_URL }),
-  ...(psnEnv.PSN_ENCRYPTION_KEY && {
-    HUB_ENCRYPTION_KEY: psnEnv.PSN_ENCRYPTION_KEY,
-  }),
-};
+import { existsSync } from "fs";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -138,7 +111,7 @@ async function runPsnCommand(
 
   try {
     const result =
-      await $`bun run ${fullPath} ${args}`.env(secretEnv).quiet().nothrow();
+      await $`bun run ${fullPath} ${args}`.cwd(PSN_ROOT).quiet().nothrow();
     return {
       stdout: result.stdout.toString().trim(),
       stderr: result.stderr.toString().trim(),

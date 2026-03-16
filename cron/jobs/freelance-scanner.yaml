@@ -2,7 +2,7 @@ name: "Freelance Scanner"
 schedule: "0 9,15 * * *"
 tz: "America/Lima"
 type: agent
-goal: "Search freelance gig platforms for new leads matching LORE.md criteria, score them, deduplicate via state.db, and send a WhatsApp digest for qualifying leads"
+goal: "Search freelance gig platforms for new leads matching LORE.md criteria, score them, deduplicate via state.db, and produce a digest of qualifying leads"
 hints:
   - "Read LORE.md for skills, freelance platforms, rate expectations"
   - "Check Toptal, Upwork, Contra and any other platforms in LORE.md"

@@ -2,7 +2,7 @@ name: "Paper Scout"
 schedule: "0 9 * * 1"
 tz: "America/Lima"
 type: agent
-goal: "Fetch arXiv RSS feeds across 5 CS categories, filter against research interests from LORE.md, and deliver a top-5 weekly digest via WhatsApp"
+goal: "Fetch arXiv RSS feeds across 5 CS categories, filter against research interests from LORE.md, and produce a top-5 weekly digest"
 hints:
   - "arXiv RSS: cs.AI, cs.LG, cs.CL, cs.MA, cs.SE. Papers from last 7 days"
   - "Filter against LORE.md research interests: multi-agent adversarial, algorithmic fairness, LLM reasoning, compilers+LLMs, spec-driven dev"

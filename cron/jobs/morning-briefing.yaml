@@ -2,11 +2,11 @@ name: "Morning Briefing"
 schedule: "30 7 * * *"
 tz: "America/Lima"
 type: agent
-goal: "Compile a compact morning briefing from calendar, email, and follow-up data and send it to Enrique via WhatsApp"
+goal: "Compile a compact morning briefing from calendar, email, and follow-up data"
 hints:
   - "Calendar events today via calendar_cli, unread emails via email_cli across all accounts"
   - "Check state.db: follow-ups due (applied > 5 days), new leads from last 24h"
   - "Check daily_state for today (date('now', '-5 hours')). Skip if briefing_sent=1"
   - "5-line headline format: events+unread+urgent, follow-ups+leads, top 3 actions"
-  - "Mark daily_state briefing_sent=1 after sending"
+  - "Mark daily_state briefing_sent=1 after completion"
 notify: "+51926689401"
