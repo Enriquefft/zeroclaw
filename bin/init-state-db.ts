@@ -3,7 +3,7 @@ import { mkdirSync } from "fs";
 import { dirname } from "path";
 
 const DEFAULT_DB_PATH = `${Bun.env.HOME}/.zeroclaw/workspace/state.db`;
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const SCHEMA_V1_DDL = `
 -- Job application tracking
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS content_log (
   posted_at   INTEGER
 );
 
--- Orchestration task tracking (v3: includes subtask columns)
+-- Orchestration task tracking (v4: includes subtask + queue columns)
 CREATE TABLE IF NOT EXISTS orchestration_tasks (
   id          TEXT PRIMARY KEY,
   description TEXT,
@@ -70,7 +70,10 @@ CREATE TABLE IF NOT EXISTS orchestration_tasks (
   step_index  INTEGER NOT NULL DEFAULT 0,
   step_output TEXT,
   parent_goal TEXT,
-  yaml_source TEXT
+  yaml_source TEXT,
+  pid         INTEGER,
+  queued_at   INTEGER,
+  started_work_at INTEGER
 );
 
 -- Notification delivery log (used for rate limiting + audit)
@@ -108,6 +111,7 @@ CREATE INDEX IF NOT EXISTS idx_freelance_status ON freelance_leads(status);
 CREATE INDEX IF NOT EXISTS idx_notify_sent_at ON notify_log(sent_at);
 CREATE INDEX IF NOT EXISTS idx_cron_job_name  ON cron_log(job_name, started_at);
 CREATE INDEX IF NOT EXISTS idx_orch_parent    ON orchestration_tasks(parent_id);
+CREATE INDEX IF NOT EXISTS idx_orch_status    ON orchestration_tasks(status);
 `;
 
 export function initStateDb(dbPath: string = DEFAULT_DB_PATH): Database {
@@ -144,7 +148,7 @@ export function initStateDb(dbPath: string = DEFAULT_DB_PATH): Database {
     db.exec("ALTER TABLE orchestration_tasks ADD COLUMN yaml_source TEXT");
     db.exec("CREATE INDEX IF NOT EXISTS idx_orch_parent ON orchestration_tasks(parent_id)");
     db.exec("COMMIT");
-    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+    // Fall through to v3→v4
   } else if (currentVersion === 2) {
     // v2 → v3: add orchestration subtask tracking columns
     db.exec("BEGIN");
@@ -154,6 +158,23 @@ export function initStateDb(dbPath: string = DEFAULT_DB_PATH): Database {
     db.exec("ALTER TABLE orchestration_tasks ADD COLUMN parent_goal TEXT");
     db.exec("ALTER TABLE orchestration_tasks ADD COLUMN yaml_source TEXT");
     db.exec("CREATE INDEX IF NOT EXISTS idx_orch_parent ON orchestration_tasks(parent_id)");
+    db.exec("COMMIT");
+    // Fall through to v3→v4
+  }
+
+  // v3 → v4: add queue/worker columns, clean orphans
+  if (currentVersion >= 2 && currentVersion <= 3) {
+    db.exec("BEGIN");
+    db.exec("ALTER TABLE orchestration_tasks ADD COLUMN pid INTEGER");
+    db.exec("ALTER TABLE orchestration_tasks ADD COLUMN queued_at INTEGER");
+    db.exec("ALTER TABLE orchestration_tasks ADD COLUMN started_work_at INTEGER");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_orch_status ON orchestration_tasks(status)");
+    db.exec(
+      `UPDATE orchestration_tasks SET status = 'failed',
+        step_output = 'orphaned: pre-v4 migration cleanup',
+        updated_at = ${Date.now()}
+      WHERE status = 'running'`
+    );
     db.exec("COMMIT");
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }

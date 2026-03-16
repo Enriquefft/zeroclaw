@@ -80,7 +80,7 @@ let
         if [[ "$job_type" == "agent" ]]; then
           # Agent job: auto-generate command from orchestrate.ts + yaml path
           # User writes goal/steps/notify in YAML, NOT a command field
-          command="${pkgs.bun}/bin/bun run /etc/nixos/zeroclaw/bin/orchestrate.ts $(realpath "$yaml_file")"
+          command="${pkgs.bun}/bin/bun run /etc/nixos/zeroclaw/bin/orchestrate.ts --enqueue $(realpath "$yaml_file")"
         else
           # Shell job: existing behavior — read command from YAML and resolve
           command=$(resolve_command "$(yq -r '.command' "$yaml_file")")
@@ -436,6 +436,7 @@ in
       ExecStart = "${zeroclawPkg}/bin/zeroclaw daemon";
       Restart = "on-failure";
       RestartSec = 5;
+      MemoryHigh = "12G";
       MemoryMax = "16G";
       EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ];
       Environment = [

@@ -4,7 +4,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { Database } from "bun:sqlite";
 import { initStateDb } from "./init-state-db.ts";
-import { orchestrate, type OrchestrateResult } from "./orchestrate.ts";
+import { orchestrate, enqueue, work, type OrchestrateResult } from "./orchestrate.ts";
 
 let tempDir: string;
 let tempDb: string;
@@ -362,6 +362,16 @@ describe("orchestrate — module structure", () => {
     expect(orchestrate.constructor.name).toBe("AsyncFunction");
   });
 
+  test("exports enqueue as AsyncFunction", () => {
+    expect(typeof enqueue).toBe("function");
+    expect(enqueue.constructor.name).toBe("AsyncFunction");
+  });
+
+  test("exports work as AsyncFunction", () => {
+    expect(typeof work).toBe("function");
+    expect(work.constructor.name).toBe("AsyncFunction");
+  });
+
   test("source imports initStateDb", async () => {
     const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("initStateDb");
@@ -386,5 +396,182 @@ describe("orchestrate — module structure", () => {
     const content = await Bun.file("/etc/nixos/zeroclaw/bin/orchestrate.ts").text();
     expect(content).toContain("YAML.parse");
     expect(content).not.toContain("RegExp");
+  });
+});
+
+// ---- Enqueue mode ----
+
+describe("enqueue mode", () => {
+  test("creates queued row and returns immediately", async () => {
+    const yamlPath = writeYaml(`
+name: enqueue-test
+goal: "Enqueue this task"
+hints:
+  - "A hint"
+`);
+    const result = await enqueue(yamlPath, { dbPath: tempDb });
+
+    expect(result.success).toBe(true);
+    expect(result.status).toBe("queued");
+    expect(result.parent_id.length).toBeGreaterThan(0);
+
+    const db = new Database(tempDb);
+    const row = db.query(
+      "SELECT * FROM orchestration_tasks WHERE id = ?"
+    ).get(result.parent_id) as any;
+    db.close();
+
+    expect(row).not.toBeNull();
+    expect(row.status).toBe("queued");
+    expect(row.queued_at).toBeGreaterThan(0);
+    expect(row.parent_goal).toBe("Enqueue this task");
+    expect(row.yaml_source).toBe(yamlPath);
+  });
+
+  test("returns error for invalid YAML", async () => {
+    const result = await enqueue("/nonexistent/path.yaml", { dbPath: tempDb });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("not found");
+  });
+
+  test("returns error for YAML without goal", async () => {
+    const yamlPath = writeYaml(`name: no-goal\nhints:\n  - "Something"\n`);
+    const result = await enqueue(yamlPath, { dbPath: tempDb });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("goal");
+  });
+});
+
+// ---- Worker mode ----
+
+describe("worker mode", () => {
+  test("claims queued task and executes it", async () => {
+    const yamlPath = writeYaml(`
+name: worker-test
+goal: "Worker should run this"
+hints:
+  - "Do it"
+`);
+
+    // Pre-insert a queued row
+    const db = new Database(tempDb);
+    const taskId = `test-${Date.now()}`;
+    const now = Date.now();
+    db.prepare(
+      `INSERT INTO orchestration_tasks
+         (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source, queued_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(taskId, "Worker should run this", "queued", now, now, null, 0, "Worker should run this", yamlPath, now);
+    db.close();
+
+    await work({ dbPath: tempDb, runner: mockRunner("worker output"), once: true });
+
+    const db2 = new Database(tempDb);
+    const row = db2.query(
+      "SELECT * FROM orchestration_tasks WHERE id = ?"
+    ).get(taskId) as any;
+    db2.close();
+
+    expect(row.status).toBe("completed");
+    expect(row.step_output).toBe("worker output");
+    expect(row.pid).toBe(process.pid);
+    expect(row.started_work_at).toBeGreaterThan(0);
+  });
+
+  test("respects concurrency gate", async () => {
+    // Pre-insert 2 running rows
+    const db = new Database(tempDb);
+    const now = Date.now();
+    for (let i = 0; i < 2; i++) {
+      db.prepare(
+        `INSERT INTO orchestration_tasks
+           (id, description, status, created_at, updated_at, parent_id, step_index, started_work_at, pid)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(`running-${i}`, `Running task ${i}`, "running", now, now, null, 0, now, process.pid);
+    }
+    // Also insert a queued row that should NOT be claimed
+    db.prepare(
+      `INSERT INTO orchestration_tasks
+         (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, queued_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run("should-not-run", "Should not run", "queued", now, now, null, 0, "Should not run", now);
+    db.close();
+
+    const { runner, calls } = trackingRunner("should not see this");
+    await work({ dbPath: tempDb, runner, once: true });
+
+    // Runner should never have been called
+    expect(calls.length).toBe(0);
+
+    // Queued task should still be queued
+    const db2 = new Database(tempDb);
+    const row = db2.query(
+      "SELECT status FROM orchestration_tasks WHERE id = 'should-not-run'"
+    ).get() as any;
+    db2.close();
+
+    expect(row.status).toBe("queued");
+  });
+
+  test("sweeps orphaned stale rows with dead PIDs", async () => {
+    const db = new Database(tempDb);
+    const now = Date.now();
+    const staleTime = now - 46 * 60 * 1000; // 46 min ago (> 45 min threshold)
+
+    // Insert a stale running row with a PID that's definitely dead
+    db.prepare(
+      `INSERT INTO orchestration_tasks
+         (id, description, status, created_at, updated_at, parent_id, step_index, started_work_at, pid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run("stale-task", "Stale task", "running", staleTime, staleTime, null, 0, staleTime, 999999);
+    db.close();
+
+    await work({ dbPath: tempDb, runner: mockRunner("done"), once: true });
+
+    const db2 = new Database(tempDb);
+    const row = db2.query(
+      "SELECT status, step_output FROM orchestration_tasks WHERE id = 'stale-task'"
+    ).get() as any;
+    db2.close();
+
+    expect(row.status).toBe("failed");
+    expect(row.step_output).toContain("orphaned");
+  });
+
+  test("exits cleanly when no queued tasks", async () => {
+    const { runner, calls } = trackingRunner("should not run");
+    await work({ dbPath: tempDb, runner, once: true });
+    expect(calls.length).toBe(0);
+  });
+
+  test("handles runner failure in worker mode", async () => {
+    const yamlPath = writeYaml(`
+name: worker-fail-test
+goal: "This will fail"
+`);
+
+    const db = new Database(tempDb);
+    const taskId = `fail-${Date.now()}`;
+    const now = Date.now();
+    db.prepare(
+      `INSERT INTO orchestration_tasks
+         (id, description, status, created_at, updated_at, parent_id, step_index, parent_goal, yaml_source, queued_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(taskId, "This will fail", "queued", now, now, null, 0, "This will fail", yamlPath, now);
+    db.close();
+
+    await work({ dbPath: tempDb, runner: failingRunner("worker kaboom"), once: true });
+
+    const db2 = new Database(tempDb);
+    const row = db2.query(
+      "SELECT status FROM orchestration_tasks WHERE id = ?"
+    ).get(taskId) as any;
+    const cronRow = db2.query(
+      "SELECT success FROM cron_log WHERE job_name = 'worker-fail-test'"
+    ).get() as any;
+    db2.close();
+
+    expect(row.status).toBe("failed");
+    expect(cronRow.success).toBe(0);
   });
 });
