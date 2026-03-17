@@ -441,7 +441,7 @@ in
       EnvironmentFile = [ "/run/secrets/rendered/zeroclaw.env" ];
       Environment = [
         "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.bun}/bin:/run/current-system/sw/bin:/home/hybridz/.local/bin:/home/hybridz/.npm-global/bin"
-        "AGENT_BROWSER_EXECUTABLE_PATH=${pkgs.google-chrome}/bin/google-chrome-stable"
+        "AGENT_BROWSER_EXECUTABLE_PATH=${pkgs.brave}/bin/brave"
       ];
     };
     Install = {
