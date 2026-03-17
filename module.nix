@@ -449,6 +449,25 @@ in
     };
   };
 
+  # kiro-browser: persistent authenticated browser for CDP-based form extraction
+  # Runs headless on workspace 8, ZeroClaw connects via CDP port 9222
+  systemd.user.services.kiro-browser = {
+    Unit = {
+      Description = "Kiro Browser (CDP auth bridge)";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.brave}/bin/brave --class=kiro-browser --user-data-dir=%h/.zeroclaw/browser/kiro/user-data --remote-debugging-port=9222 --no-first-run --no-default-browser-check";
+      Restart = "on-failure";
+      RestartSec = 10;
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
   # Bridge follows gateway lifecycle
   systemd.user.services.kapso-whatsapp-bridge.Unit.PartOf = [ "zeroclaw-gateway.service" ];
   systemd.user.services.kapso-whatsapp-bridge.Service.RestartSec = 3;
